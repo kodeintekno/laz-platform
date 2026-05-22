@@ -20,14 +20,13 @@ import type { NextRequest } from "next/server";
  *   - Session expiry handling
  */
 export const proxy = auth(function proxyHandler(
-  req: NextRequest & { auth: { user?: { id: string } } | null },
+  req: NextRequest & { auth: { user?: { id: string; permissions?: string[] } } | null },
 ) {
   const { nextUrl, auth: session } = req;
 
-  const isDashboardRoute = nextUrl.pathname.startsWith("/dashboard");
-  const isAuthRoute =
-    nextUrl.pathname.startsWith("/login") ||
-    nextUrl.pathname.startsWith("/register");
+  const pathname = nextUrl.pathname;
+  const isDashboardRoute = pathname.startsWith("/dashboard");
+  const isAuthRoute = pathname.startsWith("/login") || pathname.startsWith("/register");
 
   // Protect dashboard routes — redirect to login if not authenticated
   if (isDashboardRoute && !session?.user) {
@@ -37,6 +36,19 @@ export const proxy = auth(function proxyHandler(
   // Redirect authenticated users away from auth routes
   if (isAuthRoute && session?.user) {
     return NextResponse.redirect(new URL("/dashboard", req.url));
+  }
+
+  // RBAC Route Guards
+  if (session?.user?.permissions) {
+    const permissions = session.user.permissions;
+    
+    if (pathname.startsWith("/dashboard/users") && !permissions.includes("users.read")) {
+      return NextResponse.redirect(new URL("/dashboard", req.url));
+    }
+    
+    if (pathname.startsWith("/dashboard/rbac") && !permissions.includes("roles.manage")) {
+      return NextResponse.redirect(new URL("/dashboard", req.url));
+    }
   }
 
   return NextResponse.next();
