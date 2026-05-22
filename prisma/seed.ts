@@ -1,0 +1,193 @@
+/**
+ * Prisma Seed Script — Phase 2
+ *
+ * Seeds:
+ * 1. All permission rows from constants
+ * 2. All 5 roles
+ * 3. Role ↔ Permission matrix (from docs/user-roles-rbac.md)
+ * 4. One SUPER_ADMIN user
+ *
+ * Run with: npx prisma db seed
+ *
+ * Safe to re-run — uses upsert throughout.
+ */
+
+import { PrismaClient } from "@prisma/client";
+import { PrismaPg } from "@prisma/adapter-pg";
+import bcrypt from "bcryptjs";
+import "dotenv/config";
+
+const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL! });
+const prisma = new PrismaClient({ adapter });
+
+// ─── Permission definitions ───────────────────────────────────────────────────
+
+const PERMISSION_DEFINITIONS = [
+  // Users
+  { key: "users.read", description: "View users" },
+  { key: "users.create", description: "Create users" },
+  { key: "users.update", description: "Update users" },
+  { key: "users.delete", description: "Delete users" },
+  { key: "users.manage_roles", description: "Assign roles to users" },
+  // Programs
+  { key: "programs.read", description: "View programs" },
+  { key: "programs.create", description: "Create programs" },
+  { key: "programs.update", description: "Update programs" },
+  { key: "programs.delete", description: "Delete programs" },
+  { key: "programs.publish", description: "Publish programs" },
+  // Donations
+  { key: "donations.read", description: "View donations" },
+  { key: "donations.create", description: "Create donations" },
+  { key: "donations.update", description: "Update donations" },
+  // Payments
+  { key: "payments.read", description: "View payments" },
+  { key: "payments.manage", description: "Manage payments" },
+  // Distributions
+  { key: "distributions.read", description: "View distributions" },
+  { key: "distributions.manage", description: "Manage distributions" },
+  { key: "distributions.upload", description: "Upload distribution docs" },
+  // Audit
+  { key: "audit.read", description: "View audit logs" },
+  // Reports
+  { key: "reports.read", description: "View reports" },
+  { key: "reports.financial", description: "View financial reports" },
+  // RBAC
+  { key: "roles.read", description: "View roles" },
+  { key: "roles.manage", description: "Manage roles" },
+  { key: "permissions.manage", description: "Manage permissions" },
+  // Settings
+  { key: "settings.manage", description: "Manage system settings" },
+];
+
+// ─── Role ↔ Permission matrix (from docs/user-roles-rbac.md) ─────────────────
+
+const ROLE_PERMISSIONS: Record<string, string[]> = {
+  SUPER_ADMIN: PERMISSION_DEFINITIONS.map((p) => p.key), // full access
+
+  ADMIN: [
+    "programs.read",
+    "programs.create",
+    "programs.update",
+    "programs.delete",
+    "programs.publish",
+    "donations.read",
+    "donations.update",
+    "distributions.read",
+    "distributions.manage",
+    "reports.read",
+    "users.read",
+  ],
+
+  FINANCE: [
+    "payments.read",
+    "payments.manage",
+    "distributions.read",
+    "distributions.manage",
+    "reports.read",
+    "reports.financial",
+    "donations.read",
+  ],
+
+  DONATUR: ["donations.read", "donations.create"],
+
+  RELAWAN: ["distributions.read", "distributions.upload"],
+};
+
+const ROLE_DEFINITIONS = [
+  { name: "SUPER_ADMIN", description: "Full system access" },
+  { name: "ADMIN", description: "Manage programs and donations" },
+  { name: "FINANCE", description: "Manage payments and distributions" },
+  { name: "DONATUR", description: "Make donations and view history" },
+  { name: "RELAWAN", description: "Support field distributions" },
+];
+
+// ─── Main ─────────────────────────────────────────────────────────────────────
+
+async function main() {
+  console.log("🌱 Seeding LAZ Platform...\n");
+
+  // 1. Upsert all permissions
+  console.log("📋 Seeding permissions...");
+  const permissionMap: Record<string, string> = {};
+
+  for (const perm of PERMISSION_DEFINITIONS) {
+    const created = await prisma.permission.upsert({
+      where: { key: perm.key },
+      update: { description: perm.description },
+      create: { key: perm.key, description: perm.description },
+    });
+    permissionMap[perm.key] = created.id;
+    process.stdout.write(".");
+  }
+  console.log(` ✓ ${PERMISSION_DEFINITIONS.length} permissions\n`);
+
+  // 2. Upsert all roles
+  console.log("🔐 Seeding roles...");
+  const roleMap: Record<string, string> = {};
+
+  for (const role of ROLE_DEFINITIONS) {
+    const created = await prisma.role.upsert({
+      where: { name: role.name },
+      update: { description: role.description },
+      create: { name: role.name, description: role.description },
+    });
+    roleMap[role.name] = created.id;
+    process.stdout.write(".");
+  }
+  console.log(` ✓ ${ROLE_DEFINITIONS.length} roles\n`);
+
+  // 3. Upsert role-permission mappings
+  console.log("🔗 Seeding role-permission mappings...");
+  let mappingCount = 0;
+
+  for (const [roleName, permKeys] of Object.entries(ROLE_PERMISSIONS)) {
+    const roleId = roleMap[roleName];
+    for (const key of permKeys) {
+      const permissionId = permissionMap[key];
+      if (!permissionId) continue;
+      await prisma.rolePermission.upsert({
+        where: { roleId_permissionId: { roleId, permissionId } },
+        update: {},
+        create: { roleId, permissionId },
+      });
+      mappingCount++;
+    }
+  }
+  console.log(` ✓ ${mappingCount} mappings\n`);
+
+  // 4. Seed SUPER_ADMIN user
+  const adminEmail = process.env.SEED_ADMIN_EMAIL ?? "admin@laz.id";
+  const adminPassword = process.env.SEED_ADMIN_PASSWORD ?? "Admin@123456";
+  const superAdminRoleId = roleMap["SUPER_ADMIN"];
+
+  console.log(`👤 Seeding SUPER_ADMIN user (${adminEmail})...`);
+
+  const hashedPassword = await bcrypt.hash(adminPassword, 12);
+
+  await prisma.user.upsert({
+    where: { email: adminEmail },
+    update: {
+      roleId: superAdminRoleId,
+      status: "ACTIVE",
+    },
+    create: {
+      email: adminEmail,
+      name: "Super Admin",
+      password: hashedPassword,
+      status: "ACTIVE",
+      roleId: superAdminRoleId,
+    },
+  });
+  console.log(` ✓ Super admin created\n`);
+
+  console.log("✅ Seeding complete!");
+}
+
+main()
+  .catch((e) => {
+    console.error("❌ Seed failed:", e);
+    process.exit(1);
+  })
+  .finally(async () => {
+    await prisma.$disconnect();
+  });

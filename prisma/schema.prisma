@@ -53,13 +53,20 @@ enum AuditAction {
 // ─────────────────────────────────────────
 
 model User {
-  id        String     @id @default(cuid())
-  email     String     @unique
-  name      String?
-  password  String?
-  status    UserStatus @default(ACTIVE)
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
+  id             String     @id @default(cuid())
+  email          String     @unique
+  name           String?
+  password       String?
+  image          String?
+  emailVerified  DateTime?
+  status         UserStatus @default(ACTIVE)
+  lastLoginAt    DateTime?
+  roleId         String?
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+
+  role      Role?      @relation("UserRole", fields: [roleId], references: [id])
+  auditLogs AuditLog[] @relation("UserAuditLogs")
 
   @@map("users")
 }
@@ -71,6 +78,9 @@ model Role {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
+  users           User[]           @relation("UserRole")
+  rolePermissions RolePermission[] @relation("RoleToRolePermission")
+
   @@map("roles")
 }
 
@@ -79,6 +89,8 @@ model Permission {
   key         String   @unique // e.g. "users.read", "programs.manage"
   description String?
   createdAt   DateTime @default(now())
+
+  rolePermissions RolePermission[] @relation("PermissionToRolePermission")
 
   @@map("permissions")
 }
@@ -89,22 +101,28 @@ model RolePermission {
   permissionId String
   createdAt    DateTime @default(now())
 
+  role       Role       @relation("RoleToRolePermission", fields: [roleId], references: [id])
+  permission Permission @relation("PermissionToRolePermission", fields: [permissionId], references: [id])
+
   @@unique([roleId, permissionId])
   @@map("role_permissions")
 }
 
 model AuditLog {
-  id          String      @id @default(cuid())
-  userId      String?
-  action      AuditAction
-  entity      String // e.g. "User", "Program", "Donation"
-  entityId    String?
-  oldData     Json? // JSONB snapshot of previous state
-  newData     Json? // JSONB snapshot of new state
-  ipAddress   String?
-  userAgent   String?
-  createdAt   DateTime    @default(now())
+  id        String      @id @default(cuid())
+  userId    String?
+  action    AuditAction
+  entity    String // e.g. "User", "Program", "Donation"
+  entityId  String?
+  oldData   Json? // JSONB snapshot of previous state
+  newData   Json? // JSONB snapshot of new state
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime    @default(now())
+
+  user User? @relation("UserAuditLogs", fields: [userId], references: [id], onDelete: SetNull)
 
   @@map("audit_logs")
 }
+
 

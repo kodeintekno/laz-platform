@@ -1,8 +1,5 @@
-/**
- * Login Page — Phase 1 Shell.
- *
- * Empty placeholder. Full auth form implemented in Auth Phase.
- */
+import { LoginForm } from "@/features/auth/components/LoginForm";
+
 export default function LoginPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -10,21 +7,13 @@ export default function LoginPage() {
         <div className="mb-8 text-center">
           <h1 className="text-2xl font-bold text-gray-900">LAZ Platform</h1>
           <p className="mt-2 text-sm text-gray-500">
-            Sign in to your account
+            Masuk ke akun Anda
           </p>
         </div>
 
-        {/* Form placeholder — implemented in Auth Phase */}
-        <div className="space-y-4">
-          <div className="h-10 bg-gray-100 rounded-md animate-pulse" />
-          <div className="h-10 bg-gray-100 rounded-md animate-pulse" />
-          <div className="h-10 bg-indigo-100 rounded-md animate-pulse" />
-        </div>
-
-        <p className="mt-6 text-center text-xs text-gray-400">
-          Auth form — coming in Phase 2
-        </p>
+        <LoginForm />
       </div>
     </div>
   );
 }
+
