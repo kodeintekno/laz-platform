@@ -1,0 +1,160 @@
+import { auth } from "@/lib/auth";
+import { analyticsService } from "@/features/analytics/services/analytics.service";
+import Link from "next/link";
+import { ArrowRight, Wallet, Users, Activity, HeartHandshake } from "lucide-react";
+
+export const metadata = {
+  title: "Dashboard Overview | LAZ Platform",
+};
+
+export default async function DashboardHomePage() {
+  const session = await auth();
+  const { metrics, recentDonations, recentDistributions } = await analyticsService.getDashboardOverview();
+
+  const formatRupiah = (amount: number) => {
+    return new Intl.NumberFormat("id-ID", {
+      style: "currency",
+      currency: "IDR",
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(amount);
+  };
+
+  const formatDate = (date: Date) => {
+    return new Intl.DateTimeFormat("id-ID", {
+      dateStyle: "medium",
+      timeStyle: "short",
+    }).format(new Date(date));
+  };
+
+  return (
+    <div className="space-y-8">
+      <div>
+        <h1 className="text-2xl font-bold leading-7 text-gray-900 sm:truncate sm:text-3xl sm:tracking-tight">
+          Selamat datang, {session?.user?.name || "Admin"}
+        </h1>
+        <p className="mt-2 text-sm text-gray-500">
+          Berikut adalah ringkasan performa platform pengelolaan dana Anda.
+        </p>
+      </div>
+
+      {/* KPI Metrics */}
+      <dl className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="relative overflow-hidden rounded-2xl bg-white px-4 pb-12 pt-5 shadow sm:px-6 sm:pt-6 border border-gray-100">
+          <dt>
+            <div className="absolute rounded-md bg-indigo-50 p-3">
+              <Wallet className="h-6 w-6 text-indigo-600" aria-hidden="true" />
+            </div>
+            <p className="ml-16 truncate text-sm font-medium text-gray-500">Total Dana Terkumpul</p>
+          </dt>
+          <dd className="ml-16 flex items-baseline pb-6 sm:pb-7">
+            <p className="text-2xl font-semibold text-gray-900">{formatRupiah(metrics.totalDonations)}</p>
+          </dd>
+        </div>
+
+        <div className="relative overflow-hidden rounded-2xl bg-white px-4 pb-12 pt-5 shadow sm:px-6 sm:pt-6 border border-gray-100">
+          <dt>
+            <div className="absolute rounded-md bg-green-50 p-3">
+              <HeartHandshake className="h-6 w-6 text-green-600" aria-hidden="true" />
+            </div>
+            <p className="ml-16 truncate text-sm font-medium text-gray-500">Total Disalurkan</p>
+          </dt>
+          <dd className="ml-16 flex items-baseline pb-6 sm:pb-7">
+            <p className="text-2xl font-semibold text-gray-900">{formatRupiah(metrics.totalDistributed)}</p>
+          </dd>
+        </div>
+
+        <div className="relative overflow-hidden rounded-2xl bg-white px-4 pb-12 pt-5 shadow sm:px-6 sm:pt-6 border border-gray-100">
+          <dt>
+            <div className="absolute rounded-md bg-orange-50 p-3">
+              <Activity className="h-6 w-6 text-orange-600" aria-hidden="true" />
+            </div>
+            <p className="ml-16 truncate text-sm font-medium text-gray-500">Program Aktif</p>
+          </dt>
+          <dd className="ml-16 flex items-baseline pb-6 sm:pb-7">
+            <p className="text-2xl font-semibold text-gray-900">{metrics.activePrograms}</p>
+          </dd>
+        </div>
+
+        <div className="relative overflow-hidden rounded-2xl bg-white px-4 pb-12 pt-5 shadow sm:px-6 sm:pt-6 border border-gray-100">
+          <dt>
+            <div className="absolute rounded-md bg-blue-50 p-3">
+              <Users className="h-6 w-6 text-blue-600" aria-hidden="true" />
+            </div>
+            <p className="ml-16 truncate text-sm font-medium text-gray-500">Total Pengguna</p>
+          </dt>
+          <dd className="ml-16 flex items-baseline pb-6 sm:pb-7">
+            <p className="text-2xl font-semibold text-gray-900">{metrics.activeUsers}</p>
+          </dd>
+        </div>
+      </dl>
+
+      {/* Activity Feeds */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        
+        {/* Recent Donations */}
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100">
+          <div className="p-6 border-b border-gray-100 flex justify-between items-center">
+            <h2 className="text-lg font-bold text-gray-900">Donasi Terbaru</h2>
+            <Link href="/dashboard/donations" className="text-sm font-semibold text-indigo-600 hover:text-indigo-900 flex items-center gap-1">
+              Semua <ArrowRight className="w-4 h-4" />
+            </Link>
+          </div>
+          <ul className="divide-y divide-gray-100">
+            {recentDonations.map((donation) => (
+              <li key={donation.id} className="p-6 hover:bg-gray-50 transition">
+                <div className="flex justify-between gap-x-6">
+                  <div className="min-w-0 flex-auto">
+                    <p className="text-sm font-semibold leading-6 text-gray-900">
+                      {donation.isAnonymous ? "Hamba Allah" : donation.user?.name || "Hamba Allah"}
+                    </p>
+                    <p className="mt-1 truncate text-xs leading-5 text-gray-500">{donation.program.title}</p>
+                  </div>
+                  <div className="shrink-0 flex flex-col items-end">
+                    <p className="text-sm leading-6 font-bold text-gray-900">{formatRupiah(Number(donation.amount))}</p>
+                    <p className="mt-1 text-xs leading-5 text-gray-500">{formatDate(donation.createdAt)}</p>
+                  </div>
+                </div>
+              </li>
+            ))}
+            {recentDonations.length === 0 && (
+              <li className="p-6 text-center text-sm text-gray-500">Belum ada donasi berhasil.</li>
+            )}
+          </ul>
+        </div>
+
+        {/* Recent Distributions */}
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100">
+          <div className="p-6 border-b border-gray-100 flex justify-between items-center">
+            <h2 className="text-lg font-bold text-gray-900">Penyaluran Selesai</h2>
+            <Link href="/dashboard/distributions" className="text-sm font-semibold text-indigo-600 hover:text-indigo-900 flex items-center gap-1">
+              Semua <ArrowRight className="w-4 h-4" />
+            </Link>
+          </div>
+          <ul className="divide-y divide-gray-100">
+            {recentDistributions.map((dist) => (
+              <li key={dist.id} className="p-6 hover:bg-gray-50 transition">
+                <div className="flex justify-between gap-x-6">
+                  <div className="min-w-0 flex-auto">
+                    <p className="text-sm font-semibold leading-6 text-gray-900 truncate">
+                      {dist.title}
+                    </p>
+                    <p className="mt-1 truncate text-xs leading-5 text-gray-500">{dist.program.title}</p>
+                  </div>
+                  <div className="shrink-0 flex flex-col items-end">
+                    <p className="text-sm leading-6 font-bold text-green-600">{formatRupiah(Number(dist.amount))}</p>
+                    <p className="mt-1 text-xs leading-5 text-gray-500">{formatDate(dist.createdAt)}</p>
+                  </div>
+                </div>
+              </li>
+            ))}
+            {recentDistributions.length === 0 && (
+              <li className="p-6 text-center text-sm text-gray-500">Belum ada penyaluran selesai.</li>
+            )}
+          </ul>
+        </div>
+
+      </div>
+    </div>
+  );
+}
