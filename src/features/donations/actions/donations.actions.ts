@@ -20,8 +20,8 @@ export async function createDonationAction(formData: FormData) {
 
     const { donation } = await donationsService.createDonation(parsed.data, userId);
     
-    // Auto-simulate payment success for Phase 4 Demo
-    await donationsService.simulatePaymentSuccess(donation.id);
+    // In Phase 5, we rely on Webhooks, so we leave it PENDING
+    // and let the webhook or the Admin Dashboard simulator handle the status change.
 
     revalidatePath("/programs/[slug]", "page");
     revalidatePath("/dashboard/donations");
@@ -32,21 +32,46 @@ export async function createDonationAction(formData: FormData) {
   }
 }
 
-export async function simulatePaymentAction(formData: FormData) {
+import crypto from "crypto";
+import { prisma } from "@/lib/prisma";
+
+export async function generateMockWebhookPayloadAction(donationId: string) {
   try {
     const session = await auth();
     if (!session?.user?.permissions.includes(PERMISSIONS.PAYMENTS_MANAGE)) {
       return { error: "Akses ditolak" };
     }
 
-    const donationId = formData.get("donationId") as string;
-    if (!donationId) return { error: "ID Donasi diperlukan" };
+    const donation = await prisma.donation.findUnique({
+      where: { id: donationId },
+      include: { payment: true },
+    });
 
-    await donationsService.simulatePaymentSuccess(donationId, session.user.id);
-    revalidatePath("/dashboard/donations");
-    
-    return { success: true };
+    if (!donation || !donation.payment) {
+      return { error: "Donation atau Payment tidak ditemukan" };
+    }
+
+    const serverKey = process.env.MIDTRANS_SERVER_KEY;
+    if (!serverKey) {
+      return { error: "MIDTRANS_SERVER_KEY belum diatur di .env" };
+    }
+
+    const payload = {
+      order_id: donation.payment.gatewayRef,
+      status_code: "200",
+      gross_amount: donation.payment.amount.toString(),
+      transaction_status: "settlement",
+      payment_type: donation.payment.paymentMethod || "bank_transfer",
+      transaction_time: new Date().toISOString(),
+      transaction_id: `mock-tx-${Date.now()}`,
+      signature_key: "",
+    };
+
+    const payloadString = `${payload.order_id}${payload.status_code}${payload.gross_amount}${serverKey}`;
+    payload.signature_key = crypto.createHash("sha512").update(payloadString).digest("hex");
+
+    return { success: true, payload };
   } catch (error: any) {
-    return { error: error.message || "Gagal simulasi pembayaran" };
+    return { error: error.message || "Gagal membuat payload webhook" };
   }
 }

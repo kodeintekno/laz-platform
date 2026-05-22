@@ -1,6 +1,10 @@
 "use client";
 
+import { useState, useTransition } from "react";
 import type { Prisma } from "@prisma/client";
+import { generateMockWebhookPayloadAction } from "@/features/donations/actions/donations.actions";
+import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
+import { useRouter } from "next/navigation";
 
 type DonationWithRelations = Prisma.DonationGetPayload<{
   include: {
@@ -11,6 +15,10 @@ type DonationWithRelations = Prisma.DonationGetPayload<{
 }>;
 
 export function DonationTable({ donations }: { donations: DonationWithRelations[] }) {
+  const router = useRouter();
+  const [isPending, startTransition] = useTransition();
+  const [simulatingId, setSimulatingId] = useState<string | null>(null);
+
   const formatRupiah = (amount: number | string) => {
     return new Intl.NumberFormat("id-ID", {
       style: "currency",
@@ -26,6 +34,44 @@ export function DonationTable({ donations }: { donations: DonationWithRelations[
     }).format(new Date(date));
   };
 
+  const simulateWebhook = async (donationId: string) => {
+    setSimulatingId(donationId);
+    startTransition(async () => {
+      // 1. Get the signed mock payload from the server action
+      const result = await generateMockWebhookPayloadAction(donationId);
+      
+      if (result?.error) {
+        alert("Gagal memuat payload: " + result.error);
+        setSimulatingId(null);
+        return;
+      }
+
+      if (result?.payload) {
+        // 2. Actually POST it to our new Webhook endpoint, exactly like Midtrans would
+        try {
+          const response = await fetch("/api/webhooks/midtrans", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(result.payload),
+          });
+
+          const data = await response.json();
+          if (data.success) {
+            alert("Webhook berhasil diproses!");
+            router.refresh();
+          } else {
+            alert("Webhook gagal diproses: " + data.message);
+          }
+        } catch (error) {
+          alert("Gagal mengirim webhook: " + String(error));
+        }
+      }
+      setSimulatingId(null);
+    });
+  };
+
   return (
     <div className="overflow-x-auto shadow ring-1 ring-black ring-opacity-5 sm:rounded-lg">
       <table className="min-w-full divide-y divide-gray-300">
@@ -36,6 +82,7 @@ export function DonationTable({ donations }: { donations: DonationWithRelations[
             <th className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Nominal</th>
             <th className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Status</th>
             <th className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Tanggal</th>
+            <th className="relative py-3.5 pl-3 pr-4 sm:pr-6"><span className="sr-only">Aksi</span></th>
           </tr>
         </thead>
         <tbody className="divide-y divide-gray-200 bg-white">
@@ -71,11 +118,23 @@ export function DonationTable({ donations }: { donations: DonationWithRelations[
               <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
                 {formatDate(donation.createdAt)}
               </td>
+              <td className="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
+                {donation.status === "PENDING" && (
+                  <button
+                    onClick={() => simulateWebhook(donation.id)}
+                    disabled={isPending}
+                    className="text-indigo-600 hover:text-indigo-900 disabled:opacity-50 inline-flex items-center gap-1"
+                  >
+                    {simulatingId === donation.id && <LoadingSpinner size="sm" />}
+                    Simulate Webhook
+                  </button>
+                )}
+              </td>
             </tr>
           ))}
           {donations.length === 0 && (
             <tr>
-              <td colSpan={5} className="py-8 text-center text-sm text-gray-500">
+              <td colSpan={6} className="py-8 text-center text-sm text-gray-500">
                 Tidak ada data donasi ditemukan.
               </td>
             </tr>
