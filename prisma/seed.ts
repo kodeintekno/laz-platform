@@ -178,9 +178,67 @@ async function main() {
       roleId: superAdminRoleId,
     },
   });
-  console.log(` ✓ Super admin created\n`);
+  console.log(" ✓ Super admin created");
 
-  console.log("✅ Seeding complete!");
+  // ─── Dummy Programs ─────────────────────────────────────────────────────────
+  console.log("\n📦 Seeding dummy programs...");
+
+  const adminUser = await prisma.user.findUnique({ where: { email: "admin@laz.id" } });
+
+  if (adminUser) {
+    const dummyPrograms = [
+      {
+        title: "Bantu Pembangunan Masjid Pelosok",
+        slug: "bantu-pembangunan-masjid-pelosok",
+        description: "Masjid di desa terpencil ini butuh bantuan renovasi agar jamaah bisa beribadah dengan aman.",
+        targetAmount: 50000000,
+        currentAmount: 12500000,
+        category: "INFAK" as const,
+        status: "PUBLISHED" as const,
+        image: "https://images.unsplash.com/photo-1594957422315-77a829e0ebef?q=80&w=800&auto=format&fit=crop",
+        startDate: new Date(),
+        endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days
+        createdById: adminUser.id,
+      },
+      {
+        title: "Zakat Fitrah & Maal 1447 H",
+        slug: "zakat-fitrah-maal",
+        description: "Tunaikan kewajiban zakat Anda untuk membersihkan harta dan menyucikan jiwa.",
+        targetAmount: 100000000,
+        currentAmount: 45000000,
+        category: "ZAKAT" as const,
+        status: "PUBLISHED" as const,
+        image: "https://images.unsplash.com/photo-1628185521855-3ebffc634dd3?q=80&w=800&auto=format&fit=crop",
+        startDate: new Date(),
+        endDate: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000),
+        createdById: adminUser.id,
+      },
+      {
+        title: "Sedekah Air Bersih untuk Kekeringan",
+        slug: "sedekah-air-bersih",
+        description: "Bantu alirkan air bersih untuk desa-desa yang mengalami kekeringan ekstrem musim ini.",
+        targetAmount: 25000000,
+        currentAmount: 25000000,
+        category: "SEDEKAH" as const,
+        status: "COMPLETED" as const,
+        image: "https://images.unsplash.com/photo-1541252260730-0412e8e2108e?q=80&w=800&auto=format&fit=crop",
+        startDate: new Date(Date.now() - 60 * 24 * 60 * 60 * 1000),
+        endDate: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000),
+        createdById: adminUser.id,
+      }
+    ];
+
+    for (const prog of dummyPrograms) {
+      await prisma.program.upsert({
+        where: { slug: prog.slug },
+        update: {},
+        create: prog,
+      });
+    }
+    console.log(" ✓ Dummy programs seeded");
+  }
+
+  console.log("\n✅ Seeding complete!\n");
 }
 
 main()

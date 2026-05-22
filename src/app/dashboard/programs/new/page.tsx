@@ -1,0 +1,36 @@
+import { auth } from "@/lib/auth";
+import { PERMISSIONS } from "@/constants/permissions";
+import { ProgramForm } from "@/features/programs/components/ProgramForm";
+import { redirect } from "next/navigation";
+import Link from "next/link";
+import { ArrowLeft } from "lucide-react";
+
+export const metadata = {
+  title: "Buat Program | LAZ Platform",
+};
+
+export default async function NewProgramPage() {
+  const session = await auth();
+  
+  if (!session?.user?.permissions.includes(PERMISSIONS.PROGRAMS_CREATE)) {
+    redirect("/dashboard/programs");
+  }
+
+  return (
+    <div className="space-y-6 max-w-3xl">
+      <div className="flex items-center gap-4">
+        <Link href="/dashboard/programs" className="p-2 text-gray-400 hover:text-gray-900 bg-white rounded-full shadow-sm ring-1 ring-gray-200">
+          <ArrowLeft className="w-5 h-5" />
+        </Link>
+        <div>
+          <h1 className="text-2xl font-semibold leading-6 text-gray-900">Buat Program Baru</h1>
+          <p className="mt-2 text-sm text-gray-700">
+            Lengkapi detail program untuk memulai penggalangan dana.
+          </p>
+        </div>
+      </div>
+
+      <ProgramForm />
+    </div>
+  );
+}

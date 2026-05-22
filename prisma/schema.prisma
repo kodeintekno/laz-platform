@@ -48,8 +48,22 @@ enum AuditAction {
   DISTRIBUTION_UPDATE
 }
 
+enum ProgramCategory {
+  ZAKAT
+  INFAK
+  SEDEKAH
+  WAKAF
+}
+
+enum ProgramStatus {
+  DRAFT
+  PUBLISHED
+  COMPLETED
+  CANCELLED
+}
+
 // ─────────────────────────────────────────
-// STUB MODELS — fields will expand per phase
+// MODELS
 // ─────────────────────────────────────────
 
 model User {
@@ -67,6 +81,8 @@ model User {
 
   role      Role?      @relation("UserRole", fields: [roleId], references: [id])
   auditLogs AuditLog[] @relation("UserAuditLogs")
+  donations Donation[] @relation("UserDonations")
+  programs  Program[]  @relation("ProgramCreator")
 
   @@map("users")
 }
@@ -125,4 +141,59 @@ model AuditLog {
   @@map("audit_logs")
 }
 
+model Program {
+  id            String          @id @default(cuid())
+  title         String
+  slug          String          @unique
+  description   String          @db.Text
+  targetAmount  Decimal         @db.Decimal(12, 2)
+  currentAmount Decimal         @default(0) @db.Decimal(12, 2)
+  category      ProgramCategory
+  status        ProgramStatus   @default(DRAFT)
+  image         String?
+  startDate     DateTime?
+  endDate       DateTime?
+  createdById   String
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  createdBy User       @relation("ProgramCreator", fields: [createdById], references: [id])
+  donations Donation[] @relation("ProgramDonations")
+
+  @@map("programs")
+}
+
+model Donation {
+  id          String         @id @default(cuid())
+  amount      Decimal        @db.Decimal(12, 2)
+  message     String?
+  isAnonymous Boolean        @default(false)
+  status      DonationStatus @default(PENDING)
+  userId      String?
+  programId   String
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  user    User?    @relation("UserDonations", fields: [userId], references: [id], onDelete: SetNull)
+  program Program  @relation("ProgramDonations", fields: [programId], references: [id], onDelete: Restrict)
+  payment Payment? @relation("DonationPayment")
+
+  @@map("donations")
+}
+
+model Payment {
+  id            String        @id @default(cuid())
+  donationId    String        @unique
+  gatewayRef    String?       @unique
+  amount        Decimal       @db.Decimal(12, 2)
+  paymentMethod String?
+  status        PaymentStatus @default(PENDING)
+  metadata      Json?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  donation Donation @relation("DonationPayment", fields: [donationId], references: [id], onDelete: Cascade)
+
+  @@map("payments")
+}
 
