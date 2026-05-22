@@ -111,8 +111,9 @@ export default async function ProgramDetailPage({ params }: { params: Promise<{ 
             </div>
           </div>
 
-          {/* Donaturs */}
-          <div className="lg:col-span-1">
+          {/* Donaturs & Distributions Sidebar */}
+          <div className="lg:col-span-1 space-y-8">
+            {/* Donaturs */}
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
               <h2 className="text-lg font-bold text-gray-900 mb-4 pb-4 border-b border-gray-100">Donasi Terbaru</h2>
               <div className="space-y-4">
@@ -140,6 +141,35 @@ export default async function ProgramDetailPage({ params }: { params: Promise<{ 
                   ))
                 ) : (
                   <p className="text-sm text-gray-500 text-center py-4">Belum ada donasi. Jadilah yang pertama!</p>
+                )}
+              </div>
+            </div>
+
+            {/* Kabar Penyaluran */}
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+              <h2 className="text-lg font-bold text-gray-900 mb-4 pb-4 border-b border-gray-100">Kabar Penyaluran</h2>
+              <div className="space-y-6">
+                {program.distributions && program.distributions.length > 0 ? (
+                  program.distributions.filter(d => d.status === "COMPLETED").map((dist) => (
+                    <div key={dist.id} className="border-l-2 border-indigo-200 pl-4 relative">
+                      <div className="absolute w-3 h-3 bg-indigo-600 rounded-full -left-[7px] top-1.5"></div>
+                      <p className="text-xs text-gray-500 mb-1">
+                        {new Intl.DateTimeFormat('id-ID', { dateStyle: 'long' }).format(new Date(dist.createdAt))}
+                      </p>
+                      <h3 className="text-sm font-bold text-gray-900">{dist.title}</h3>
+                      <p className="text-sm font-bold text-green-600 my-1">
+                        Tersalurkan: {formatRupiah(Number(dist.amount))}
+                      </p>
+                      <p className="text-sm text-gray-600 line-clamp-3 mb-2">{dist.description}</p>
+                      {dist.receiptImage && (
+                        <a href={dist.receiptImage} target="_blank" rel="noreferrer" className="text-xs text-indigo-600 hover:underline font-medium">
+                          Lihat Bukti Penyaluran &rarr;
+                        </a>
+                      )}
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-sm text-gray-500 text-center py-4">Belum ada kabar penyaluran dana.</p>
                 )}
               </div>
             </div>

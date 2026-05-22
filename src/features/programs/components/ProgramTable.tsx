@@ -53,9 +53,12 @@ export function ProgramTable({ programs }: { programs: ProgramWithCreator[] }) {
                   {program.status}
                 </span>
               </td>
-              <td className="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
-                <Link href={`/programs/${program.slug}`} target="_blank" className="text-indigo-600 hover:text-indigo-900">
-                  Lihat Publik
+              <td className="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6 space-x-4">
+                <Link href={`/programs/${program.slug}`} className="text-indigo-600 hover:text-indigo-900">
+                  Lihat
+                </Link>
+                <Link href={`/dashboard/programs/${program.slug}/distributions/new`} className="text-green-600 hover:text-green-900">
+                  Ajukan Penyaluran
                 </Link>
               </td>
             </tr>

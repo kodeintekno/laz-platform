@@ -62,6 +62,13 @@ enum ProgramStatus {
   CANCELLED
 }
 
+enum DistributionStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  COMPLETED
+}
+
 // ─────────────────────────────────────────
 // MODELS
 // ─────────────────────────────────────────
@@ -83,6 +90,8 @@ model User {
   auditLogs AuditLog[] @relation("UserAuditLogs")
   donations Donation[] @relation("UserDonations")
   programs  Program[]  @relation("ProgramCreator")
+  createdDistributions  Distribution[] @relation("DistributionCreator")
+  approvedDistributions Distribution[] @relation("DistributionApprover")
 
   @@map("users")
 }
@@ -146,19 +155,21 @@ model Program {
   title         String
   slug          String          @unique
   description   String          @db.Text
-  targetAmount  Decimal         @db.Decimal(12, 2)
-  currentAmount Decimal         @default(0) @db.Decimal(12, 2)
-  category      ProgramCategory
-  status        ProgramStatus   @default(DRAFT)
-  image         String?
-  startDate     DateTime?
-  endDate       DateTime?
-  createdById   String
-  createdAt     DateTime        @default(now())
-  updatedAt     DateTime        @updatedAt
+  targetAmount      Decimal         @db.Decimal(12, 2)
+  currentAmount     Decimal         @default(0) @db.Decimal(12, 2)
+  distributedAmount Decimal         @default(0) @db.Decimal(12, 2)
+  category          ProgramCategory
+  status            ProgramStatus   @default(DRAFT)
+  image             String?
+  startDate         DateTime?
+  endDate           DateTime?
+  createdById       String
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
 
-  createdBy User       @relation("ProgramCreator", fields: [createdById], references: [id])
-  donations Donation[] @relation("ProgramDonations")
+  createdBy     User           @relation("ProgramCreator", fields: [createdById], references: [id])
+  donations     Donation[]     @relation("ProgramDonations")
+  distributions Distribution[] @relation("ProgramDistributions")
 
   @@map("programs")
 }
@@ -197,3 +208,22 @@ model Payment {
   @@map("payments")
 }
 
+model Distribution {
+  id           String             @id @default(cuid())
+  programId    String
+  amount       Decimal            @db.Decimal(12, 2)
+  title        String
+  description  String             @db.Text
+  receiptImage String?
+  status       DistributionStatus @default(PENDING)
+  createdById  String
+  approvedById String?
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+
+  program    Program @relation("ProgramDistributions", fields: [programId], references: [id], onDelete: Restrict)
+  createdBy  User    @relation("DistributionCreator", fields: [createdById], references: [id], onDelete: Restrict)
+  approvedBy User?   @relation("DistributionApprover", fields: [approvedById], references: [id], onDelete: SetNull)
+
+  @@map("distributions")
+}

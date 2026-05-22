@@ -26,7 +26,7 @@ export const programsService = {
   },
 
   async getProgramBySlug(slug: string) {
-    return programsRepository.findBySlug(slug);
+    return programsRepository.getProgramBySlug(slug);
   },
 
   async createProgram(data: ProgramInput, adminId: string) {

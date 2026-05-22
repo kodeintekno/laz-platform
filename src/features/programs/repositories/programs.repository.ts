@@ -54,15 +54,22 @@ export const programsRepository = {
   /**
    * Find a specific program by its slug.
    */
-  async findBySlug(slug: string) {
+  async getProgramBySlug(slug: string) {
     return prisma.program.findUnique({
       where: { slug },
       include: {
+        createdBy: { select: { name: true, image: true } },
         donations: {
           where: { status: "PAID" },
           orderBy: { createdAt: "desc" },
-          take: 10,
-          include: { user: { select: { name: true, image: true } } },
+          take: 20,
+          include: {
+            user: { select: { name: true, image: true } },
+          },
+        },
+        distributions: {
+          where: { status: "COMPLETED" },
+          orderBy: { createdAt: "desc" },
         },
       },
     });
