@@ -63,4 +63,70 @@ export const paymentsRepository = {
       }
     });
   },
+
+  /**
+   * Find paged and searchable payments.
+   */
+  async findManyPaged(page: number = 1, limit: number = 10, search?: string) {
+    const skip = (page - 1) * limit;
+
+    const where: any = {};
+    if (search) {
+      const isStatusEnum = [
+        "PENDING", "SUCCESS", "FAILED", "CANCELLED", "EXPIRED"
+      ].includes(search.toUpperCase());
+
+      where.OR = [
+        { gatewayRef: { contains: search, mode: "insensitive" } },
+        { id: { contains: search, mode: "insensitive" } },
+        { paymentMethod: { contains: search, mode: "insensitive" } },
+        { donation: { program: { title: { contains: search, mode: "insensitive" } } } },
+        { donation: { user: { name: { contains: search, mode: "insensitive" } } } },
+        { donation: { user: { email: { contains: search, mode: "insensitive" } } } },
+      ];
+
+      if (isStatusEnum) {
+        where.OR.push({ status: { equals: search.toUpperCase() as any } });
+      }
+    }
+
+    const [items, total] = await Promise.all([
+      prisma.payment.findMany({
+        where,
+        include: {
+          donation: {
+            include: {
+              program: {
+                select: {
+                  title: true,
+                  slug: true,
+                },
+              },
+              user: {
+                select: {
+                  name: true,
+                  email: true,
+                },
+              },
+            },
+          },
+        },
+        orderBy: { createdAt: "desc" },
+        skip,
+        take: limit,
+      }),
+      prisma.payment.count({ where }),
+    ]);
+
+    return {
+      items,
+      metadata: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
+  },
 };
+

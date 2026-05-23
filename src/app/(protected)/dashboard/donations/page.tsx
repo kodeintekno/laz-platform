@@ -3,6 +3,7 @@ import { PERMISSIONS } from "@/constants/permissions";
 import { donationsService } from "@/features/donations/services/donations.service";
 import { DonationTable } from "@/features/donations/components/DonationTable";
 import { redirect } from "next/navigation";
+import { Pagination } from "@/components/ui/Pagination";
 
 export const metadata = {
   title: "Donation Management | LAZ Platform",
@@ -40,11 +41,12 @@ export default async function DonationsPage({
 
       {/* Pagination Controls */}
       {metadata.totalPages > 1 && (
-        <div className="flex items-center justify-between border-t border-gray-200 bg-white px-4 py-3 sm:px-6 mt-4 rounded-md shadow-sm">
-          <p className="text-sm text-gray-700">
-            Halaman <span className="font-medium">{page}</span> dari <span className="font-medium">{metadata.totalPages}</span>
-          </p>
-        </div>
+        <Pagination
+          currentPage={page}
+          totalPages={metadata.totalPages}
+          totalCount={metadata.total}
+          pageSize={10}
+        />
       )}
     </div>
   );
