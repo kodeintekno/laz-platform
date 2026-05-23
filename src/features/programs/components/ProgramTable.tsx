@@ -2,6 +2,7 @@
 
 import type { Prisma } from "@prisma/client";
 import Link from "next/link";
+import { Badge, EmptyState } from "@/components/ui";
 
 type ProgramWithCreator = Prisma.ProgramGetPayload<{
   include: { createdBy: { select: { name: true } } };
@@ -15,6 +16,15 @@ export function ProgramTable({ programs }: { programs: ProgramWithCreator[] }) {
       minimumFractionDigits: 0,
     }).format(Number(amount));
   };
+
+  if (programs.length === 0) {
+    return (
+      <EmptyState
+        title="Tidak ada program ditemukan"
+        description="Daftar program kampanye zakat, infak, atau sedekah kosong."
+      />
+    );
+  }
 
   return (
     <div className="overflow-hidden shadow ring-1 ring-black ring-opacity-5 sm:rounded-lg">
@@ -36,42 +46,35 @@ export function ProgramTable({ programs }: { programs: ProgramWithCreator[] }) {
                 <div className="text-gray-500 text-xs mt-1">oleh {program.createdBy.name}</div>
               </td>
               <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                <span className="inline-flex items-center rounded-md bg-blue-50 px-2 py-1 text-xs font-medium text-blue-700 ring-1 ring-inset ring-blue-700/10">
+                <Badge intent="info">
                   {program.category}
-                </span>
+                </Badge>
               </td>
               <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
                 <div className="font-medium text-gray-900">{formatRupiah(program.currentAmount as any)}</div>
                 <div className="text-xs text-gray-400">dari {formatRupiah(program.targetAmount as any)}</div>
               </td>
               <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                <span className={`inline-flex items-center rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset ${
-                  program.status === 'PUBLISHED' ? 'bg-green-50 text-green-700 ring-green-600/20' : 
-                  program.status === 'COMPLETED' ? 'bg-gray-50 text-gray-600 ring-gray-500/10' :
-                  'bg-yellow-50 text-yellow-800 ring-yellow-600/20'
-                }`}>
+                <Badge intent={
+                  program.status === "PUBLISHED" ? "success" : 
+                  program.status === "COMPLETED" ? "muted" : "warning"
+                }>
                   {program.status}
-                </span>
+                </Badge>
               </td>
               <td className="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6 space-x-4">
-                <Link href={`/programs/${program.slug}`} className="text-indigo-600 hover:text-indigo-900">
+                <Link href={`/programs/${program.slug}`} className="text-indigo-600 hover:text-indigo-900 font-semibold">
                   Lihat
                 </Link>
-                <Link href={`/dashboard/programs/${program.slug}/distributions/new`} className="text-green-600 hover:text-green-900">
+                <Link href={`/dashboard/programs/${program.slug}/distributions/new`} className="text-emerald-600 hover:text-emerald-900 font-semibold">
                   Ajukan Penyaluran
                 </Link>
               </td>
             </tr>
           ))}
-          {programs.length === 0 && (
-            <tr>
-              <td colSpan={5} className="py-8 text-center text-sm text-gray-500">
-                Tidak ada program ditemukan.
-              </td>
-            </tr>
-          )}
         </tbody>
       </table>
     </div>
   );
 }
+

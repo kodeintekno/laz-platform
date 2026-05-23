@@ -4,7 +4,7 @@ import { programsService } from "@/features/programs/services/programs.service";
 import { ProgramTable } from "@/features/programs/components/ProgramTable";
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { Plus } from "lucide-react";
+import { Button, Pagination } from "@/components/ui";
 
 export const metadata = {
   title: "Program Management | LAZ Platform",
@@ -39,11 +39,8 @@ export default async function ProgramsPage({
         </div>
         {canCreate && (
           <div className="mt-4 sm:ml-16 sm:mt-0 sm:flex-none">
-            <Link
-              href="/dashboard/programs/new"
-              className="block rounded-md bg-indigo-600 px-3 py-2 text-center text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
-            >
-              Buat Program
+            <Link href="/dashboard/programs/new">
+              <Button size="sm">Buat Program</Button>
             </Link>
           </div>
         )}
@@ -53,11 +50,12 @@ export default async function ProgramsPage({
 
       {/* Pagination Controls */}
       {metadata.totalPages > 1 && (
-        <div className="flex items-center justify-between border-t border-gray-200 bg-white px-4 py-3 sm:px-6 mt-4 rounded-md shadow-sm">
-          <p className="text-sm text-gray-700">
-            Halaman <span className="font-medium">{page}</span> dari <span className="font-medium">{metadata.totalPages}</span>
-          </p>
-        </div>
+        <Pagination
+          currentPage={page}
+          totalPages={metadata.totalPages}
+          totalCount={metadata.total}
+          pageSize={10}
+        />
       )}
     </div>
   );
