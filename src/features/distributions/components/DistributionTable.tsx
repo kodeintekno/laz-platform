@@ -4,6 +4,7 @@ import { useTransition, useState } from "react";
 import type { Prisma } from "@prisma/client";
 import { approveDistributionAction, rejectDistributionAction } from "@/features/distributions/actions/distributions.actions";
 import { Button, Badge, ConfirmDialog } from "@/components/ui";
+import { DataTable, type ColumnDef } from "@/components/ui/data-table";
 import { toast } from "@/stores/toast.store";
 import { useRouter } from "next/navigation";
 
@@ -79,81 +80,95 @@ export function DistributionTable({ distributions }: { distributions: Distributi
     });
   };
 
-  return (
-    <div className="overflow-x-auto shadow ring-1 ring-black ring-opacity-5 sm:rounded-lg">
-      <table className="min-w-full divide-y divide-gray-300">
-        <thead className="bg-gray-50">
-          <tr>
-            <th className="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-6">Program</th>
-            <th className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Rincian Penyaluran</th>
-            <th className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Nominal</th>
-            <th className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Pemohon</th>
-            <th className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Status</th>
-            <th className="relative py-3.5 pl-3 pr-4 sm:pr-6"><span className="sr-only">Aksi</span></th>
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-gray-200 bg-white">
-          {distributions.map((dist) => (
-            <tr key={dist.id}>
-              <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm sm:pl-6">
-                <div className="font-medium text-gray-900 truncate max-w-[200px]">{dist.program.title}</div>
-                <div className="text-xs text-gray-500 mt-0.5">Saldo: {formatRupiah(Number(dist.program.currentAmount) - Number(dist.program.distributedAmount))}</div>
-              </td>
-              <td className="px-3 py-4 text-sm text-gray-500 max-w-[250px]">
-                <div className="font-medium text-gray-900 mb-1">{dist.title}</div>
-                <div className="text-xs line-clamp-2">{dist.description}</div>
-              </td>
-              <td className="whitespace-nowrap px-3 py-4 text-sm font-medium text-gray-900">
-                {formatRupiah(dist.amount as any)}
-              </td>
-              <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                {dist.createdBy.name}
-              </td>
-              <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                <Badge intent={
-                  dist.status === 'COMPLETED' ? 'success' : 
-                  dist.status === 'PENDING' ? 'warning' : 'destructive'
-                }>
-                  {dist.status}
-                </Badge>
-                {dist.approvedBy && (
-                  <div className="text-xs text-gray-400 mt-1">Oleh: {dist.approvedBy.name}</div>
-                )}
-              </td>
-              <td className="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6 space-x-3">
-                {dist.status === "PENDING" && (
-                  <div className="flex gap-2 justify-end">
-                    <Button
-                      onClick={() => handleApprove(dist.id)}
-                      disabled={isPending}
-                      size="sm"
-                      intent="primary"
-                    >
-                      Setujui
-                    </Button>
-                    <Button
-                      onClick={() => handleReject(dist.id)}
-                      disabled={isPending}
-                      size="sm"
-                      intent="destructive"
-                    >
-                      Tolak
-                    </Button>
-                  </div>
-                )}
-              </td>
-            </tr>
-          ))}
-          {distributions.length === 0 && (
-            <tr>
-              <td colSpan={6} className="py-8 text-center text-sm text-gray-500">
-                Belum ada data penyaluran.
-              </td>
-            </tr>
+  const columns: ColumnDef<DistributionWithRelations>[] = [
+    {
+      header: "Program",
+      cell: (dist) => (
+        <div>
+          <div className="font-semibold text-gray-900 truncate max-w-[200px]">{dist.program.title}</div>
+          <div className="text-xs text-gray-500 mt-0.5">
+            Saldo: {formatRupiah(Number(dist.program.currentAmount) - Number(dist.program.distributedAmount))}
+          </div>
+        </div>
+      ),
+    },
+    {
+      header: "Rincian Penyaluran",
+      cell: (dist) => (
+        <div className="max-w-[250px]">
+          <div className="font-medium text-gray-900 mb-1">{dist.title}</div>
+          <div className="text-xs text-gray-500 line-clamp-2">{dist.description}</div>
+        </div>
+      ),
+    },
+    {
+      header: "Nominal",
+      cell: (dist) => (
+        <span className="font-medium text-gray-900">{formatRupiah(dist.amount as any)}</span>
+      ),
+    },
+    {
+      header: "Pemohon",
+      cell: (dist) => (
+        <span className="text-gray-500 text-sm">{dist.createdBy.name}</span>
+      ),
+    },
+    {
+      header: "Status",
+      cell: (dist) => (
+        <div>
+          <Badge
+            intent={
+              dist.status === "COMPLETED"
+                ? "success"
+                : dist.status === "PENDING"
+                ? "warning"
+                : "destructive"
+            }
+          >
+            {dist.status}
+          </Badge>
+          {dist.approvedBy && (
+            <div className="text-xs text-gray-400 mt-1">Oleh: {dist.approvedBy.name}</div>
           )}
-        </tbody>
-      </table>
+        </div>
+      ),
+    },
+    {
+      header: "Aksi",
+      align: "right",
+      cell: (dist) =>
+        dist.status === "PENDING" ? (
+          <div className="flex gap-2 justify-end">
+            <Button
+              onClick={() => handleApprove(dist.id)}
+              disabled={isPending}
+              size="sm"
+              intent="primary"
+            >
+              Setujui
+            </Button>
+            <Button
+              onClick={() => handleReject(dist.id)}
+              disabled={isPending}
+              size="sm"
+              intent="destructive"
+            >
+              Tolak
+            </Button>
+          </div>
+        ) : null,
+    },
+  ];
 
+  return (
+    <>
+      <DataTable
+        columns={columns}
+        data={distributions}
+        emptyTitle="Tidak ada data penyaluran ditemukan"
+        emptyDescription="Daftar pengajuan penyaluran dana kosong."
+      />
       <ConfirmDialog
         isOpen={confirmState.isOpen}
         onClose={() => setConfirmState((prev) => ({ ...prev, isOpen: false }))}
@@ -163,6 +178,6 @@ export function DistributionTable({ distributions }: { distributions: Distributi
         intent={confirmState.intent}
         isLoading={isPending}
       />
-    </div>
+    </>
   );
 }

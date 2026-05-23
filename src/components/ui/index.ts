@@ -19,4 +19,6 @@ export { Skeleton } from "./Skeleton";
 export { Pagination } from "./Pagination";
 export { ToastContainer } from "./Toast";
 export { Breadcrumbs } from "./breadcrumb";
+export { DataTable } from "./data-table/data-table";
+
 
