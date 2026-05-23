@@ -2,6 +2,7 @@
 
 import { auth } from "@/lib/auth";
 import { donationsService } from "@/features/donations/services/donations.service";
+import { donationsRepository } from "@/features/donations/repositories/donations.repository";
 import { donationSchema } from "@/features/donations/validations/donations.schema";
 import { revalidatePath } from "next/cache";
 import { PERMISSIONS } from "@/constants/permissions";
@@ -33,7 +34,6 @@ export async function createDonationAction(formData: FormData) {
 }
 
 import crypto from "crypto";
-import { prisma } from "@/lib/prisma";
 
 export async function generateMockWebhookPayloadAction(donationId: string) {
   try {
@@ -42,10 +42,7 @@ export async function generateMockWebhookPayloadAction(donationId: string) {
       return { error: "Akses ditolak" };
     }
 
-    const donation = await prisma.donation.findUnique({
-      where: { id: donationId },
-      include: { payment: true },
-    });
+    const donation = await donationsRepository.getDonationWithPayment(donationId);
 
     if (!donation || !donation.payment) {
       return { error: "Donation atau Payment tidak ditemukan" };

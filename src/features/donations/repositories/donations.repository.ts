@@ -110,4 +110,14 @@ export const donationsRepository = {
       return donation;
     });
   },
+
+  /**
+   * Find a unique donation by ID including its associated payment record.
+   */
+  async getDonationWithPayment(id: string) {
+    return prisma.donation.findUnique({
+      where: { id },
+      include: { payment: true },
+    });
+  },
 };

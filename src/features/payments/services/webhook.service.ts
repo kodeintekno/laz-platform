@@ -1,6 +1,6 @@
 import crypto from "crypto";
 import { donationsRepository } from "@/features/donations/repositories/donations.repository";
-import { prisma } from "@/lib/prisma";
+import { paymentsRepository } from "@/features/payments/repositories/payments.repository";
 import { auditService } from "@/features/audit/services/audit.service";
 import { AuditAction } from "@/features/audit/types/audit.types";
 import { PaymentStatus, DonationStatus } from "@prisma/client";
@@ -42,10 +42,7 @@ export const webhookService = {
     }
 
     // 1. Find the payment using gatewayRef (which we mapped to order_id during creation)
-    const payment = await prisma.payment.findUnique({
-      where: { gatewayRef: payload.order_id },
-      include: { donation: true },
-    });
+    const payment = await paymentsRepository.findByGatewayRef(payload.order_id);
 
     if (!payment) {
       throw new Error("Payment not found");
@@ -77,35 +74,14 @@ export const webhookService = {
     }
 
     // 4. Update the DB inside a transaction
-    await prisma.$transaction(async (tx) => {
-      // Update Payment
-      await tx.payment.update({
-        where: { id: payment.id },
-        data: {
-          status: newPaymentStatus,
-          metadata: payload as any,
-        },
-      });
-
-      // Update Donation
-      await tx.donation.update({
-        where: { id: payment.donationId },
-        data: {
-          status: newDonationStatus,
-        },
-      });
-
-      // If successful, increment the Program funding
-      if (newDonationStatus === "PAID") {
-        await tx.program.update({
-          where: { id: payment.donation.programId },
-          data: {
-            currentAmount: {
-              increment: payment.amount,
-            },
-          },
-        });
-      }
+    await paymentsRepository.updatePaymentAndDonationStatus({
+      paymentId: payment.id,
+      donationId: payment.donationId,
+      programId: payment.donation.programId,
+      amount: Number(payment.amount),
+      newPaymentStatus,
+      newDonationStatus,
+      metadata: payload,
     });
 
     // 5. Audit Log (System level, no user)

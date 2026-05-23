@@ -4,6 +4,7 @@ import { auditService } from "@/features/audit/services/audit.service";
 import { AuditAction } from "@/features/audit/types/audit.types";
 import type { LoginInput, RegisterInput } from "@/features/auth/validations/auth.schema";
 import type { RBACSessionUser, PermissionKey } from "@/types";
+import { logger } from "@/lib/logger";
 
 /**
  * Auth Service — Phase 2.
@@ -37,7 +38,7 @@ export const authService = {
       user.role?.rolePermissions.map((rp) => rp.permission.key as PermissionKey) ?? [];
 
     // Update last login (fire and forget)
-    userRepository.updateLastLogin(user.id).catch(console.error);
+    userRepository.updateLastLogin(user.id).catch((err) => logger.error({ err }, "Failed to update last login timestamp"));
 
     return {
       id: user.id,

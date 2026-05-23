@@ -1,22 +1,27 @@
 import { Sidebar } from "@/features/dashboard/components/Sidebar";
 import { Header } from "@/features/dashboard/components/Header";
+import { auth } from "@/lib/auth";
+import { redirect } from "next/navigation";
 
 /**
- * Dashboard Route Group Layout — Phase 1 Shell.
+ * Protected Route Group Layout.
  *
- * This layout wraps all routes inside (dashboard)/.
- * It is a Server Component — no client state here.
- *
- * RBAC / auth protection:
- * - Full auth guard is enforced by middleware.ts
- * - TODO (Auth Phase): Add `auth()` call to validate session server-side
- *   and redirect unauthenticated users before the layout renders.
+ * This layout wraps all routes inside (protected)/.
+ * It is a Server Component that validates session server-side
+ * and redirects unauthenticated users before the layout renders.
  */
-export default function DashboardLayout({
+export default async function ProtectedLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const session = await auth();
+
+  // Guard: Redirect unauthenticated users
+  if (!session?.user) {
+    redirect("/login");
+  }
+
   return (
     <div className="flex h-screen overflow-hidden bg-gray-50">
       {/* Sidebar */}
