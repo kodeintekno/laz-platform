@@ -5,6 +5,7 @@ import { programsService } from "@/features/programs/services/programs.service";
 import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
+import { BreadcrumbOverride } from "@/providers/breadcrumb-provider";
 
 export const metadata = {
   title: "Ajukan Penyaluran | LAZ Platform",
@@ -28,6 +29,10 @@ export default async function NewDistributionPage({ params }: { params: Promise<
 
   return (
     <div className="space-y-6 max-w-3xl">
+      <BreadcrumbOverride 
+        path={`/dashboard/programs/${program.slug}`} 
+        label={program.title} 
+      />
       <div className="flex items-center gap-4">
         <Link href="/dashboard/programs" className="p-2 text-gray-400 hover:text-gray-900 bg-white rounded-full shadow-sm ring-1 ring-gray-200">
           <ArrowLeft className="w-5 h-5" />
