@@ -48,4 +48,59 @@ export const auditRepository = {
       take: limit,
     });
   },
+
+  /**
+   * Find paged and searchable audit logs.
+   */
+  async getAuditLogs(page: number = 1, limit: number = 10, search?: string) {
+    const skip = (page - 1) * limit;
+
+    const where: any = {};
+    if (search) {
+      const isActionEnum = [
+        "LOGIN", "LOGOUT", "CREATE", "UPDATE", "DELETE",
+        "ROLE_CHANGE", "PAYMENT_UPDATE", "DISTRIBUTION_UPDATE"
+      ].includes(search.toUpperCase());
+
+      where.OR = [
+        { entity: { contains: search, mode: "insensitive" } },
+        { entityId: { contains: search, mode: "insensitive" } },
+        { user: { name: { contains: search, mode: "insensitive" } } },
+        { user: { email: { contains: search, mode: "insensitive" } } },
+      ];
+
+      if (isActionEnum) {
+        where.OR.push({ action: { equals: search.toUpperCase() as any } });
+      }
+    }
+
+    const [items, total] = await Promise.all([
+      prisma.auditLog.findMany({
+        where,
+        include: {
+          user: {
+            select: {
+              name: true,
+              email: true,
+            },
+          },
+        },
+        orderBy: { createdAt: "desc" },
+        skip,
+        take: limit,
+      }),
+      prisma.auditLog.count({ where }),
+    ]);
+
+    return {
+      items,
+      metadata: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
+  },
 };
+

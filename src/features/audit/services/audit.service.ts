@@ -26,4 +26,12 @@ export const auditService = {
       logger.error({ err, input }, "Failed to write audit log");
     }
   },
+
+  /**
+   * Retrieve paged and searchable audit logs.
+   */
+  async getLogs(page: number = 1, limit: number = 10, search?: string) {
+    return auditRepository.getAuditLogs(page, limit, search);
+  },
 };
+
