@@ -3,7 +3,8 @@
 import { useState, useTransition } from "react";
 import type { Prisma } from "@prisma/client";
 import { generateMockWebhookPayloadAction } from "@/features/donations/actions/donations.actions";
-import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
+import { Button, Badge } from "@/components/ui";
+import { toast } from "@/stores/toast.store";
 import { useRouter } from "next/navigation";
 
 type DonationWithRelations = Prisma.DonationGetPayload<{
@@ -41,7 +42,7 @@ export function DonationTable({ donations }: { donations: DonationWithRelations[
       const result = await generateMockWebhookPayloadAction(donationId);
       
       if (result?.error) {
-        alert("Gagal memuat payload: " + result.error);
+        toast.error("Gagal memuat payload: " + result.error);
         setSimulatingId(null);
         return;
       }
@@ -59,13 +60,13 @@ export function DonationTable({ donations }: { donations: DonationWithRelations[
 
           const data = await response.json();
           if (data.success) {
-            alert("Webhook berhasil diproses!");
+            toast.success("Webhook berhasil diproses!");
             router.refresh();
           } else {
-            alert("Webhook gagal diproses: " + data.message);
+            toast.error("Webhook gagal diproses: " + data.message);
           }
         } catch (error) {
-          alert("Gagal mengirim webhook: " + String(error));
+          toast.error("Gagal mengirim webhook: " + String(error));
         }
       }
       setSimulatingId(null);
@@ -107,27 +108,27 @@ export function DonationTable({ donations }: { donations: DonationWithRelations[
                 )}
               </td>
               <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                <span className={`inline-flex items-center rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset ${
-                  donation.status === 'PAID' ? 'bg-green-50 text-green-700 ring-green-600/20' : 
-                  donation.status === 'PENDING' ? 'bg-yellow-50 text-yellow-800 ring-yellow-600/20' :
-                  'bg-red-50 text-red-700 ring-red-600/20'
-                }`}>
+                <Badge intent={
+                  donation.status === 'PAID' ? 'success' : 
+                  donation.status === 'PENDING' ? 'warning' : 'destructive'
+                }>
                   {donation.status}
-                </span>
+                </Badge>
               </td>
               <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
                 {formatDate(donation.createdAt)}
               </td>
               <td className="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
                 {donation.status === "PENDING" && (
-                  <button
+                  <Button
                     onClick={() => simulateWebhook(donation.id)}
                     disabled={isPending}
-                    className="text-indigo-600 hover:text-indigo-900 disabled:opacity-50 inline-flex items-center gap-1"
+                    isLoading={simulatingId === donation.id}
+                    size="sm"
+                    intent="outline"
                   >
-                    {simulatingId === donation.id && <LoadingSpinner size="sm" />}
                     Simulate Webhook
-                  </button>
+                  </Button>
                 )}
               </td>
             </tr>

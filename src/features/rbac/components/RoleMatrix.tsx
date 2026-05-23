@@ -2,7 +2,8 @@
 
 import React, { useState, useTransition } from "react";
 import { saveRolePermissionsAction } from "@/features/rbac/actions/rbac.actions";
-import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
+import { Button } from "@/components/ui";
+import { toast } from "@/stores/toast.store";
 import type { Prisma } from "@prisma/client";
 
 interface RoleMatrixProps {
@@ -54,10 +55,9 @@ export function RoleMatrix({ roles, permissions, initialActiveMappings }: RoleMa
       const result = await saveRolePermissionsAction(formData);
       
       if (result?.error) {
-        alert(result.error);
-        // Fallback: reset to initial if failed (in a real app, you'd fetch latest state)
+        toast.error(result.error);
       } else {
-        alert("Permissions berhasil disimpan!");
+        toast.success("Permissions berhasil disimpan!");
       }
       setSavingRoleId(null);
     });
@@ -72,16 +72,18 @@ export function RoleMatrix({ roles, permissions, initialActiveMappings }: RoleMa
               Module / Permission
             </th>
             {roles.map((role) => (
-              <th key={role.id} scope="col" className="px-3 py-3.5 text-center text-sm font-semibold text-gray-900 min-w-[120px]">
+              <th key={role.id} scope="col" className="px-3 py-3.5 text-center text-sm font-semibold text-gray-955 dark:text-slate-200 min-w-[120px]">
                 <div className="flex flex-col items-center gap-2">
                   <span>{role.name}</span>
-                  <button
+                  <Button
                     onClick={() => saveRole(role.id)}
+                    size="sm"
+                    intent="outline"
+                    isLoading={savingRoleId === role.id}
                     disabled={isPending}
-                    className="inline-flex items-center gap-1 rounded bg-indigo-50 px-2 py-1 text-xs font-semibold text-indigo-600 shadow-sm hover:bg-indigo-100 disabled:opacity-50"
                   >
-                    {savingRoleId === role.id ? <LoadingSpinner size="sm" /> : "Simpan"}
-                  </button>
+                    Simpan
+                  </Button>
                 </div>
               </th>
             ))}
@@ -106,13 +108,14 @@ export function RoleMatrix({ roles, permissions, initialActiveMappings }: RoleMa
                   {roles.map((role) => {
                     const isChecked = activeMappings.has(`${role.id}_${perm.id}`);
                     return (
-                      <td key={`${role.id}_${perm.id}`} className="whitespace-nowrap px-3 py-3 text-center text-sm text-gray-500">
+                      <td key={`${role.id}_${perm.id}`} className="whitespace-nowrap px-3 py-3 text-center text-sm text-gray-500 dark:text-slate-400">
                         <input
                           type="checkbox"
                           checked={isChecked}
                           onChange={() => togglePermission(role.id, perm.id)}
                           disabled={isPending}
-                          className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600 disabled:opacity-50 cursor-pointer"
+                          aria-label={`Berikan izin ${perm.key} untuk role ${role.name}`}
+                          className="h-4 w-4 rounded border-border text-primary focus:ring-primary disabled:opacity-50 cursor-pointer"
                         />
                       </td>
                     );

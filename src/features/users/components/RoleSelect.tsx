@@ -2,7 +2,9 @@
 
 import { useTransition, useRef } from "react";
 import { changeUserRoleAction } from "@/features/users/actions/users.actions";
+import { Select } from "@/components/ui/Select";
 import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
+import { toast } from "@/stores/toast.store";
 
 interface RoleSelectProps {
   userId: string;
@@ -21,9 +23,11 @@ export function RoleSelect({ userId, currentRoleId, roles, disabled }: RoleSelec
       startTransition(async () => {
         const res = await changeUserRoleAction(formData);
         if (res?.error) {
-          alert(res.error); // Fallback error handling
+          toast.error(res.error);
           // Reset select to original value if failed
           formRef.current?.reset();
+        } else {
+          toast.success("Role pengguna berhasil diperbarui");
         }
       });
     }
@@ -32,20 +36,21 @@ export function RoleSelect({ userId, currentRoleId, roles, disabled }: RoleSelec
   return (
     <form ref={formRef} className="flex items-center gap-2">
       <input type="hidden" name="userId" value={userId} />
-      <select
+      <Select
         name="roleId"
         defaultValue={currentRoleId}
         onChange={handleChange}
         disabled={isPending || disabled}
-        className="block w-full rounded-md border-0 py-1.5 pl-3 pr-10 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm sm:leading-6 disabled:opacity-50"
+        className="w-48"
       >
         {roles.map((role) => (
           <option key={role.id} value={role.id}>
             {role.name}
           </option>
         ))}
-      </select>
+      </Select>
       {isPending && <LoadingSpinner size="sm" />}
     </form>
   );
 }
+

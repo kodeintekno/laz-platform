@@ -2,7 +2,40 @@
 
 :root {
   --background: #ffffff;
-  --foreground: #171717;
+  --foreground: #111827; /* gray-900 */
+  
+  --primary: #4f46e5; /* indigo-600 */
+  --primary-hover: #4338ca; /* indigo-700 */
+  --secondary: #6b7280; /* gray-500 */
+  --destructive: #ef4444; /* red-500 */
+  --destructive-hover: #dc2626; /* red-600 */
+  --success: #10b981; /* emerald-500 */
+  --success-hover: #059669; /* emerald-600 */
+  --warning: #f59e0b; /* amber-500 */
+  --warning-hover: #d97706; /* amber-600 */
+  --muted: #f3f4f6; /* gray-100 */
+  --muted-foreground: #6b7280; /* gray-500 */
+  --border: #e5e7eb; /* gray-200 */
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0f172a; /* slate-900 */
+    --foreground: #f8fafc; /* slate-50 */
+    
+    --primary: #6366f1; /* indigo-500 */
+    --primary-hover: #4f46e5; /* indigo-600 */
+    --secondary: #94a3b8; /* slate-400 */
+    --destructive: #f87171; /* red-400 */
+    --destructive-hover: #ef4444; /* red-500 */
+    --success: #34d399; /* emerald-400 */
+    --success-hover: #10b981; /* emerald-500 */
+    --warning: #fbbf24; /* amber-400 */
+    --warning-hover: #f59e0b; /* amber-500 */
+    --muted: #1e293b; /* slate-800 */
+    --muted-foreground: #94a3b8; /* slate-400 */
+    --border: #334155; /* slate-700 */
+  }
 }
 
 @theme inline {
@@ -10,13 +43,19 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  
+  --color-primary: var(--primary);
+  --color-primary-hover: var(--primary-hover);
+  --color-secondary: var(--secondary);
+  --color-destructive: var(--destructive);
+  --color-destructive-hover: var(--destructive-hover);
+  --color-success: var(--success);
+  --color-success-hover: var(--success-hover);
+  --color-warning: var(--warning);
+  --color-warning-hover: var(--warning-hover);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-border: var(--border);
 }
 
 body {

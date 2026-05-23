@@ -1,6 +1,8 @@
 "use client";
 
 import { RoleSelect } from "./RoleSelect";
+import { Badge } from "@/components/ui/Badge";
+import { EmptyState } from "@/components/ui/EmptyState";
 import type { Prisma } from "@prisma/client";
 
 type UserWithRole = Prisma.UserGetPayload<{
@@ -14,6 +16,15 @@ interface UserTableProps {
 }
 
 export function UserTable({ users, roles, canManageRoles }: UserTableProps) {
+  if (users.length === 0) {
+    return (
+      <EmptyState
+        title="Tidak ada pengguna ditemukan"
+        description="Daftar pengguna kosong atau tidak ada data yang sesuai."
+      />
+    );
+  }
+
   return (
     <div className="overflow-hidden shadow ring-1 ring-black ring-opacity-5 sm:rounded-lg">
       <table className="min-w-full divide-y divide-gray-300">
@@ -43,13 +54,9 @@ export function UserTable({ users, roles, canManageRoles }: UserTableProps) {
                 {user.email}
               </td>
               <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                <span className={`inline-flex items-center rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset ${
-                  user.status === 'ACTIVE' 
-                    ? 'bg-green-50 text-green-700 ring-green-600/20' 
-                    : 'bg-red-50 text-red-700 ring-red-600/20'
-                }`}>
+                <Badge intent={user.status === "ACTIVE" ? "success" : "destructive"}>
                   {user.status}
-                </span>
+                </Badge>
               </td>
               <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
                 {canManageRoles && user.roleId ? (
@@ -59,22 +66,16 @@ export function UserTable({ users, roles, canManageRoles }: UserTableProps) {
                     roles={roles} 
                   />
                 ) : (
-                  <span className="inline-flex items-center rounded-md bg-gray-50 px-2 py-1 text-xs font-medium text-gray-600 ring-1 ring-inset ring-gray-500/10">
+                  <Badge intent="muted">
                     {user.role?.name || "N/A"}
-                  </span>
+                  </Badge>
                 )}
               </td>
             </tr>
           ))}
-          {users.length === 0 && (
-            <tr>
-              <td colSpan={4} className="py-8 text-center text-sm text-gray-500">
-                Tidak ada pengguna ditemukan.
-              </td>
-            </tr>
-          )}
         </tbody>
       </table>
     </div>
   );
 }
+
