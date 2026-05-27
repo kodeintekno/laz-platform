@@ -29,8 +29,8 @@ export default async function AuditPage({
     <div className="space-y-6">
       <div className="sm:flex sm:items-center">
         <div className="sm:flex-auto">
-          <h1 className="text-2xl font-semibold leading-6 text-gray-900">Audit Logs</h1>
-          <p className="mt-2 text-sm text-gray-700">
+          <h1 className="text-2xl font-semibold leading-6 text-text-primary">Audit Logs</h1>
+          <p className="mt-2 text-sm text-text-secondary">
             Riwayat log audit aktivitas mutasi admin dan pengelolaan sistem secara realtime.
           </p>
         </div>

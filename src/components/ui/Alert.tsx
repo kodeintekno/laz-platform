@@ -10,17 +10,17 @@ export interface AlertProps {
 
 export function Alert({ children, intent = "info", title, className = "" }: AlertProps) {
   const iconMap = {
-    success: <CheckCircle className="h-5 w-5 text-emerald-500" />,
-    error: <AlertCircle className="h-5 w-5 text-red-500" />,
-    warning: <AlertTriangle className="h-5 w-5 text-amber-500" />,
-    info: <Info className="h-5 w-5 text-blue-500" />,
+    success: <CheckCircle className="h-5 w-5 text-success" />,
+    error: <AlertCircle className="h-5 w-5 text-destructive" />,
+    warning: <AlertTriangle className="h-5 w-5 text-warning" />,
+    info: <Info className="h-5 w-5 text-info-token" />,
   };
 
   const bgMap = {
-    success: "bg-emerald-50 border-emerald-200 text-emerald-900 dark:bg-emerald-950/20 dark:border-emerald-800/30 dark:text-emerald-300",
-    error: "bg-red-50 border-red-200 text-red-900 dark:bg-red-950/20 dark:border-red-800/30 dark:text-red-300",
-    warning: "bg-amber-50 border-amber-200 text-amber-900 dark:bg-amber-950/20 dark:border-amber-800/30 dark:text-amber-300",
-    info: "bg-blue-50 border-blue-200 text-blue-900 dark:bg-blue-950/20 dark:border-blue-800/30 dark:text-blue-300",
+    success: "bg-success/10 border-success/20 text-text-primary",
+    error: "bg-destructive/10 border-destructive/20 text-text-primary",
+    warning: "bg-warning/10 border-warning/20 text-text-primary",
+    info: "bg-info-token/10 border-info-token/20 text-text-primary",
   };
 
   return (

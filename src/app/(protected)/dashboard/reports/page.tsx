@@ -18,19 +18,19 @@ export default async function ReportsPage() {
     <div className="space-y-6">
       <div className="sm:flex sm:items-center">
         <div className="sm:flex-auto">
-          <h1 className="text-2xl font-semibold leading-6 text-gray-900">Laporan Keuangan & Kinerja</h1>
-          <p className="mt-2 text-sm text-gray-700">
+          <h1 className="text-2xl font-semibold leading-6 text-text-primary">Laporan Keuangan & Kinerja</h1>
+          <p className="mt-2 text-sm text-text-secondary">
             Lihat dan ekspor laporan pendistribusian zakat, statistik donasi, serta audit kepatuhan syariah.
           </p>
         </div>
       </div>
 
-      <div className="bg-white rounded-2xl border border-gray-100 p-12 text-center shadow-sm">
-        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-indigo-50 mb-4">
-          <BarChart3 className="h-6 w-6 text-indigo-600" />
+      <div className="bg-surface rounded-2xl border border-border p-12 text-center shadow-sm">
+        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-brand-primary/10 mb-4">
+          <BarChart3 className="h-6 w-6 text-brand-primary" />
         </div>
-        <h3 className="text-sm font-semibold text-gray-900">Fitur Laporan Analitik</h3>
-        <p className="mt-1 text-sm text-gray-500 max-w-sm mx-auto">
+        <h3 className="text-sm font-semibold text-text-primary">Fitur Laporan Analitik</h3>
+        <p className="mt-1 text-sm text-text-muted max-w-sm mx-auto">
           Halaman laporan analitik sedang dalam pengembangan. Laporan berkala akan ditampilkan dengan grafik interaktif di sini.
         </p>
       </div>

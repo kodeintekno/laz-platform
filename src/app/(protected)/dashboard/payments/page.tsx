@@ -29,8 +29,8 @@ export default async function PaymentsPage({
     <div className="space-y-6">
       <div className="sm:flex sm:items-center">
         <div className="sm:flex-auto">
-          <h1 className="text-2xl font-semibold leading-6 text-gray-900">Manajemen Pembayaran</h1>
-          <p className="mt-2 text-sm text-gray-700">
+          <h1 className="text-2xl font-semibold leading-6 text-text-primary">Manajemen Pembayaran</h1>
+          <p className="mt-2 text-sm text-text-secondary">
             Kelola transaksi pembayaran donasi, detail invoice, dan integrasi payment gateway.
           </p>
         </div>

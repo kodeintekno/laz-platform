@@ -30,8 +30,8 @@ export default async function DonationsPage({
     <div className="space-y-6">
       <div className="sm:flex sm:items-center">
         <div className="sm:flex-auto">
-          <h1 className="text-2xl font-semibold leading-6 text-gray-900">Data Donasi Masuk</h1>
-          <p className="mt-2 text-sm text-gray-700">
+          <h1 className="text-2xl font-semibold leading-6 text-text-primary">Data Donasi Masuk</h1>
+          <p className="mt-2 text-sm text-text-secondary">
             Daftar semua transaksi donasi yang masuk ke platform.
           </p>
         </div>

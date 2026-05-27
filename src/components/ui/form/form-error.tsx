@@ -11,7 +11,7 @@ export function FormError({ id, message, className = "" }: FormErrorProps) {
   return (
     <p
       id={id}
-      className={`mt-1.5 text-xs font-semibold text-destructive dark:text-red-450 ${className}`}
+      className={`mt-1.5 text-xs font-semibold text-destructive ${className}`}
       aria-live="polite"
     >
       {message}

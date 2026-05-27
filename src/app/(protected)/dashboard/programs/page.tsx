@@ -32,8 +32,8 @@ export default async function ProgramsPage({
     <div className="space-y-6">
       <div className="sm:flex sm:items-center">
         <div className="sm:flex-auto">
-          <h1 className="text-2xl font-semibold leading-6 text-gray-900">Program Management</h1>
-          <p className="mt-2 text-sm text-gray-700">
+          <h1 className="text-2xl font-semibold leading-6 text-text-primary">Program Management</h1>
+          <p className="mt-2 text-sm text-text-secondary">
             Kelola semua program kampanye zakat, infak, dan sedekah.
           </p>
         </div>
