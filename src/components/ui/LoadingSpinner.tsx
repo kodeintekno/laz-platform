@@ -24,7 +24,7 @@ export function LoadingSpinner({
       aria-label="Loading"
       className={`
         ${sizeClasses[size]}
-        rounded-full border-gray-200 border-t-indigo-600
+        rounded-full border-border border-t-brand-primary
         animate-spin
         ${className}
       `}

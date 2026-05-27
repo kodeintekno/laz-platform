@@ -32,7 +32,7 @@ export function FormCheckbox({ name, label, description, disabled, ...props }: F
           {(label || description) && (
             <div className="text-sm leading-5">
               {label && <span className="font-semibold text-foreground">{label}</span>}
-              {description && <p className="text-gray-500 dark:text-slate-400 mt-0.5">{description}</p>}
+              {description && <p className="text-text-muted mt-0.5">{description}</p>}
             </div>
           )}
         </label>

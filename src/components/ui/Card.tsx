@@ -2,7 +2,7 @@ import React from "react";
 
 export function Card({ children, className = "" }: { children: React.ReactNode; className?: string }) {
   return (
-    <div className={`bg-white dark:bg-slate-900 rounded-2xl border border-border shadow-sm overflow-hidden flex flex-col ${className}`}>
+    <div className={`bg-surface rounded-2xl border border-border shadow-sm overflow-hidden flex flex-col ${className}`}>
       {children}
     </div>
   );
@@ -34,7 +34,7 @@ export function CardContent({ children, className = "" }: { children: React.Reac
 
 export function CardFooter({ children, className = "" }: { children: React.ReactNode; className?: string }) {
   return (
-    <div className={`bg-muted dark:bg-slate-950 p-6 sm:p-8 border-t border-border ${className}`}>
+    <div className={`bg-surface-muted p-6 sm:p-8 border-t border-border ${className}`}>
       {children}
     </div>
   );

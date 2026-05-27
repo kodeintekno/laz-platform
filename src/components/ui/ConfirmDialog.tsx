@@ -35,7 +35,7 @@ export function ConfirmDialog({
   return (
     <Dialog isOpen={isOpen} onClose={onClose} title={title}>
       <div className="space-y-6">
-        <p className="text-sm text-gray-500 dark:text-slate-400">{message}</p>
+        <p className="text-sm text-text-secondary">{message}</p>
         <div className="flex items-center justify-end gap-3 pt-4 border-t border-border">
           <Button intent="outline" onClick={onClose} disabled={isLoading}>
             {cancelText}

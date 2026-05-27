@@ -130,7 +130,7 @@ export function FormField({
       {renderField()}
 
       {description && type !== "checkbox" && (
-        <p id={descId} className="text-[11px] text-gray-400 dark:text-slate-500 leading-tight">
+        <p id={descId} className="text-[11px] text-text-muted leading-tight">
           {description}
         </p>
       )}

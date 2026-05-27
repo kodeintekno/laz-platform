@@ -3,7 +3,7 @@
 import React from "react";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
-import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
 
 interface DataTableToolbarProps {
   searchValue?: string;
@@ -17,20 +17,45 @@ export function DataTableToolbar({
   searchPlaceholder = "Cari...",
   filterSlot,
 }: DataTableToolbarProps) {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+    const searchVal = formData.get("search")?.toString() || "";
+
+    const params = new URLSearchParams(searchParams ? searchParams.toString() : "");
+    if (searchVal) {
+      params.set("search", searchVal);
+    } else {
+      params.delete("search");
+    }
+    params.set("page", "1"); // Reset page when query changes
+    router.push(`?${params.toString()}`);
+  };
+
+  const handleReset = () => {
+    const params = new URLSearchParams(searchParams ? searchParams.toString() : "");
+    params.delete("search");
+    params.set("page", "1");
+    router.push(`?${params.toString()}`);
+  };
+
   return (
-    <form method="GET" className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full">
+    <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full">
       <div className="flex items-center gap-2 max-w-md w-full">
         <Input
           name="search"
           defaultValue={searchValue || ""}
           placeholder={searchPlaceholder}
-          className="w-full bg-white"
+          className="w-full"
         />
         <Button type="submit">Cari</Button>
         {searchValue && (
-          <Link href="?">
-            <Button type="button" intent="outline">Reset</Button>
-          </Link>
+          <Button type="button" intent="outline" onClick={handleReset}>
+            Reset
+          </Button>
         )}
       </div>
       

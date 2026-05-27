@@ -19,16 +19,16 @@ export function Breadcrumbs() {
         {/* Root Dashboard Segment */}
         <li className="inline-flex items-center">
           {isHome ? (
-            <span className="inline-flex items-center gap-1.5 font-bold text-slate-800">
-              <Home className="h-4 w-4 text-slate-500" />
+            <span className="inline-flex items-center gap-1.5 font-bold text-text-primary">
+              <Home className="h-4 w-4 text-text-muted" />
               <span>Dashboard</span>
             </span>
           ) : (
             <Link
               href="/dashboard"
-              className="inline-flex items-center gap-1.5 text-slate-500 hover:text-primary font-semibold transition-colors duration-150"
+              className="inline-flex items-center gap-1.5 text-text-secondary hover:text-primary font-semibold transition-colors duration-150"
             >
-              <Home className="h-4 w-4 text-slate-500" />
+              <Home className="h-4 w-4 text-text-muted" />
               <span>Dashboard</span>
             </Link>
           )}
@@ -41,18 +41,18 @@ export function Breadcrumbs() {
 
           return (
             <li key={item.href} className="inline-flex items-center">
-              <ChevronRight className="h-4 w-4 text-slate-400 mx-1 flex-shrink-0" />
+              <ChevronRight className="h-4 w-4 text-text-muted mx-1 flex-shrink-0" />
               {item.isLast ? (
                 <span
                   aria-current="page"
-                  className="font-bold text-slate-800 max-w-[180px] sm:max-w-[240px] truncate block"
+                  className="font-bold text-text-primary max-w-[180px] sm:max-w-[240px] truncate block"
                 >
                   {item.label}
                 </span>
               ) : (
                 <Link
                   href={item.href}
-                  className="text-slate-500 hover:text-primary font-semibold transition-colors duration-150 max-w-[150px] truncate block"
+                  className="text-text-secondary hover:text-primary font-semibold transition-colors duration-150 max-w-[150px] truncate block"
                 >
                   {item.label}
                 </Link>

@@ -1,5 +1,8 @@
+"use client";
+
 import React from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
 export interface PaginationProps {
@@ -15,14 +18,17 @@ export function Pagination({
   totalPages,
   totalCount,
   pageSize,
-  baseUrl = "",
 }: PaginationProps) {
+  const searchParams = useSearchParams();
+
   const getPageUrl = (page: number) => {
-    return `${baseUrl}?page=${page}`;
+    const params = new URLSearchParams(searchParams ? searchParams.toString() : "");
+    params.set("page", page.toString());
+    return `?${params.toString()}`;
   };
 
   return (
-    <div className="flex items-center justify-between border-t border-border bg-white dark:bg-slate-900 px-4 py-3 sm:px-6 mt-4 rounded-xl shadow-sm">
+    <div className="flex items-center justify-between border-t border-border bg-surface px-4 py-3 sm:px-6 mt-4 rounded-xl shadow-sm">
       <div className="flex flex-1 justify-between sm:hidden">
         <Link
           href={getPageUrl(Math.max(1, currentPage - 1))}
@@ -43,7 +49,7 @@ export function Pagination({
       </div>
       <div className="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
         <div>
-          <p className="text-sm text-gray-700 dark:text-slate-400">
+          <p className="text-sm text-text-secondary">
             Menampilkan halaman <span className="font-semibold">{currentPage}</span> dari{" "}
             <span className="font-semibold">{totalPages}</span> ({totalCount} total)
           </p>
@@ -55,7 +61,7 @@ export function Pagination({
           >
             <Link
               href={getPageUrl(Math.max(1, currentPage - 1))}
-              className={`relative inline-flex items-center px-3 py-2 text-gray-400 dark:text-slate-500 hover:bg-muted ${
+              className={`relative inline-flex items-center px-3 py-2 text-text-muted hover:bg-muted ${
                 currentPage === 1 ? "pointer-events-none opacity-30" : ""
               }`}
             >
@@ -81,7 +87,7 @@ export function Pagination({
             })}
             <Link
               href={getPageUrl(Math.min(totalPages, currentPage + 1))}
-              className={`relative inline-flex items-center px-3 py-2 text-gray-400 dark:text-slate-500 hover:bg-muted border-l border-border ${
+              className={`relative inline-flex items-center px-3 py-2 text-text-muted hover:bg-muted border-l border-border ${
                 currentPage === totalPages ? "pointer-events-none opacity-30" : ""
               }`}
             >

@@ -9,7 +9,7 @@ export function Skeleton({
   className = "",
   ...props
 }: SkeletonProps) {
-  const baseStyle = "animate-pulse bg-gray-200 dark:bg-slate-800";
+  const baseStyle = "animate-pulse bg-surface-soft dark:bg-brand-primary/20";
 
   const variantStyles = {
     text: "h-4 w-full rounded-md",

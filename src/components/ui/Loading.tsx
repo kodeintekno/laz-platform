@@ -15,7 +15,7 @@ export function Loading({ message = "Memuat data...", fullHeight = true }: Loadi
     >
       <LoadingSpinner size="lg" />
       {message && (
-        <p className="text-sm font-semibold text-gray-500 dark:text-slate-400">
+        <p className="text-sm font-semibold text-text-muted">
           {message}
         </p>
       )}

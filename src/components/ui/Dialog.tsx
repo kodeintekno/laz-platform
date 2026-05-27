@@ -37,7 +37,7 @@ export function Dialog({ isOpen, onClose, title, children }: DialogProps) {
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       {/* Overlay */}
       <div
-        className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity"
+        className="fixed inset-0 bg-text-primary/60 backdrop-blur-sm transition-opacity"
         onClick={onClose}
         aria-hidden="true"
       />
@@ -47,7 +47,7 @@ export function Dialog({ isOpen, onClose, title, children }: DialogProps) {
         role="dialog"
         aria-modal="true"
         aria-labelledby="modal-title"
-        className="relative bg-white dark:bg-slate-900 rounded-2xl max-w-lg w-full shadow-xl border border-border overflow-hidden transition-all transform scale-100 flex flex-col max-h-[90vh]"
+        className="relative bg-surface rounded-2xl max-w-lg w-full shadow-xl border border-border overflow-hidden transition-all transform scale-100 flex flex-col max-h-[90vh]"
       >
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-border">
@@ -59,7 +59,7 @@ export function Dialog({ isOpen, onClose, title, children }: DialogProps) {
           </h3>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 focus:outline-none dark:hover:text-gray-200 cursor-pointer"
+            className="text-text-muted hover:text-text-primary focus:outline-none cursor-pointer"
             aria-label="Close dialog"
           >
             <X className="h-5 w-5" />
