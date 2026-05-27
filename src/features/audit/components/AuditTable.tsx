@@ -46,7 +46,7 @@ export function AuditTable({ logs, search, pagination }: AuditTableProps) {
     {
       header: "Waktu",
       cell: (log) => (
-        <span className="text-text-primary font-medium text-sm">
+        <span className="text-primary font-medium text-sm">
           {formatDate(log.createdAt)}
         </span>
       ),
@@ -55,11 +55,11 @@ export function AuditTable({ logs, search, pagination }: AuditTableProps) {
       header: "Operator",
       cell: (log) => log.user ? (
         <div>
-          <div className="font-semibold text-text-primary">{log.user.name}</div>
-          <div className="text-xs text-text-secondary">{log.user.email}</div>
+          <div className="font-semibold text-primary">{log.user.name}</div>
+          <div className="text-xs text-secondary">{log.user.email}</div>
         </div>
       ) : (
-        <span className="italic text-text-muted font-medium">System</span>
+        <span className="italic text-muted font-medium">System</span>
       ),
     },
     {
@@ -74,9 +74,9 @@ export function AuditTable({ logs, search, pagination }: AuditTableProps) {
       header: "Entitas / ID",
       cell: (log) => (
         <div>
-          <span className="font-semibold text-text-primary">{log.entity}</span>
+          <span className="font-semibold text-primary">{log.entity}</span>
           {log.entityId && (
-            <span className="block text-xs font-mono text-text-muted mt-0.5 truncate max-w-[120px]" title={log.entityId}>
+            <span className="block text-xs font-mono text-muted mt-0.5 truncate max-w-[120px]" title={log.entityId}>
               {log.entityId}
             </span>
           )}
@@ -86,7 +86,7 @@ export function AuditTable({ logs, search, pagination }: AuditTableProps) {
     {
       header: "Perubahan Data",
       cell: (log) => (log.oldData || log.newData) ? (
-        <details className="text-xs text-text-secondary font-mono cursor-pointer">
+        <details className="text-xs text-secondary font-mono cursor-pointer">
           <summary className="text-xs text-brand-primary font-semibold hover:underline outline-none">
             Lihat snapshot
           </summary>
@@ -95,17 +95,17 @@ export function AuditTable({ logs, search, pagination }: AuditTableProps) {
           </pre>
         </details>
       ) : (
-        <span className="text-xs text-text-muted italic">No snapshot</span>
+        <span className="text-xs text-muted italic">No snapshot</span>
       ),
     },
     {
       header: "Klien Info",
       cell: (log) => (
         <div className="max-w-[200px]">
-          <div className="truncate text-xs font-semibold text-text-secondary" title={log.ipAddress}>
+          <div className="truncate text-xs font-semibold text-secondary" title={log.ipAddress}>
             IP: {log.ipAddress || "-"}
           </div>
-          <div className="truncate text-[10px] text-text-muted mt-0.5" title={log.userAgent}>
+          <div className="truncate text-[10px] text-muted mt-0.5" title={log.userAgent}>
             Agent: {log.userAgent || "-"}
           </div>
         </div>

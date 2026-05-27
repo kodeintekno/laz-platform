@@ -40,7 +40,7 @@ export function Header({ user }: HeaderProps) {
       <button
         onClick={toggleSidebar}
         aria-label="Toggle sidebar"
-        className="p-2 rounded-xl text-text-secondary hover:bg-surface-muted transition-colors lg:hidden cursor-pointer"
+        className="p-2 rounded-xl text-secondary hover:bg-surface-muted transition-colors lg:hidden cursor-pointer"
       >
         <span className="sr-only">Toggle sidebar</span>
         <Menu className="w-5 h-5" />
@@ -53,7 +53,7 @@ export function Header({ user }: HeaderProps) {
       <div className="flex items-center gap-4">
         {/* Notification Icon */}
         <button 
-          className="p-1.5 rounded-full text-text-muted hover:bg-surface-muted hover:text-text-primary transition-all cursor-pointer"
+          className="p-1.5 rounded-full text-muted hover:bg-surface-muted hover:text-primary transition-all cursor-pointer"
           aria-label="Notification bell"
         >
           <Bell className="w-5 h-5" />
@@ -85,8 +85,8 @@ export function Header({ user }: HeaderProps) {
             <div className="absolute right-0 mt-2 w-56 bg-surface rounded-xl shadow-soft border border-border py-1.5 z-30 animate-in fade-in slide-in-from-top-2 duration-150">
               {/* User Identity Info */}
               <div className="px-4 py-2 border-b border-border">
-                <p className="text-sm font-bold text-text-primary truncate">{user?.name || "User"}</p>
-                <p className="text-xs text-text-secondary truncate mb-1.5">{user?.email || "No email"}</p>
+                <p className="text-sm font-bold text-primary truncate">{user?.name || "User"}</p>
+                <p className="text-xs text-secondary truncate mb-1.5">{user?.email || "No email"}</p>
                 {user?.roleName && (
                   <span className="inline-flex items-center rounded-md bg-brand-primary/10 px-2 py-0.5 text-xs font-semibold text-brand-primary ring-1 ring-inset ring-brand-primary/20">
                     {user.roleName}

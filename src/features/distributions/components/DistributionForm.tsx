@@ -91,7 +91,7 @@ export function DistributionForm({ programId, availableBalance }: { programId: s
         </CardContent>
 
         <CardFooter className="flex items-center justify-end gap-x-4 border-t border-border pt-4">
-          <Link href={`/dashboard/programs`} className="text-sm font-semibold leading-6 text-text-secondary hover:text-brand-primary transition">
+          <Link href={`/dashboard/programs`} className="text-sm font-semibold leading-6 text-secondary hover:text-brand-primary transition">
             Batal
           </Link>
           <Button

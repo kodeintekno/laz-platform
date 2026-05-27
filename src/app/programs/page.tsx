@@ -28,7 +28,7 @@ export default async function PublicProgramsPage() {
             LAZ Platform
           </Link>
           <div className="flex gap-4">
-            <Link href="/programs" className="text-text-secondary hover:text-brand-primary font-semibold">
+            <Link href="/programs" className="text-secondary hover:text-brand-primary font-semibold">
               Donasi
             </Link>
             <Link href="/dashboard" className="text-brand-primary hover:text-brand-secondary font-semibold">
@@ -40,10 +40,10 @@ export default async function PublicProgramsPage() {
 
       <main className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-10">
         <div className="text-center mb-12">
-          <h1 className="text-3xl font-bold tracking-tight text-text-primary sm:text-4xl">
+          <h1 className="text-3xl font-bold tracking-tight text-primary sm:text-4xl">
             Pilih Program Kebaikanmu
           </h1>
-          <p className="mt-4 text-lg text-text-secondary">
+          <p className="mt-4 text-lg text-secondary">
             Salurkan zakat, infak, dan sedekah Anda kepada yang membutuhkan.
           </p>
         </div>
@@ -65,7 +65,7 @@ export default async function PublicProgramsPage() {
                       className="object-cover"
                     />
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center text-text-muted">
+                    <div className="w-full h-full flex items-center justify-center text-muted">
                       Tidak ada gambar
                     </div>
                   )}
@@ -75,7 +75,7 @@ export default async function PublicProgramsPage() {
                 </div>
 
                 <div className="p-5 flex-1 flex flex-col">
-                  <h3 className="text-lg font-bold text-text-primary line-clamp-2 leading-tight mb-2">
+                  <h3 className="text-lg font-bold text-primary line-clamp-2 leading-tight mb-2">
                     <Link href={`/programs/${program.slug}`}>
                       <span aria-hidden="true" className="absolute inset-0" />
                       {program.title}
@@ -89,12 +89,12 @@ export default async function PublicProgramsPage() {
                     
                     <div className="flex justify-between items-end">
                       <div>
-                        <p className="text-xs text-text-secondary mb-0.5">Terkumpul</p>
-                        <p className="text-sm font-bold text-text-primary">{formatRupiah(currentAmount)}</p>
+                        <p className="text-xs text-secondary mb-0.5">Terkumpul</p>
+                        <p className="text-sm font-bold text-primary">{formatRupiah(currentAmount)}</p>
                       </div>
                       <div className="text-right">
-                        <p className="text-xs text-text-secondary mb-0.5">Sisa Waktu</p>
-                        <p className="text-sm font-medium text-text-primary">
+                        <p className="text-xs text-secondary mb-0.5">Sisa Waktu</p>
+                        <p className="text-sm font-medium text-primary">
                           {program.endDate ? Math.max(0, Math.ceil((new Date(program.endDate).getTime() - now) / (1000 * 60 * 60 * 24))) + " Hari" : "∞"}
                         </p>
                       </div>

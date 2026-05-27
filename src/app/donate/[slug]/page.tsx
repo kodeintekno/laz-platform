@@ -27,7 +27,7 @@ export default async function DonatePage({ params }: { params: Promise<{ slug: s
             LAZ Platform
           </Link>
           <div className="flex gap-4">
-            <Link href="/programs" className="text-text-secondary hover:text-brand-primary font-semibold">
+            <Link href="/programs" className="text-secondary hover:text-brand-primary font-semibold">
               Eksplor Program
             </Link>
           </div>

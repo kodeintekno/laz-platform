@@ -17,10 +17,10 @@ export function Alert({ children, intent = "info", title, className = "" }: Aler
   };
 
   const bgMap = {
-    success: "bg-success/10 border-success/20 text-text-primary",
-    error: "bg-destructive/10 border-destructive/20 text-text-primary",
-    warning: "bg-warning/10 border-warning/20 text-text-primary",
-    info: "bg-info-token/10 border-info-token/20 text-text-primary",
+    success: "bg-success/10 border-success/20 text-primary",
+    error: "bg-destructive/10 border-destructive/20 text-primary",
+    warning: "bg-warning/10 border-warning/20 text-primary",
+    info: "bg-info-token/10 border-info-token/20 text-primary",
   };
 
   return (

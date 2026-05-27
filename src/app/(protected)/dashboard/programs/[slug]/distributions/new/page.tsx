@@ -34,12 +34,12 @@ export default async function NewDistributionPage({ params }: { params: Promise<
         label={program.title} 
       />
       <div className="flex items-center gap-4">
-        <Link href="/dashboard/programs" className="p-2 text-text-muted hover:text-text-primary bg-surface rounded-full shadow-sm ring-1 ring-border">
+        <Link href="/dashboard/programs" className="p-2 text-muted hover:text-primary bg-surface rounded-full shadow-sm ring-1 ring-border">
           <ArrowLeft className="w-5 h-5" />
         </Link>
         <div>
-          <h1 className="text-2xl font-semibold leading-6 text-text-primary">Ajukan Penyaluran Dana</h1>
-          <p className="mt-2 text-sm text-text-secondary">
+          <h1 className="text-2xl font-semibold leading-6 text-primary">Ajukan Penyaluran Dana</h1>
+          <p className="mt-2 text-sm text-secondary">
             Program: <span className="font-semibold">{program.title}</span> (Saldo: Rp {availableBalance.toLocaleString("id-ID")})
           </p>
         </div>

@@ -41,7 +41,7 @@ export default async function ProgramDetailPage({ params }: { params: Promise<{ 
             LAZ Platform
           </Link>
           <div className="flex gap-4">
-            <Link href="/programs" className="text-text-secondary hover:text-brand-primary font-semibold">
+            <Link href="/programs" className="text-secondary hover:text-brand-primary font-semibold">
               Donasi
             </Link>
           </div>
@@ -55,7 +55,7 @@ export default async function ProgramDetailPage({ params }: { params: Promise<{ 
             {program.image ? (
               <Image src={program.image} alt={program.title} fill className="object-cover" />
             ) : (
-              <div className="w-full h-full flex items-center justify-center text-text-muted">Tidak ada gambar</div>
+              <div className="w-full h-full flex items-center justify-center text-muted">Tidak ada gambar</div>
             )}
             <div className="absolute top-4 left-4 bg-brand-primary px-3 py-1.5 rounded-xl text-xs font-bold tracking-wider text-white shadow-soft">
               {program.category}
@@ -64,14 +64,14 @@ export default async function ProgramDetailPage({ params }: { params: Promise<{ 
 
           {/* Donation Box Section */}
           <div className="lg:w-5/12 p-6 lg:p-8 flex flex-col">
-            <h1 className="text-2xl font-bold text-text-primary mb-6 leading-tight">
+            <h1 className="text-2xl font-bold text-primary mb-6 leading-tight">
               {program.title}
             </h1>
             
             <div className="mb-6">
               <div className="flex items-end gap-2 mb-2">
                 <span className="text-2xl font-bold text-brand-primary">{formatRupiah(currentAmount)}</span>
-                <span className="text-sm text-text-secondary mb-1">terkumpul dari {formatRupiah(targetAmount)}</span>
+                <span className="text-sm text-secondary mb-1">terkumpul dari {formatRupiah(targetAmount)}</span>
               </div>
               <div className="w-full bg-surface-soft rounded-full h-2.5">
                 <div className="bg-brand-primary h-2.5 rounded-full" style={{ width: `${progress}%` }}></div>
@@ -80,12 +80,12 @@ export default async function ProgramDetailPage({ params }: { params: Promise<{ 
 
             <div className="grid grid-cols-2 gap-4 mb-8">
               <div className="bg-surface-muted p-4 rounded-xl border border-border text-center">
-                <p className="text-sm text-text-secondary mb-1">Donatur</p>
-                <p className="text-xl font-bold text-text-primary">{program.donations.length}</p>
+                <p className="text-sm text-secondary mb-1">Donatur</p>
+                <p className="text-xl font-bold text-primary">{program.donations.length}</p>
               </div>
               <div className="bg-surface-muted p-4 rounded-xl border border-border text-center">
-                <p className="text-sm text-text-secondary mb-1">Sisa Waktu</p>
-                <p className="text-xl font-bold text-text-primary">
+                <p className="text-sm text-secondary mb-1">Sisa Waktu</p>
+                <p className="text-xl font-bold text-primary">
                   {program.endDate ? Math.max(0, Math.ceil((new Date(program.endDate).getTime() - now) / (1000 * 60 * 60 * 24))) : "∞"} Hari
                 </p>
               </div>
@@ -106,8 +106,8 @@ export default async function ProgramDetailPage({ params }: { params: Promise<{ 
           {/* Story */}
           <div className="lg:col-span-2">
             <div className="bg-surface rounded-xl shadow-soft border border-border p-6 sm:p-8">
-              <h2 className="text-xl font-bold text-text-primary mb-4 pb-4 border-b border-border">Cerita Penggalangan Dana</h2>
-              <div className="prose prose-emerald max-w-none text-text-secondary whitespace-pre-wrap">
+              <h2 className="text-xl font-bold text-primary mb-4 pb-4 border-b border-border">Cerita Penggalangan Dana</h2>
+              <div className="prose prose-emerald max-w-none text-secondary whitespace-pre-wrap">
                 {program.description}
               </div>
             </div>
@@ -117,7 +117,7 @@ export default async function ProgramDetailPage({ params }: { params: Promise<{ 
           <div className="lg:col-span-1 space-y-8">
             {/* Donaturs */}
             <div className="bg-surface rounded-xl shadow-soft border border-border p-6">
-              <h2 className="text-lg font-bold text-text-primary mb-4 pb-4 border-b border-border">Donasi Terbaru</h2>
+              <h2 className="text-lg font-bold text-primary mb-4 pb-4 border-b border-border">Donasi Terbaru</h2>
               <div className="space-y-4">
                 {program.donations.length > 0 ? (
                   program.donations.map((donation) => (
@@ -126,15 +126,15 @@ export default async function ProgramDetailPage({ params }: { params: Promise<{ 
                         {(donation.isAnonymous || !donation.user?.name) ? "H" : donation.user.name.charAt(0).toUpperCase()}
                       </div>
                       <div>
-                        <p className="text-sm font-bold text-text-primary">
+                        <p className="text-sm font-bold text-primary">
                           {donation.isAnonymous ? "Hamba Allah" : donation.user?.name || "Hamba Allah"}
                         </p>
                         <p className="text-sm font-semibold text-brand-primary">{formatRupiah(Number(donation.amount))}</p>
-                        <p className="text-xs text-text-secondary mt-0.5">
+                        <p className="text-xs text-secondary mt-0.5">
                           {new Intl.DateTimeFormat('id-ID', { dateStyle: 'medium' }).format(new Date(donation.createdAt))}
                         </p>
                         {donation.message && (
-                          <p className="text-sm text-text-secondary italic mt-2 bg-surface-muted p-2 rounded border border-border">
+                          <p className="text-sm text-secondary italic mt-2 bg-surface-muted p-2 rounded border border-border">
                             "{donation.message}"
                           </p>
                         )}
@@ -142,27 +142,27 @@ export default async function ProgramDetailPage({ params }: { params: Promise<{ 
                     </div>
                   ))
                 ) : (
-                  <p className="text-sm text-text-secondary text-center py-4">Belum ada donasi. Jadilah yang pertama!</p>
+                  <p className="text-sm text-secondary text-center py-4">Belum ada donasi. Jadilah yang pertama!</p>
                 )}
               </div>
             </div>
 
             {/* Kabar Penyaluran */}
             <div className="bg-surface rounded-xl shadow-soft border border-border p-6">
-              <h2 className="text-lg font-bold text-text-primary mb-4 pb-4 border-b border-border">Kabar Penyaluran</h2>
+              <h2 className="text-lg font-bold text-primary mb-4 pb-4 border-b border-border">Kabar Penyaluran</h2>
               <div className="space-y-6">
                 {program.distributions && program.distributions.length > 0 ? (
                   program.distributions.filter(d => d.status === "COMPLETED").map((dist) => (
                     <div key={dist.id} className="border-l-2 border-brand-accent/30 pl-4 relative">
                       <div className="absolute w-3 h-3 bg-brand-primary rounded-full -left-[7px] top-1.5"></div>
-                      <p className="text-xs text-text-secondary mb-1">
+                      <p className="text-xs text-secondary mb-1">
                         {new Intl.DateTimeFormat('id-ID', { dateStyle: 'long' }).format(new Date(dist.createdAt))}
                       </p>
-                      <h3 className="text-sm font-bold text-text-primary">{dist.title}</h3>
+                      <h3 className="text-sm font-bold text-primary">{dist.title}</h3>
                       <p className="text-sm font-bold text-success my-1">
                         Tersalurkan: {formatRupiah(Number(dist.amount))}
                       </p>
-                      <p className="text-sm text-text-secondary line-clamp-3 mb-2">{dist.description}</p>
+                      <p className="text-sm text-secondary line-clamp-3 mb-2">{dist.description}</p>
                       {dist.receiptImage && (
                         <a href={dist.receiptImage} target="_blank" rel="noreferrer" className="text-xs text-brand-primary hover:underline font-semibold">
                           Lihat Bukti Penyaluran &rarr;
@@ -171,7 +171,7 @@ export default async function ProgramDetailPage({ params }: { params: Promise<{ 
                     </div>
                   ))
                 ) : (
-                  <p className="text-sm text-text-secondary text-center py-4">Belum ada kabar penyaluran dana.</p>
+                  <p className="text-sm text-secondary text-center py-4">Belum ada kabar penyaluran dana.</p>
                 )}
               </div>
             </div>

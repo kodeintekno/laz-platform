@@ -81,16 +81,16 @@ export function RoleMatrix({ roles, permissions, initialActiveMappings }: RoleMa
     {
       header: "Module / Permission",
       cell: (row) => (
-        <div className="font-semibold text-text-primary py-1">
+        <div className="font-semibold text-primary py-1">
           {row.key}
-          <div className="text-xs text-text-secondary font-normal mt-0.5">{row.description}</div>
+          <div className="text-xs text-secondary font-normal mt-0.5">{row.description}</div>
         </div>
       ),
     },
     ...roles.map((role) => ({
       header: (
         <div className="flex flex-col items-center gap-2 py-1">
-          <span className="text-xs font-bold text-text-primary uppercase tracking-wider">{role.name}</span>
+          <span className="text-xs font-bold text-primary uppercase tracking-wider">{role.name}</span>
           <Button
             onClick={() => saveRole(role.id)}
             size="sm"

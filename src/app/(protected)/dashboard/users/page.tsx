@@ -37,8 +37,8 @@ export default async function UsersPage({
     <div className="space-y-6">
       <div className="sm:flex sm:items-center">
         <div className="sm:flex-auto">
-          <h1 className="text-2xl font-semibold leading-6 text-text-primary">User Management</h1>
-          <p className="mt-2 text-sm text-text-secondary">
+          <h1 className="text-2xl font-semibold leading-6 text-primary">User Management</h1>
+          <p className="mt-2 text-sm text-secondary">
             Daftar semua pengguna terdaftar, termasuk donatur, admin, dan relawan.
           </p>
         </div>

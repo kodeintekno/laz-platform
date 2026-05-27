@@ -23,8 +23,8 @@ export function ProgramTable({ programs }: { programs: ProgramWithCreator[] }) {
       header: "Judul Program",
       cell: (program) => (
         <div>
-          <div className="font-semibold text-text-primary truncate max-w-[250px]">{program.title}</div>
-          <div className="text-text-secondary text-xs mt-0.5">oleh {program.createdBy.name}</div>
+          <div className="font-semibold text-primary truncate max-w-[250px]">{program.title}</div>
+          <div className="text-secondary text-xs mt-0.5">oleh {program.createdBy.name}</div>
         </div>
       ),
     },
@@ -40,8 +40,8 @@ export function ProgramTable({ programs }: { programs: ProgramWithCreator[] }) {
       header: "Terkumpul",
       cell: (program) => (
         <div>
-          <div className="font-semibold text-text-primary">{formatRupiah(program.currentAmount as any)}</div>
-          <div className="text-xs text-text-muted mt-0.5">dari {formatRupiah(program.targetAmount as any)}</div>
+          <div className="font-semibold text-primary">{formatRupiah(program.currentAmount as any)}</div>
+          <div className="text-xs text-muted mt-0.5">dari {formatRupiah(program.targetAmount as any)}</div>
         </div>
       ),
     },

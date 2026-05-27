@@ -65,7 +65,7 @@ export function LoginForm() {
         </Button>
       </FormWrapper>
 
-      <p className="text-center text-sm text-text-secondary">
+      <p className="text-center text-sm text-secondary">
         Belum punya akun?{" "}
         <Link href="/register" className="text-brand-primary hover:text-brand-secondary hover:underline font-semibold transition">
           Daftar sekarang

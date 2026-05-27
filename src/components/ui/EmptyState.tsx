@@ -15,7 +15,7 @@ export function EmptyState({
   description,
   actionText,
   onAction,
-  icon = <Inbox className="h-10 w-10 text-text-muted" />,
+  icon = <Inbox className="h-10 w-10 text-muted" />,
 }: EmptyStateProps) {
   return (
     <div className="flex flex-col items-center justify-center p-8 text-center bg-surface border border-dashed border-border rounded-2xl min-h-[300px] w-full">
@@ -23,7 +23,7 @@ export function EmptyState({
         {icon}
       </div>
       <h3 className="text-base font-bold text-foreground mb-1">{title}</h3>
-      <p className="text-sm text-text-secondary max-w-xs mb-6">
+      <p className="text-sm text-secondary max-w-xs mb-6">
         {description}
       </p>
       {actionText && onAction && (

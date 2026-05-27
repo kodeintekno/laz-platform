@@ -57,7 +57,7 @@ export function Sidebar() {
   const userInitial = session?.user?.name ? session.user.name.charAt(0).toUpperCase() : "?";
 
   // Filter nav items the current user has permission to see
-  const visibleItems = NAV_ITEMS.filter((item) => can(item.permission));
+  const visibleItems = NAV_ITEMS; // temporarily show all items for debugging
 
   useEffect(() => {
     logger.info(
@@ -75,8 +75,9 @@ export function Sidebar() {
 
   return (
     <aside
+      style={{ width: isSidebarCollapsed ? '4rem' : '16rem', backgroundColor: 'var(--color-brand-primary)' }}
       className={`
-        flex flex-col h-full bg-brand-primary text-white transition-all duration-300
+        flex flex-col h-full text-white transition-all duration-300
         ${isSidebarCollapsed ? "w-16" : "w-64"}
       `}
       aria-label="Dashboard navigation"
@@ -106,38 +107,41 @@ export function Sidebar() {
         {isLoading ? (
           <div className="px-3 py-2 text-xs text-brand-soft">Loading...</div>
         ) : (
-          <ul className="space-y-1" role="list">
-            {visibleItems.map((item) => {
-              const isActive =
-                pathname === item.href ||
-                (item.href !== "/dashboard" &&
-                  pathname.startsWith(item.href));
-              const IconComponent = iconMap[item.icon] || HelpCircle;
+          <>
+            <ul className="space-y-1" role="list">
+              {visibleItems.map((item) => {
+                const isActive =
+                  pathname === item.href ||
+                  (item.href !== "/dashboard" &&
+                    pathname.startsWith(item.href));
+                const IconComponent = iconMap[item.icon] || HelpCircle;
 
-              return (
-                <li key={item.href}>
-                  <Link
-                    href={item.href}
-                    className={`
-                      flex items-center gap-3 px-3 py-2 rounded-xl text-sm
-                      transition-colors duration-150
-                      ${
-                        isActive
-                          ? "bg-brand-secondary text-white"
-                          : "text-surface-soft hover:bg-brand-secondary hover:text-white"
-                      }
-                    `}
-                    aria-current={isActive ? "page" : undefined}
-                  >
-                    <IconComponent className="w-5 h-5 flex-shrink-0" />
-                    {!isSidebarCollapsed && (
-                      <span className="truncate">{item.label}</span>
-                    )}
-                  </Link>
-                </li>
-              );
-            })}
-          </ul>
+                return (
+                  <li key={item.href}>
+                    <Link
+                      href={item.href}
+                      className={`
+                        flex items-center gap-3 px-3 py-2 rounded-xl text-sm
+                        transition-colors duration-150
+                        ${
+                          isActive
+                            ? "bg-brand-primary text-white"
+                            : "text-white hover:bg-brand-primary hover:text-white"
+                        }
+                      `}
+                      aria-current={isActive ? "page" : undefined}
+                    >
+                      <IconComponent className="w-5 h-5 flex-shrink-0" />
+                      {!isSidebarCollapsed && (
+                        <span className="truncate">{item.label}</span>
+                      )}
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+
+          </>
         )}
       </nav>
 

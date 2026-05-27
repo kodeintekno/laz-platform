@@ -59,7 +59,7 @@ export function Dialog({ isOpen, onClose, title, children }: DialogProps) {
           </h3>
           <button
             onClick={onClose}
-            className="text-text-muted hover:text-text-primary focus:outline-none cursor-pointer"
+            className="text-muted hover:text-primary focus:outline-none cursor-pointer"
             aria-label="Close dialog"
           >
             <X className="h-5 w-5" />

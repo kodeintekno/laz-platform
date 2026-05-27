@@ -27,10 +27,10 @@ function ToastItem({ toast, onClose }: { toast: ToastMessage; onClose: () => voi
   };
 
   const bgMap = {
-    success: "bg-success/10 border-success/20 text-text-primary",
-    error: "bg-destructive/10 border-destructive/20 text-text-primary",
-    warning: "bg-warning/10 border-warning/20 text-text-primary",
-    info: "bg-info-token/10 border-info-token/20 text-text-primary",
+    success: "bg-success/10 border-success/20 text-primary",
+    error: "bg-destructive/10 border-destructive/20 text-primary",
+    warning: "bg-warning/10 border-warning/20 text-primary",
+    info: "bg-info-token/10 border-info-token/20 text-primary",
   };
 
   return (
@@ -42,7 +42,7 @@ function ToastItem({ toast, onClose }: { toast: ToastMessage; onClose: () => voi
       <div className="flex-1 text-sm font-medium">{toast.message}</div>
       <button
         onClick={onClose}
-        className="flex-shrink-0 text-text-muted hover:text-text-primary focus:outline-none cursor-pointer"
+        className="flex-shrink-0 text-muted hover:text-primary focus:outline-none cursor-pointer"
         aria-label="Close notification"
       >
         <X className="h-4 w-4" />

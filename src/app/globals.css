@@ -76,10 +76,19 @@
   --color-error-token: #DC2626;
   --color-info-token: #2563EB;
 
+
   /* Custom Shadow Tokens */
   --shadow-soft: 0 4px 12px 0 rgba(0, 0, 0, 0.03), 0 1px 3px 0 rgba(0, 0, 0, 0.02);
   --shadow-card: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -4px rgba(0, 0, 0, 0.05);
 }
+
+/* Text color utilities */
+.text-primary { color: var(--color-text-primary); }
+
+/* Custom background utility for brand primary */
+.bg-brand-primary { background-color: var(--color-brand-primary); }
+.text-secondary { color: var(--color-text-secondary); }
+.text-muted { color: var(--color-text-muted); }
 
 body {
   background: var(--background);

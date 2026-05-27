@@ -49,7 +49,7 @@ export function Pagination({
       </div>
       <div className="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
         <div>
-          <p className="text-sm text-text-secondary">
+          <p className="text-sm text-secondary">
             Menampilkan halaman <span className="font-semibold">{currentPage}</span> dari{" "}
             <span className="font-semibold">{totalPages}</span> ({totalCount} total)
           </p>
@@ -61,7 +61,7 @@ export function Pagination({
           >
             <Link
               href={getPageUrl(Math.max(1, currentPage - 1))}
-              className={`relative inline-flex items-center px-3 py-2 text-text-muted hover:bg-muted ${
+              className={`relative inline-flex items-center px-3 py-2 text-muted hover:bg-muted ${
                 currentPage === 1 ? "pointer-events-none opacity-30" : ""
               }`}
             >
@@ -87,7 +87,7 @@ export function Pagination({
             })}
             <Link
               href={getPageUrl(Math.min(totalPages, currentPage + 1))}
-              className={`relative inline-flex items-center px-3 py-2 text-text-muted hover:bg-muted border-l border-border ${
+              className={`relative inline-flex items-center px-3 py-2 text-muted hover:bg-muted border-l border-border ${
                 currentPage === totalPages ? "pointer-events-none opacity-30" : ""
               }`}
             >

@@ -29,8 +29,8 @@ export default async function DistributionsPage({
     <div className="space-y-6">
       <div className="sm:flex sm:items-center">
         <div className="sm:flex-auto">
-          <h1 className="text-2xl font-semibold leading-6 text-text-primary">Manajemen Penyaluran Dana</h1>
-          <p className="mt-2 text-sm text-text-secondary">
+          <h1 className="text-2xl font-semibold leading-6 text-primary">Manajemen Penyaluran Dana</h1>
+          <p className="mt-2 text-sm text-secondary">
             Daftar pengajuan penyaluran dana dari berbagai program kampanye.
           </p>
         </div>
@@ -41,7 +41,7 @@ export default async function DistributionsPage({
       {/* Pagination Controls */}
       {metadata.totalPages > 1 && (
         <div className="flex items-center justify-between border-t border-border bg-surface px-4 py-3 sm:px-6 mt-4 rounded-xl shadow-sm">
-          <p className="text-sm text-text-secondary">
+          <p className="text-sm text-secondary">
             Halaman <span className="font-medium">{page}</span> dari <span className="font-medium">{metadata.totalPages}</span>
           </p>
         </div>

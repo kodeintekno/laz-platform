@@ -85,8 +85,8 @@ export function DistributionTable({ distributions }: { distributions: Distributi
       header: "Program",
       cell: (dist) => (
         <div>
-          <div className="font-semibold text-text-primary truncate max-w-[200px]">{dist.program.title}</div>
-          <div className="text-xs text-text-secondary mt-0.5">
+          <div className="font-semibold text-primary truncate max-w-[200px]">{dist.program.title}</div>
+          <div className="text-xs text-secondary mt-0.5">
             Saldo: {formatRupiah(Number(dist.program.currentAmount) - Number(dist.program.distributedAmount))}
           </div>
         </div>
@@ -96,21 +96,21 @@ export function DistributionTable({ distributions }: { distributions: Distributi
       header: "Rincian Penyaluran",
       cell: (dist) => (
         <div className="max-w-[250px]">
-          <div className="font-medium text-text-primary mb-1">{dist.title}</div>
-          <div className="text-xs text-text-secondary line-clamp-2">{dist.description}</div>
+          <div className="font-medium text-primary mb-1">{dist.title}</div>
+          <div className="text-xs text-secondary line-clamp-2">{dist.description}</div>
         </div>
       ),
     },
     {
       header: "Nominal",
       cell: (dist) => (
-        <span className="font-medium text-text-primary">{formatRupiah(dist.amount as any)}</span>
+        <span className="font-medium text-primary">{formatRupiah(dist.amount as any)}</span>
       ),
     },
     {
       header: "Pemohon",
       cell: (dist) => (
-        <span className="text-text-secondary text-sm">{dist.createdBy.name}</span>
+        <span className="text-secondary text-sm">{dist.createdBy.name}</span>
       ),
     },
     {
@@ -129,7 +129,7 @@ export function DistributionTable({ distributions }: { distributions: Distributi
             {dist.status}
           </Badge>
           {dist.approvedBy && (
-            <div className="text-xs text-text-muted mt-1">Oleh: {dist.approvedBy.name}</div>
+            <div className="text-xs text-muted mt-1">Oleh: {dist.approvedBy.name}</div>
           )}
         </div>
       ),

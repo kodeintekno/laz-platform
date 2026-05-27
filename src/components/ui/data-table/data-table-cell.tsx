@@ -21,7 +21,7 @@ export function DataTableCell({
 
   return (
     <td
-      className={`px-3 py-4 text-sm text-text-secondary whitespace-nowrap ${alignClass} ${className}`}
+      className={`px-3 py-4 text-sm text-secondary whitespace-nowrap ${alignClass} ${className}`}
       style={width ? { width } : undefined}
     >
       {children}

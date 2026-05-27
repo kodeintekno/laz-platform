@@ -79,13 +79,13 @@ export function DonationTable({ donations }: { donations: DonationWithRelations[
       header: "Donatur",
       cell: (donation) => (
         <div>
-          <div className="font-semibold text-text-primary">
+          <div className="font-semibold text-primary">
             {donation.isAnonymous ? "Hamba Allah" : donation.user?.name || "Hamba Allah"}
             {donation.isAnonymous && donation.user && (
-              <span className="ml-2 text-xs text-text-muted font-normal">(Asli: {donation.user.name})</span>
+              <span className="ml-2 text-xs text-muted font-normal">(Asli: {donation.user.name})</span>
             )}
           </div>
-          {donation.user?.email && <div className="text-text-secondary text-xs mt-0.5">{donation.user.email}</div>}
+          {donation.user?.email && <div className="text-secondary text-xs mt-0.5">{donation.user.email}</div>}
         </div>
       ),
     },
@@ -98,11 +98,11 @@ export function DonationTable({ donations }: { donations: DonationWithRelations[
       header: "Nominal",
       cell: (donation) => (
         <div>
-          <div className="font-semibold text-text-primary">
+          <div className="font-semibold text-primary">
             {formatRupiah(donation.amount as any)}
           </div>
           {donation.payment?.paymentMethod && (
-            <div className="text-xs text-text-secondary font-normal mt-0.5">
+            <div className="text-xs text-secondary font-normal mt-0.5">
               {donation.payment.paymentMethod.replace("_", " ")}
             </div>
           )}

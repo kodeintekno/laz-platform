@@ -50,7 +50,7 @@ export function PaymentTable({ payments, search, pagination }: PaymentTableProps
     {
       header: "Invoice / Ref",
       cell: (payment) => (
-        <span className="font-mono text-text-primary select-all font-medium">
+        <span className="font-mono text-primary select-all font-medium">
           {payment.gatewayRef || payment.id}
         </span>
       ),
@@ -58,7 +58,7 @@ export function PaymentTable({ payments, search, pagination }: PaymentTableProps
     {
       header: "Program",
       cell: (payment) => (
-        <div className="max-w-[200px] truncate font-medium text-text-primary" title={payment.donation.program.title}>
+        <div className="max-w-[200px] truncate font-medium text-primary" title={payment.donation.program.title}>
           {payment.donation.program.title}
         </div>
       ),
@@ -67,14 +67,14 @@ export function PaymentTable({ payments, search, pagination }: PaymentTableProps
       header: "Donatur",
       cell: (payment) => (
         <div>
-          <div className="font-semibold text-text-primary">
+          <div className="font-semibold text-primary">
             {payment.donation.isAnonymous ? "Hamba Allah" : payment.donation.user?.name || "Hamba Allah"}
             {payment.donation.isAnonymous && payment.donation.user && (
-              <span className="ml-2 text-xs text-text-muted font-normal">(Asli: {payment.donation.user.name})</span>
+              <span className="ml-2 text-xs text-muted font-normal">(Asli: {payment.donation.user.name})</span>
             )}
           </div>
           {payment.donation.user?.email && (
-            <div className="text-xs text-text-muted mt-0.5">{payment.donation.user.email}</div>
+            <div className="text-xs text-muted mt-0.5">{payment.donation.user.email}</div>
           )}
         </div>
       ),
@@ -82,13 +82,13 @@ export function PaymentTable({ payments, search, pagination }: PaymentTableProps
     {
       header: "Nominal",
       cell: (payment) => (
-        <span className="font-semibold text-text-primary">{formatRupiah(payment.amount)}</span>
+        <span className="font-semibold text-primary">{formatRupiah(payment.amount)}</span>
       ),
     },
     {
       header: "Metode",
       cell: (payment) => (
-        <span className="font-medium text-text-secondary">
+        <span className="font-medium text-secondary">
           {payment.paymentMethod ? payment.paymentMethod.replace("_", " ") : "-"}
         </span>
       ),
@@ -104,7 +104,7 @@ export function PaymentTable({ payments, search, pagination }: PaymentTableProps
     {
       header: "Tanggal",
       cell: (payment) => (
-        <span className="text-text-secondary text-sm">
+        <span className="text-secondary text-sm">
           {formatDate(payment.createdAt)}
         </span>
       ),

@@ -72,17 +72,17 @@ export function DataTableHeader<TData>({
             <th
               key={colKey.toString()}
               scope="col"
-              className={`px-3 py-3.5 text-sm font-semibold text-text-primary ${alignClass}`}
+              className={`px-3 py-3.5 text-sm font-semibold text-primary ${alignClass}`}
               style={column.width ? { width: column.width } : undefined}
             >
               {column.sortable && onSortChange ? (
                 <button
                   type="button"
                   onClick={() => handleSortClick(column)}
-                  className="inline-flex items-center gap-1 group hover:text-text-primary focus:outline-none cursor-pointer"
+                  className="inline-flex items-center gap-1 group hover:text-primary focus:outline-none cursor-pointer"
                 >
                   <span>{column.header}</span>
-                  <span className="flex-shrink-0 text-text-muted group-hover:text-text-secondary transition duration-150">
+                  <span className="flex-shrink-0 text-muted group-hover:text-secondary transition duration-150">
                     {isSorted ? (
                       sortOrder === "asc" ? (
                         <ArrowUp className="h-4 w-4 text-primary" />

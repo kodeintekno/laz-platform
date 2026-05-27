@@ -13,10 +13,10 @@ export function DataTableEmpty({
   colSpan,
 }: DataTableEmptyProps) {
   return (
-    <tr>
-      <td colSpan={colSpan} className="p-0">
-        <EmptyState title={title} description={description} />
-      </td>
-    </tr>
+      <tr>
+        <td colSpan={colSpan} className="p-4 text-center">
+          <EmptyState title={title} description={description} />
+        </td>
+      </tr>
   );
 }
