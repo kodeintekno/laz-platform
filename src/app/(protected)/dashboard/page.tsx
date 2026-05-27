@@ -4,7 +4,7 @@ import Link from "next/link";
 import { ArrowRight, Wallet, Users, Activity, HeartHandshake } from "lucide-react";
 
 export const metadata = {
-  title: "Dashboard Overview | LAZ Platform",
+  title: "Dashboard Overview",
 };
 
 export default async function DashboardHomePage() {

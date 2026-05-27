@@ -6,7 +6,7 @@ import { redirect } from "next/navigation";
 import { Pagination } from "@/components/ui/Pagination";
 
 export const metadata = {
-  title: "Donation Management | LAZ Platform",
+  title: "Donation Management",
 };
 
 export default async function DonationsPage({

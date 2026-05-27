@@ -5,7 +5,7 @@ import { auditService } from "@/features/audit/services/audit.service";
 import { AuditTable } from "@/features/audit/components/AuditTable";
 
 export const metadata = {
-  title: "Audit Logs | LAZ Platform",
+  title: "Audit Logs",
 };
 
 export default async function AuditPage({

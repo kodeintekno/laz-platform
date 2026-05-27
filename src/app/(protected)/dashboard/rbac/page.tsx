@@ -5,7 +5,7 @@ import { RoleMatrix } from "@/features/rbac/components/RoleMatrix";
 import { redirect } from "next/navigation";
 
 export const metadata = {
-  title: "RBAC Management | LAZ Platform",
+  title: "RBAC Management",
 };
 
 export default async function RBACPage() {

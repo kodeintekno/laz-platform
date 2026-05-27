@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { BarChart3 } from "lucide-react";
 
 export const metadata = {
-  title: "Reports | LAZ Platform",
+  title: "Reports",
 };
 
 export default async function ReportsPage() {

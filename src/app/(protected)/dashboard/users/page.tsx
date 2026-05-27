@@ -7,7 +7,7 @@ import { Pagination } from "@/components/ui/Pagination";
 
 
 export const metadata = {
-  title: "User Management | LAZ Platform",
+  title: "User Management",
 };
 
 export default async function UsersPage({

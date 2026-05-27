@@ -5,7 +5,7 @@ import { paymentsService } from "@/features/payments/services/payments.service";
 import { PaymentTable } from "@/features/payments/components/PaymentTable";
 
 export const metadata = {
-  title: "Payments | LAZ Platform",
+  title: "Payments",
 };
 
 export default async function PaymentsPage({

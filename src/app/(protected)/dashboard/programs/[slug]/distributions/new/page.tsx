@@ -8,7 +8,7 @@ import { ArrowLeft } from "lucide-react";
 import { BreadcrumbOverride } from "@/providers/breadcrumb-provider";
 
 export const metadata = {
-  title: "Ajukan Penyaluran | LAZ Platform",
+  title: "Ajukan Penyaluran",
 };
 
 export default async function NewDistributionPage({ params }: { params: Promise<{ slug: string }> }) {

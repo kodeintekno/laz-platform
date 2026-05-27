@@ -5,7 +5,7 @@ import { DistributionTable } from "@/features/distributions/components/Distribut
 import { redirect } from "next/navigation";
 
 export const metadata = {
-  title: "Penyaluran Dana | LAZ Platform",
+  title: "Penyaluran Dana",
 };
 
 export default async function DistributionsPage({

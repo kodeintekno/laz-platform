@@ -7,7 +7,7 @@ import Link from "next/link";
 import { Button, Pagination } from "@/components/ui";
 
 export const metadata = {
-  title: "Program Management | LAZ Platform",
+  title: "Program Management",
 };
 
 export default async function ProgramsPage({

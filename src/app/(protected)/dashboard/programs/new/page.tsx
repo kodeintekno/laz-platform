@@ -6,7 +6,7 @@ import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 
 export const metadata = {
-  title: "Buat Program | LAZ Platform",
+  title: "Buat Program",
 };
 
 export default async function NewProgramPage() {

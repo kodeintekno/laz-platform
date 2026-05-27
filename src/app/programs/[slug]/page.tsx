@@ -7,7 +7,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const resolvedParams = await params;
   const program = await programsService.getProgramBySlug(resolvedParams.slug);
   if (!program) return { title: "Not Found" };
-  return { title: `${program.title} | LAZ Platform` };
+  return { title: program.title };
 }
 
 export default async function ProgramDetailPage({ params }: { params: Promise<{ slug: string }> }) {

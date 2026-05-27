@@ -3,7 +3,9 @@ import Link from "next/link";
 import Image from "next/image";
 
 export const metadata = {
-  title: "LAZ Platform | Aplikasi Manajemen Zakat & Donasi",
+  title: {
+    absolute: "LAZ Platform | Aplikasi Manajemen Zakat & Donasi",
+  },
   description: "Platform terpercaya untuk menyalurkan zakat, infak, dan sedekah Anda.",
 };
 

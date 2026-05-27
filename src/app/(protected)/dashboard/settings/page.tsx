@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { Settings } from "lucide-react";
 
 export const metadata = {
-  title: "Settings | LAZ Platform",
+  title: "Settings",
 };
 
 export default async function SettingsPage() {
