@@ -23,6 +23,7 @@ import {
   ChevronRight,
   LogOut,
   HelpCircle,
+  Menu,
 } from "lucide-react";
 
 const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
@@ -50,7 +51,7 @@ const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
  */
 export function Sidebar() {
   const pathname = usePathname();
-  const { isSidebarCollapsed, toggleSidebarCollapsed } = useUIStore();
+  const { isSidebarOpen, toggleSidebar, isSidebarCollapsed, toggleSidebarCollapsed } = useUIStore();
   const { can, isLoading, permissions, roleName } = usePermission();
   const { data: session } = useSession();
 
@@ -74,111 +75,135 @@ export function Sidebar() {
   }, [isLoading, roleName, permissions, visibleItems]);
 
   return (
-    <aside
-      style={{ width: isSidebarCollapsed ? '4rem' : '16rem' }}
-      className={`
-            flex flex-col h-full text-primary
-            bg-surface/95 backdrop-blur-sm rounded-xl shadow-md
-            transition-all duration-300
-            ${isSidebarCollapsed ? "w-16" : "w-64"}
-          `}
-      aria-label="Dashboard navigation"
-    >
-      {/* Logo / Brand */}
-      <div className="flex items-center justify-between p-4 h-16 bg-surface/80 backdrop-blur-sm">
-        {!isSidebarCollapsed && (
-          <span className="text-lg font-bold tracking-tight text-primary">
-            LAZ Platform
-          </span>
-        )}
-        <button
-          onClick={toggleSidebarCollapsed}
-          aria-label={isSidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
-          className="p-1.5 rounded-xl hover:bg-surface-muted transition-colors ml-auto cursor-pointer flex items-center justify-center"
-        >
-          {isSidebarCollapsed ? (
-            <ChevronRight className="h-4 w-4 text-brand-soft" />
-          ) : (
-            <ChevronLeft className="h-4 w-4 text-brand-soft" />
-          )}
-        </button>
-      </div>
+    <>
+      {/* Mobile overlay backdrop */}
+      {isSidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black/30 lg:hidden"
+          onClick={toggleSidebar}
+          aria-label="Close sidebar overlay"
+        />
+      )}
 
-      {/* Nav Items */}
-      <nav className="flex-1 overflow-y-auto py-4 px-2">
-        {isLoading ? (
-          <div className="px-3 py-2 text-xs text-secondary">Loading...</div>
-        ) : (
-          <>
-            <ul className="space-y-1" role="list">
-              {visibleItems.map((item) => {
-                const isActive =
-                  pathname === item.href ||
-                  (item.href !== "/dashboard" &&
-                    pathname.startsWith(item.href));
-                const IconComponent = iconMap[item.icon] || HelpCircle;
-
-                return (
-                  <li key={item.href}>
-                    <Link
-                      href={item.href}
-                      className={`flex items-center gap-3 px-3 py-2 text-sm ${isActive ? "bg-success/5 text-success font-medium" : "text-primary hover:bg-surface-muted hover:text-primary"}`}
-                      aria-current={isActive ? "page" : undefined}
-                    >
-                      <IconComponent className={`w-5 h-5 flex-shrink-0 text-primary`} />
-                      {!isSidebarCollapsed && (
-                        <span className="truncate">{item.label}</span>
-                      )}
-                    </Link>
-                  </li>
-                );
-              })}
-            </ul>
-
-          </>
-        )}
-      </nav>
-
-      {/* Profile Footer */}
-      <div className="p-4 mt-auto flex flex-col gap-4 bg-surface/80 backdrop-blur-sm">
-        <div className="flex items-center gap-3">
-          {session?.user?.image ? (
-            <img
-              src={session.user.image}
-              alt={session.user.name || "User Avatar"}
-              className="w-8 h-8 rounded-full object-cover shadow-sm"
-            />
-          ) : (
-            <div className="w-8 h-8 rounded-full bg-surface-muted text-primary flex items-center justify-center font-bold text-sm shadow-soft">
-              {userInitial}
-            </div>
-          )}
-          {!isSidebarCollapsed && (
-            <div className="min-w-0 flex-1">
-              <p className="text-sm font-semibold text-primary truncate">{session?.user?.name || "Admin"}</p>
-              <p className="text-xs text-secondary truncate">{session?.user?.roleName || "Staff"}</p>
-            </div>
-          )}
-          {!isSidebarCollapsed && (
-            <button
-              onClick={() => signOut({ callbackUrl: "/login" })}
-              className="p-1.5 rounded-xl hover:bg-surface-muted text-primary hover:text-primary transition-colors cursor-pointer"
-              aria-label="Sign out"
-            >
-              <LogOut className="w-4 h-4" />
-            </button>
-          )}
-        </div>
-        {isSidebarCollapsed && (
+      <aside
+        style={{ width: isSidebarCollapsed ? '4rem' : '16rem' }}
+        className={`
+          flex flex-col h-full text-primary
+          bg-surface/95 backdrop-blur-sm rounded-r-xl shadow-md
+          transition-transform duration-300
+          ${isSidebarCollapsed ? "w-16" : "w-64"}
+          fixed inset-y-0 left-0 z-40
+          ${isSidebarOpen ? "translate-x-0" : "-translate-x-full"}
+          lg:relative lg:translate-x-0 lg:static
+        `}
+        aria-label="Dashboard navigation"
+      >
+        {/* Header with mobile hamburger */}
+        <div className="flex items-center justify-between p-4 h-16 bg-surface/80 backdrop-blur-sm">
+          {/* Mobile hamburger toggle */}
           <button
-            onClick={() => signOut({ callbackUrl: "/login" })}
-            className="mx-auto p-1.5 rounded-xl hover:bg-surface-muted text-primary hover:text-primary transition-colors cursor-pointer"
-            aria-label="Sign out"
+            onClick={toggleSidebar}
+            aria-label="Toggle sidebar"
+            className="p-2 rounded-xl text-secondary hover:bg-surface-muted transition-colors lg:hidden"
           >
-            <LogOut className="w-4 h-4" />
+            <Menu className="w-5 h-5" />
           </button>
-        )}
-      </div>
-    </aside>
+
+          {/* Logo */}
+          {!isSidebarCollapsed && (
+            <span className="text-lg font-bold tracking-tight text-primary">
+              LAZ Platform
+            </span>
+          )}
+
+          {/* Collapse/Expand button */}
+          <button
+            onClick={toggleSidebarCollapsed}
+            aria-label={isSidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+            className="p-1.5 rounded-xl hover:bg-surface-muted transition-colors ml-auto cursor-pointer flex items-center justify-center"
+          >
+            {isSidebarCollapsed ? (
+              <ChevronRight className="h-4 w-4 text-brand-soft" />
+            ) : (
+              <ChevronLeft className="h-4 w-4 text-brand-soft" />
+            )}
+          </button>
+        </div>
+
+        {/* Nav Items */}
+        <nav className="flex-1 overflow-y-auto py-4 px-2">
+          {isLoading ? (
+            <div className="px-3 py-2 text-xs text-secondary">Loading...</div>
+          ) : (
+            <>
+              <ul className="space-y-1" role="list">
+                {visibleItems.map((item) => {
+                  const isActive =
+                    pathname === item.href ||
+                    (item.href !== "/dashboard" && pathname.startsWith(item.href));
+                  const IconComponent = iconMap[item.icon] || HelpCircle;
+
+                  return (
+                    <li key={item.href}>
+                      <Link
+                        href={item.href}
+                        className={`flex items-center gap-3 px-3 py-2 text-sm ${isActive ? "bg-success/5 text-success font-medium" : "text-primary hover:bg-surface-muted hover:text-primary"}`}
+                        aria-current={isActive ? "page" : undefined}
+                      >
+                        <IconComponent className="w-5 h-5 flex-shrink-0 text-primary" />
+                        {!isSidebarCollapsed && (
+                          <span className="truncate">{item.label}</span>
+                        )}
+                      </Link>
+                    </li>
+                  );
+                })}
+              </ul>
+            </>
+          )}
+        </nav>
+
+        {/* Profile Footer */}
+        <div className="p-4 mt-auto flex flex-col gap-4 bg-surface/80 backdrop-blur-sm">
+          <div className="flex items-center gap-3">
+            {session?.user?.image ? (
+              <img
+                src={session.user.image}
+                alt={session.user.name || "User Avatar"}
+                className="w-8 h-8 rounded-full object-cover shadow-sm"
+              />
+            ) : (
+              <div className="w-8 h-8 rounded-full bg-surface-muted text-primary flex items-center justify-center font-bold text-sm shadow-soft">
+                {userInitial}
+              </div>
+            )}
+            {!isSidebarCollapsed && (
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-semibold text-primary truncate">{session?.user?.name || "Admin"}</p>
+                <p className="text-xs text-secondary truncate">{session?.user?.roleName || "Staff"}</p>
+              </div>
+            )}
+            {!isSidebarCollapsed && (
+              <button
+                onClick={() => signOut({ callbackUrl: "/login" })}
+                className="p-1.5 rounded-xl hover:bg-surface-muted text-primary hover:text-primary transition-colors cursor-pointer"
+                aria-label="Sign out"
+              >
+                <LogOut className="w-4 h-4" />
+              </button>
+            )}
+            {isSidebarCollapsed && (
+              <button
+                onClick={() => signOut({ callbackUrl: "/login" })}
+                className="mx-auto p-1.5 rounded-xl hover:bg-surface-muted text-primary hover:text-primary transition-colors cursor-pointer"
+                aria-label="Sign out"
+              >
+                <LogOut className="w-4 h-4" />
+              </button>
+            )}
+          </div>
+        </div>
+      </aside>
+    </>
   );
 }

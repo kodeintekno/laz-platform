@@ -90,6 +90,24 @@
   animation: flash 0.3s forwards;
 }
 
+/* Data table row softening */
+/* Add subtle bottom border to each row */
+table.min-w-full > tbody > tr {
+  @apply border-b border-border/20;
+}
+/* Remove border on last row */
+table.min-w-full > tbody > tr:last-child {
+  @apply border-b-0;
+}
+/* Rounded corners on first and last cells */
+table.min-w-full > tbody > tr > td:first-child {
+  @apply rounded-l-md;
+}
+
+table.min-w-full > tbody > tr > td:last-child {
+  @apply rounded-r-md;
+}
+
 /* Text color utilities */
 .text-primary { color: var(--color-text-primary); }
 

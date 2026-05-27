@@ -48,7 +48,7 @@ export default async function ProtectedLayout({
           <Header user={session?.user} />
 
           {/* Page content */}
-          <main className="flex-1 overflow-y-auto p-6" id="main-content">
+          <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 container mx-auto max-w-7xl" id="main-content">
             <div className="mb-4">
               <Breadcrumbs />
             </div>

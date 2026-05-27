@@ -35,16 +35,15 @@ export function Header({ user }: HeaderProps) {
   const userInitial = user?.name ? user.name.charAt(0).toUpperCase() : "?";
 
   return (
-    <header className="h-16 bg-surface shadow-sm flex items-center justify-between px-6 flex-shrink-0 relative z-20">
-      {/* Left: Mobile sidebar toggle */}
-      <button
-        onClick={toggleSidebar}
-        aria-label="Toggle sidebar"
-        className="p-2 rounded-xl text-secondary hover:bg-surface-muted transition-colors lg:hidden cursor-pointer"
-      >
-        <span className="sr-only">Toggle sidebar</span>
-        <Menu className="w-5 h-5" />
-      </button>
+    <header className="h-16 bg-surface flex items-center justify-between px-6 flex-shrink-0 relative z-20">
+        {/* Mobile sidebar trigger */}
+        <button
+          onClick={toggleSidebar}
+          aria-label="Open sidebar"
+          className="p-2 rounded-xl text-secondary hover:bg-surface-muted transition-colors lg:hidden"
+        >
+          <Menu className="w-5 h-5" />
+        </button>
 
       {/* Center / Left: Empty spacer for alignment */}
       <div className="flex-1" />

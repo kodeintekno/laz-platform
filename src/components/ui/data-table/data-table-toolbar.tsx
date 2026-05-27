@@ -43,7 +43,7 @@ export function DataTableToolbar({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full rounded-xl bg-surface p-4 shadow-sm">
+    <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row items-center gap-2 w-full rounded-md border border-border/20 bg-surface/95 p-2">
       <div className="p-4 text-center bg-surface flex items-center gap-2 max-w-md w-full">
         <Input
           name="search"
