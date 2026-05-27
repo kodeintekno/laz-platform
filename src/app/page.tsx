@@ -34,7 +34,7 @@ export default async function Home() {
             <Link href="/programs" className="text-sm text-[#6B7280] hover:text-[#0F3D2E] font-semibold transition">
               Semua Program
             </Link>
-            <Link href="/login" className="text-sm bg-[#F8FAF7] text-[#0F3D2E] hover:bg-[#D1FAE5] px-4 py-2 rounded-xl font-semibold transition">
+            <Link href="/login" className="inline-block bg-[#16A34A] hover:bg-[#15803D] text-white font-medium py-3 px-8 rounded-xl transition">
               Login
             </Link>
           </div>
