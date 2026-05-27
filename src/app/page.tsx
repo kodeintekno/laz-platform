@@ -34,8 +34,8 @@ export default async function Home() {
             <Link href="/programs" className="text-sm text-[#6B7280] hover:text-[#0F3D2E] font-semibold transition">
               Semua Program
             </Link>
-            <Link href="/dashboard" className="text-sm bg-[#F8FAF7] text-[#0F3D2E] hover:bg-[#D1FAE5] px-4 py-2 rounded-xl font-semibold transition">
-              Dashboard Admin
+            <Link href="/login" className="text-sm bg-[#F8FAF7] text-[#0F3D2E] hover:bg-[#D1FAE5] px-4 py-2 rounded-xl font-semibold transition">
+              Login
             </Link>
           </div>
         </div>
