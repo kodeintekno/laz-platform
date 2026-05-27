@@ -23,18 +23,18 @@ export default async function Home() {
     }).format(Number(amount));
 
   return (
-    <div className="bg-white min-h-screen">
+    <div className="bg-surface min-h-screen">
       {/* Header */}
-      <header className="bg-white/80 backdrop-blur-md sticky top-0 z-50 shadow-soft border-b border-[#E5E7EB]">
+      <header className="bg-surface/80 backdrop-blur-md sticky top-0 z-50 shadow-soft shadow-sm">
         <div className="mx-auto max-w-7xl px-4 py-4 sm:px-6 lg:px-8 flex justify-between items-center">
-          <Link href="/" className="text-xl font-bold text-[#0F3D2E]">
+          <Link href="/" className="text-xl font-bold text-primary">
             LAZ Platform
           </Link>
           <div className="flex gap-6 items-center">
-            <Link href="/programs" className="text-sm text-[#6B7280] hover:text-[#0F3D2E] font-semibold transition">
+            <Link href="/programs" className="text-sm text-secondary hover:text-primary font-semibold transition">
               Semua Program
             </Link>
-            <Link href="/login" className="inline-block bg-[#16A34A] hover:bg-[#15803D] text-white font-medium py-3 px-8 rounded-xl transition">
+            <Link href="/login" className="inline-block bg-success hover:bg-success/90 text-white font-medium py-3 px-8 rounded-xl transition">
               Login
             </Link>
           </div>
@@ -57,7 +57,7 @@ export default async function Home() {
           {/* Sample Program Cards */}
           <div className="grid grid-cols-1 gap-y-10 gap-x-6 sm:grid-cols-2 lg:grid-cols-3 xl:gap-x-8">
             {/* Program 1: Food Aid */}
-            <div className="group relative bg-white rounded-[12px] shadow-sm border border-[#E5E7EB] hover:border-[#16A34A] transition overflow-hidden flex flex-col">
+            <div className="group relative bg-surface rounded-xl shadow-soft hover:border-success transition overflow-hidden flex flex-col">
               <div className="aspect-[16/9] w-full overflow-hidden bg-[#F8FAF7] relative">
                 <Image
                   src="/images/programs/food_aid.png"
@@ -67,28 +67,28 @@ export default async function Home() {
                 />
               </div>
               <div className="p-6 flex-1 flex flex-col">
-                <h3 className="text-xl font-bold text-[#0F3D2E] line-clamp-2 mb-3 group-hover:text-[#16A34A] transition-colors">
+                <h3 className="text-xl font-bold text-primary line-clamp-2 mb-3 group-hover:text-[#16A34A] transition-colors">
                   Bantuan Makanan
                 </h3>
-                <p className="text-sm text-[#6B7280] line-clamp-2 mb-6">
+                <p className="text-sm text-secondary line-clamp-2 mb-6">
                   Penyediaan paket sembako untuk keluarga yang membutuhkan di daerah rawan pangan.
                 </p>
-                <div className="mt-auto pt-4 border-t border-[#E5E7EB]">
+                <div className="mt-auto pt-4 border-t border-border/10">
                   <div className="flex justify-between items-end mb-2">
-                    <p className="text-sm font-bold text-[#0F3D2E]">Rp 500.000.000</p>
-                    <p className="text-xs font-medium text-[#6B7280]">75%</p>
+                    <p className="text-sm font-bold text-primary">Rp 500.000.000</p>
+                    <p className="text-xs font-medium text-secondary">75%</p>
                   </div>
-                  <div className="w-full bg-[#E5E7EB] rounded-full h-2 mb-2">
-                    <div className="bg-[#16A34A] h-2 rounded-full" style={{ width: `75%` }} />
+                  <div className="w-full bg-surface-soft rounded-full h-2 mb-2">
+                    <div className="bg-success h-2 rounded-full" style={{ width: `75%` }} />
                   </div>
                   <div className="mt-3 text-right">
-                    <p className="text-xs text-[#6B7280] font-medium">30 Hari Tersisa</p>
+                    <p className="text-xs text-secondary font-medium">30 Hari Tersisa</p>
                   </div>
                 </div>
               </div>
             </div>
             {/* Program 2: Education */}
-            <div className="group relative bg-white rounded-[12px] shadow-sm border border-[#E5E7EB] hover:border-[#16A34A] transition overflow-hidden flex flex-col">
+            <div className="group relative bg-surface rounded-xl shadow-soft hover:border-success transition overflow-hidden flex flex-col">
               <div className="aspect-[16/9] w-full overflow-hidden bg-[#F8FAF7] relative">
                 <Image
                   src="/images/programs/education.png"
@@ -98,22 +98,22 @@ export default async function Home() {
                 />
               </div>
               <div className="p-6 flex-1 flex flex-col">
-                <h3 className="text-xl font-bold text-[#0F3D2E] line-clamp-2 mb-3 group-hover:text-[#16A34A] transition-colors">
+                <h3 className="text-xl font-bold text-primary line-clamp-2 mb-3 group-hover:text-[#16A34A] transition-colors">
                   Pendidikan Anak
                 </h3>
-                <p className="text-sm text-[#6B7280] line-clamp-2 mb-6">
+                <p className="text-sm text-secondary line-clamp-2 mb-6">
                   Mendukung pendidikan formal dan non‑formal untuk anak‑anak kurang mampu.
                 </p>
                 <div className="mt-auto pt-4 border-t border-[#E5E7EB]">
                   <div className="flex justify-between items-end mb-2">
-                    <p className="text-sm font-bold text-[#0F3D2E]">Rp 300.000.000</p>
-                    <p className="text-xs font-medium text-[#6B7280]">40%</p>
+                    <p className="text-sm font-bold text-primary">Rp 300.000.000</p>
+                    <p className="text-xs font-medium text-secondary">40%</p>
                   </div>
-                  <div className="w-full bg-[#E5E7EB] rounded-full h-2 mb-2">
-                    <div className="bg-[#16A34A] h-2 rounded-full" style={{ width: `40%` }} />
+                  <div className="w-full bg-surface-soft rounded-full h-2 mb-2">
+                    <div className="bg-success h-2 rounded-full" style={{ width: `40%` }} />
                   </div>
                   <div className="mt-3 text-right">
-                    <p className="text-xs text-[#6B7280] font-medium">60 Hari Tersisa</p>
+                    <p className="text-xs text-secondary font-medium">60 Hari Tersisa</p>
                   </div>
                 </div>
               </div>
@@ -131,7 +131,7 @@ export default async function Home() {
       </section>
 
       {/* Footer */}
-      <footer className="bg-white border-t border-[#E5E7EB] py-12">
+      <footer className="bg-surface shadow-sm py-12">
         <div className="mx-auto max-w-7xl px-6 lg:px-8 text-center">
           <p className="text-sm text-[#6B7280]">&copy; {new Date().getFullYear()} LAZ Platform. All rights reserved.</p>
         </div>

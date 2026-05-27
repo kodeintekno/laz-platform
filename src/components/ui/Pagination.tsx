@@ -28,21 +28,21 @@ export function Pagination({
   };
 
   return (
-    <div className="flex items-center justify-between border-t border-border bg-surface px-4 py-3 sm:px-6 mt-4 rounded-xl shadow-sm">
+    <div className="flex items-center justify-between border-t border-transparent bg-surface px-4 py-3 sm:px-6 mt-4 rounded-xl shadow-sm">
       <div className="flex flex-1 justify-between sm:hidden">
         <Link
           href={getPageUrl(Math.max(1, currentPage - 1))}
-          className={`relative inline-flex items-center rounded-xl border border-border bg-background px-4 py-2 text-sm font-medium text-foreground hover:bg-muted ${
-            currentPage === 1 ? "pointer-events-none opacity-50" : ""
-          }`}
+          className={`relative inline-flex items-center rounded-xl border border-transparent bg-surface px-4 py-2 text-sm font-medium text-primary hover:bg-surface-muted ${
+              currentPage === 1 ? "pointer-events-none opacity-50" : ""
+            }`}
         >
           Previous
         </Link>
         <Link
           href={getPageUrl(Math.min(totalPages, currentPage + 1))}
-          className={`relative ml-3 inline-flex items-center rounded-xl border border-border bg-background px-4 py-2 text-sm font-medium text-foreground hover:bg-muted ${
-            currentPage === totalPages ? "pointer-events-none opacity-50" : ""
-          }`}
+          className={`relative ml-3 inline-flex items-center rounded-xl border border-transparent bg-surface px-4 py-2 text-sm font-medium text-primary hover:bg-surface-muted ${
+              currentPage === totalPages ? "pointer-events-none opacity-50" : ""
+            }`}
         >
           Next
         </Link>
@@ -56,12 +56,12 @@ export function Pagination({
         </div>
         <div>
           <nav
-            className="isolate inline-flex -space-x-px rounded-xl shadow-sm border border-border bg-background overflow-hidden"
+            className="isolate inline-flex -space-x-px rounded-xl shadow-sm border border-transparent bg-background overflow-hidden"
             aria-label="Pagination"
           >
             <Link
               href={getPageUrl(Math.max(1, currentPage - 1))}
-              className={`relative inline-flex items-center px-3 py-2 text-muted hover:bg-muted ${
+              className={`relative inline-flex items-center px-3 py-2 text-secondary hover:bg-surface-muted ${
                 currentPage === 1 ? "pointer-events-none opacity-30" : ""
               }`}
             >
@@ -76,10 +76,10 @@ export function Pagination({
                   key={pageNum}
                   href={getPageUrl(pageNum)}
                   className={`relative inline-flex items-center px-4 py-2 text-sm font-semibold focus:z-20 ${
-                    isActive
-                      ? "bg-primary text-white"
-                      : "text-foreground hover:bg-muted border-l border-border"
-                  }`}
+                     isActive
+                       ? "bg-primary text-primary"
+                       : "text-primary hover:bg-surface-muted border-l border-transparent"
+                   }`}
                 >
                   {pageNum}
                 </Link>
@@ -87,7 +87,7 @@ export function Pagination({
             })}
             <Link
               href={getPageUrl(Math.min(totalPages, currentPage + 1))}
-              className={`relative inline-flex items-center px-3 py-2 text-muted hover:bg-muted border-l border-border ${
+              className={`relative inline-flex items-center px-3 py-2 text-secondary hover:bg-surface-muted border-l border-transparent ${
                 currentPage === totalPages ? "pointer-events-none opacity-30" : ""
               }`}
             >

@@ -59,7 +59,7 @@ export function DataTableBody<TData>({
           <tr
             key={id}
             className={`hover:bg-surface-muted transition duration-150 ${
-              isSelected ? "bg-brand-primary/5" : ""
+              isSelected ? "bg-primary/5" : ""
             }`}
           >
             {/* Selection Checkbox */}
@@ -69,7 +69,7 @@ export function DataTableBody<TData>({
                   type="checkbox"
                   checked={isSelected}
                   onChange={() => onRowSelectToggle && onRowSelectToggle(id)}
-                  className="h-4 w-4 rounded border-border text-primary focus:ring-primary cursor-pointer"
+                  className="h-4 w-4 rounded-xl shadow-sm text-primary focus:ring-primary cursor-pointer"
                 />
               </td>
             )}

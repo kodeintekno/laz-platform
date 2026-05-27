@@ -14,7 +14,7 @@ export function DataTableEmpty({
 }: DataTableEmptyProps) {
   return (
       <tr>
-        <td colSpan={colSpan} className="p-4 text-center">
+        <td colSpan={colSpan} className="p-4 text-center bg-surface">
           <EmptyState title={title} description={description} />
         </td>
       </tr>

@@ -108,7 +108,7 @@ export function DataTable<TData>({
       )}
 
       {/* Main Table Wrapper */}
-      <div className="overflow-hidden border border-border rounded-xl bg-surface shadow-sm w-full">
+      <div className="overflow-hidden rounded-xl bg-surface shadow-sm w-full">
         <div className="overflow-x-auto w-full">
           <table className="min-w-full divide-y divide-border align-middle">
             <DataTableHeader

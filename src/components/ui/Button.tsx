@@ -25,16 +25,11 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       "inline-flex items-center justify-center font-semibold transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none rounded-xl cursor-pointer";
 
     const intentStyles = {
-      primary:
-        "bg-primary hover:bg-primary-hover text-white focus:ring-primary shadow-sm border border-transparent",
-      secondary:
-        "bg-secondary hover:bg-opacity-90 text-white focus:ring-secondary shadow-sm border border-transparent",
-      outline:
-        "bg-transparent border border-border text-foreground hover:bg-muted focus:ring-primary",
-      ghost:
-        "bg-transparent hover:bg-muted text-foreground focus:ring-primary",
-      destructive:
-        "bg-destructive hover:bg-destructive-hover text-white focus:ring-destructive shadow-sm border border-transparent",
+      primary: "bg-primary hover:bg-primary/90 text-white focus:ring-primary/20 shadow-sm",
+      secondary: "bg-surface hover:bg-surface-muted text-primary focus:ring-primary/20 shadow-sm",
+      outline: "bg-transparent shadow-sm text-primary hover:bg-surface-muted focus:ring-primary/20",
+      ghost: "bg-transparent hover:bg-surface-muted text-primary focus:ring-primary/20",
+      destructive: "bg-destructive hover:bg-destructive/90 text-white focus:ring-destructive/20 shadow-sm",
     };
 
     const sizeStyles = {

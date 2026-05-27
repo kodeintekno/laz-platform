@@ -75,24 +75,26 @@ export function Sidebar() {
 
   return (
     <aside
-      style={{ width: isSidebarCollapsed ? '4rem' : '16rem', backgroundColor: 'var(--color-brand-primary)' }}
+      style={{ width: isSidebarCollapsed ? '4rem' : '16rem' }}
       className={`
-        flex flex-col h-full text-white transition-all duration-300
-        ${isSidebarCollapsed ? "w-16" : "w-64"}
-      `}
+            flex flex-col h-full text-primary
+            bg-surface/95 backdrop-blur-sm rounded-xl shadow-md
+            transition-all duration-300
+            ${isSidebarCollapsed ? "w-16" : "w-64"}
+          `}
       aria-label="Dashboard navigation"
     >
       {/* Logo / Brand */}
-      <div className="flex items-center justify-between p-4 border-b border-brand-secondary/40 h-16">
+      <div className="flex items-center justify-between p-4 h-16 bg-surface/80 backdrop-blur-sm">
         {!isSidebarCollapsed && (
-          <span className="text-lg font-bold tracking-tight text-white">
+          <span className="text-lg font-bold tracking-tight text-primary">
             LAZ Platform
           </span>
         )}
         <button
           onClick={toggleSidebarCollapsed}
           aria-label={isSidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
-          className="p-1.5 rounded-xl hover:bg-brand-secondary transition-colors ml-auto cursor-pointer flex items-center justify-center"
+          className="p-1.5 rounded-xl hover:bg-surface-muted transition-colors ml-auto cursor-pointer flex items-center justify-center"
         >
           {isSidebarCollapsed ? (
             <ChevronRight className="h-4 w-4 text-brand-soft" />
@@ -105,7 +107,7 @@ export function Sidebar() {
       {/* Nav Items */}
       <nav className="flex-1 overflow-y-auto py-4 px-2">
         {isLoading ? (
-          <div className="px-3 py-2 text-xs text-brand-soft">Loading...</div>
+          <div className="px-3 py-2 text-xs text-secondary">Loading...</div>
         ) : (
           <>
             <ul className="space-y-1" role="list">
@@ -120,18 +122,10 @@ export function Sidebar() {
                   <li key={item.href}>
                     <Link
                       href={item.href}
-                      className={`
-                        flex items-center gap-3 px-3 py-2 rounded-xl text-sm
-                        transition-colors duration-150
-                        ${
-                          isActive
-                            ? "bg-brand-primary text-white"
-                            : "text-white hover:bg-brand-primary hover:text-white"
-                        }
-                      `}
+                      className={`flex items-center gap-3 px-3 py-2 text-sm ${isActive ? "bg-success/5 text-success font-medium" : "text-primary hover:bg-surface-muted hover:text-primary"}`}
                       aria-current={isActive ? "page" : undefined}
                     >
-                      <IconComponent className="w-5 h-5 flex-shrink-0" />
+                      <IconComponent className={`w-5 h-5 flex-shrink-0 text-primary`} />
                       {!isSidebarCollapsed && (
                         <span className="truncate">{item.label}</span>
                       )}
@@ -146,29 +140,29 @@ export function Sidebar() {
       </nav>
 
       {/* Profile Footer */}
-      <div className="p-4 border-t border-brand-secondary/40 mt-auto flex flex-col gap-4">
+      <div className="p-4 mt-auto flex flex-col gap-4 bg-surface/80 backdrop-blur-sm">
         <div className="flex items-center gap-3">
           {session?.user?.image ? (
             <img
               src={session.user.image}
               alt={session.user.name || "User Avatar"}
-              className="w-8 h-8 rounded-full object-cover ring-2 ring-brand-secondary"
+              className="w-8 h-8 rounded-full object-cover shadow-sm"
             />
           ) : (
-            <div className="w-8 h-8 rounded-full bg-brand-secondary text-white flex items-center justify-center font-bold text-sm shadow-soft">
+            <div className="w-8 h-8 rounded-full bg-surface-muted text-primary flex items-center justify-center font-bold text-sm shadow-soft">
               {userInitial}
             </div>
           )}
           {!isSidebarCollapsed && (
             <div className="min-w-0 flex-1">
-              <p className="text-sm font-semibold text-white truncate">{session?.user?.name || "Admin"}</p>
-              <p className="text-xs text-brand-soft truncate">{session?.user?.roleName || "Staff"}</p>
+              <p className="text-sm font-semibold text-primary truncate">{session?.user?.name || "Admin"}</p>
+              <p className="text-xs text-secondary truncate">{session?.user?.roleName || "Staff"}</p>
             </div>
           )}
           {!isSidebarCollapsed && (
             <button
               onClick={() => signOut({ callbackUrl: "/login" })}
-              className="p-1.5 rounded-xl hover:bg-brand-secondary text-brand-soft hover:text-white transition-colors cursor-pointer"
+              className="p-1.5 rounded-xl hover:bg-surface-muted text-primary hover:text-primary transition-colors cursor-pointer"
               aria-label="Sign out"
             >
               <LogOut className="w-4 h-4" />
@@ -178,7 +172,7 @@ export function Sidebar() {
         {isSidebarCollapsed && (
           <button
             onClick={() => signOut({ callbackUrl: "/login" })}
-            className="mx-auto p-1.5 rounded-xl hover:bg-brand-secondary text-brand-soft hover:text-white transition-colors cursor-pointer"
+            className="mx-auto p-1.5 rounded-xl hover:bg-surface-muted text-primary hover:text-primary transition-colors cursor-pointer"
             aria-label="Sign out"
           >
             <LogOut className="w-4 h-4" />

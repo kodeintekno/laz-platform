@@ -35,7 +35,7 @@ export function Header({ user }: HeaderProps) {
   const userInitial = user?.name ? user.name.charAt(0).toUpperCase() : "?";
 
   return (
-    <header className="h-16 bg-surface border-b border-border flex items-center justify-between px-6 flex-shrink-0 relative z-20">
+    <header className="h-16 bg-surface shadow-sm flex items-center justify-between px-6 flex-shrink-0 relative z-20">
       {/* Left: Mobile sidebar toggle */}
       <button
         onClick={toggleSidebar}
@@ -82,9 +82,9 @@ export function Header({ user }: HeaderProps) {
 
           {/* Dropdown Menu */}
           {isDropdownOpen && (
-            <div className="absolute right-0 mt-2 w-56 bg-surface rounded-xl shadow-soft border border-border py-1.5 z-30 animate-in fade-in slide-in-from-top-2 duration-150">
+            <div className="absolute right-0 mt-2 w-56 bg-surface rounded-xl shadow-soft py-1.5 z-30 animate-in fade-in slide-in-from-top-2 duration-150">
               {/* User Identity Info */}
-              <div className="px-4 py-2 border-b border-border">
+              <div className="px-4 py-2 shadow-sm">
                 <p className="text-sm font-bold text-primary truncate">{user?.name || "User"}</p>
                 <p className="text-xs text-secondary truncate mb-1.5">{user?.email || "No email"}</p>
                 {user?.roleName && (

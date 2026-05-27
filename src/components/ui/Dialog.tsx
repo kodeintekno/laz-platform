@@ -47,10 +47,10 @@ export function Dialog({ isOpen, onClose, title, children }: DialogProps) {
         role="dialog"
         aria-modal="true"
         aria-labelledby="modal-title"
-        className="relative bg-surface rounded-2xl max-w-lg w-full shadow-xl border border-border overflow-hidden transition-all transform scale-100 flex flex-col max-h-[90vh]"
+        className="relative bg-surface rounded-2xl max-w-lg w-full shadow-xl border-transparent overflow-hidden transition-all transform scale-100 flex flex-col max-h-[90vh]"
       >
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-border">
+        <div className="flex items-center justify-between p-6 shadow-sm">
           <h3
             id="modal-title"
             className="text-lg font-bold leading-6 text-foreground"

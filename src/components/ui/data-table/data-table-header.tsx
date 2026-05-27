@@ -43,7 +43,7 @@ export function DataTableHeader<TData>({
   };
 
   return (
-    <thead className="bg-surface-muted border-b border-border">
+    <thead className="bg-surface-muted shadow-sm">
       <tr>
         {/* Bulk Selection Column */}
         {enableSelection && (
@@ -52,7 +52,7 @@ export function DataTableHeader<TData>({
               type="checkbox"
               checked={isAllSelected}
               onChange={onSelectAllToggle}
-              className="h-4 w-4 rounded border-border text-primary focus:ring-primary cursor-pointer"
+              className="h-4 w-4 rounded-xl shadow-sm text-primary focus:ring-primary cursor-pointer"
             />
           </th>
         )}
