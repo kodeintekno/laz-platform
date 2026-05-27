@@ -46,10 +46,8 @@ export function Header({ user }: HeaderProps) {
         <Menu className="w-5 h-5" />
       </button>
 
-      {/* Center / Left: Page title placeholder */}
-      <div className="flex-1 px-4">
-        <p className="text-sm text-text-secondary font-semibold">Dashboard</p>
-      </div>
+      {/* Center / Left: Empty spacer for alignment */}
+      <div className="flex-1" />
 
       {/* Right: Actions */}
       <div className="flex items-center gap-4">

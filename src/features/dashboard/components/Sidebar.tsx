@@ -3,13 +3,43 @@
 import { useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useSession, signOut } from "next-auth/react";
 import { useUIStore } from "@/stores/ui.store";
 import { usePermission } from "@/hooks/usePermission";
 import { NAV_ITEMS } from "@/constants/nav";
 import { logger } from "@/lib/logger";
+import {
+  LayoutDashboard,
+  BookOpen,
+  Heart,
+  CreditCard,
+  Truck,
+  BarChart2,
+  Users,
+  Shield,
+  ScrollText,
+  Settings,
+  ChevronLeft,
+  ChevronRight,
+  LogOut,
+  HelpCircle,
+} from "lucide-react";
+
+const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
+  LayoutDashboard,
+  BookOpen,
+  Heart,
+  CreditCard,
+  Truck,
+  BarChart2,
+  Users,
+  Shield,
+  ScrollText,
+  Settings,
+};
 
 /**
- * Dashboard Sidebar — Phase 1 Shell.
+ * Dashboard Sidebar — Polished Production Component.
  *
  * Presentation-only component. Renders permission-gated nav items.
  * Business logic and data fetching must NOT live here.
@@ -17,14 +47,14 @@ import { logger } from "@/lib/logger";
  * Active link detection uses usePathname (client hook).
  * Sidebar collapse state is from Zustand UIStore.
  * Visible nav items are filtered by usePermission.
- *
- * TODO (Dashboard Phase): Add icon rendering with lucide-react.
- * TODO (Dashboard Phase): Add user avatar + signout button.
  */
 export function Sidebar() {
   const pathname = usePathname();
   const { isSidebarCollapsed, toggleSidebarCollapsed } = useUIStore();
   const { can, isLoading, permissions, roleName } = usePermission();
+  const { data: session } = useSession();
+
+  const userInitial = session?.user?.name ? session.user.name.charAt(0).toUpperCase() : "?";
 
   // Filter nav items the current user has permission to see
   const visibleItems = NAV_ITEMS.filter((item) => can(item.permission));
@@ -42,9 +72,6 @@ export function Sidebar() {
       "Sidebar RBAC State"
     );
   }, [isLoading, roleName, permissions, visibleItems]);
-
-
-
 
   return (
     <aside
@@ -64,12 +91,13 @@ export function Sidebar() {
         <button
           onClick={toggleSidebarCollapsed}
           aria-label={isSidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
-          className="p-1.5 rounded-xl hover:bg-brand-secondary transition-colors ml-auto cursor-pointer"
+          className="p-1.5 rounded-xl hover:bg-brand-secondary transition-colors ml-auto cursor-pointer flex items-center justify-center"
         >
-          {/* Chevron placeholder — replaced with lucide icon in Dashboard Phase */}
-          <span className="text-brand-soft text-xs">
-            {isSidebarCollapsed ? "›" : "‹"}
-          </span>
+          {isSidebarCollapsed ? (
+            <ChevronRight className="h-4 w-4 text-brand-soft" />
+          ) : (
+            <ChevronLeft className="h-4 w-4 text-brand-soft" />
+          )}
         </button>
       </div>
 
@@ -84,6 +112,7 @@ export function Sidebar() {
                 pathname === item.href ||
                 (item.href !== "/dashboard" &&
                   pathname.startsWith(item.href));
+              const IconComponent = iconMap[item.icon] || HelpCircle;
 
               return (
                 <li key={item.href}>
@@ -100,10 +129,7 @@ export function Sidebar() {
                     `}
                     aria-current={isActive ? "page" : undefined}
                   >
-                    {/* Icon placeholder — replaced with lucide-react icons in Dashboard Phase */}
-                    <span className="w-5 h-5 flex-shrink-0 text-center text-xs opacity-70">
-                      ○
-                    </span>
+                    <IconComponent className="w-5 h-5 flex-shrink-0" />
                     {!isSidebarCollapsed && (
                       <span className="truncate">{item.label}</span>
                     )}
@@ -115,12 +141,46 @@ export function Sidebar() {
         )}
       </nav>
 
-      {/* Footer / Version */}
-      {!isSidebarCollapsed && (
-        <div className="p-4 border-t border-brand-secondary/40">
-          <p className="text-xs text-brand-soft">v0.1.0 — Phase 1</p>
+      {/* Profile Footer */}
+      <div className="p-4 border-t border-brand-secondary/40 mt-auto flex flex-col gap-4">
+        <div className="flex items-center gap-3">
+          {session?.user?.image ? (
+            <img
+              src={session.user.image}
+              alt={session.user.name || "User Avatar"}
+              className="w-8 h-8 rounded-full object-cover ring-2 ring-brand-secondary"
+            />
+          ) : (
+            <div className="w-8 h-8 rounded-full bg-brand-secondary text-white flex items-center justify-center font-bold text-sm shadow-soft">
+              {userInitial}
+            </div>
+          )}
+          {!isSidebarCollapsed && (
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-semibold text-white truncate">{session?.user?.name || "Admin"}</p>
+              <p className="text-xs text-brand-soft truncate">{session?.user?.roleName || "Staff"}</p>
+            </div>
+          )}
+          {!isSidebarCollapsed && (
+            <button
+              onClick={() => signOut({ callbackUrl: "/login" })}
+              className="p-1.5 rounded-xl hover:bg-brand-secondary text-brand-soft hover:text-white transition-colors cursor-pointer"
+              aria-label="Sign out"
+            >
+              <LogOut className="w-4 h-4" />
+            </button>
+          )}
         </div>
-      )}
+        {isSidebarCollapsed && (
+          <button
+            onClick={() => signOut({ callbackUrl: "/login" })}
+            className="mx-auto p-1.5 rounded-xl hover:bg-brand-secondary text-brand-soft hover:text-white transition-colors cursor-pointer"
+            aria-label="Sign out"
+          >
+            <LogOut className="w-4 h-4" />
+          </button>
+        )}
+      </div>
     </aside>
   );
 }
