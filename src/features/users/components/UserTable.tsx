@@ -20,7 +20,7 @@ export function UserTable({ users, roles, canManageRoles }: UserTableProps) {
     {
       header: "Name",
       accessorKey: "name",
-      cell: (user) => <span className="font-semibold text-gray-900">{user.name}</span>,
+      cell: (user) => <span className="font-semibold text-text-primary">{user.name}</span>,
     },
     {
       header: "Email",

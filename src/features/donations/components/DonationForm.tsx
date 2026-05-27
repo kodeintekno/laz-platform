@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
 import { useFormContext } from "react-hook-form";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
@@ -22,7 +21,6 @@ const formatRupiah = (amount: number) => {
 };
 
 export function DonationForm({ programId, programSlug }: { programId: string; programSlug: string }) {
-  const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
@@ -54,13 +52,13 @@ export function DonationForm({ programId, programSlug }: { programId: string; pr
       <div className="max-w-lg mx-auto mt-10">
         <Card>
           <CardContent className="text-center flex flex-col items-center">
-            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-950/30 mb-6">
-              <svg className="h-8 w-8 text-emerald-600 dark:text-emerald-400" fill="none" viewBox="0 0 24 24" strokeWidth="2.5" stroke="currentColor">
+            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-success/10 mb-6">
+              <svg className="h-8 w-8 text-success" fill="none" viewBox="0 0 24 24" strokeWidth="2.5" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
               </svg>
             </div>
-            <h2 className="text-2xl font-bold text-foreground mb-2">Alhamdulillah!</h2>
-            <p className="text-gray-500 dark:text-slate-400 mb-8">
+            <h2 className="text-2xl font-bold text-text-primary mb-2">Alhamdulillah!</h2>
+            <p className="text-text-secondary mb-8">
               Donasi Anda telah berhasil dicatat. Semoga menjadi amal jariyah yang pahalanya mengalir tiada henti.
             </p>
             <Link href={`/programs/${programSlug}`} className="w-full">
@@ -74,7 +72,7 @@ export function DonationForm({ programId, programSlug }: { programId: string; pr
 
   return (
     <div className="max-w-lg mx-auto mt-8">
-      <Link href={`/programs/${programSlug}`} className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-gray-900 mb-6 font-medium">
+      <Link href={`/programs/${programSlug}`} className="inline-flex items-center gap-2 text-sm text-text-secondary hover:text-brand-primary mb-6 font-semibold transition">
         <ArrowLeft className="w-4 h-4" /> Kembali
       </Link>
 
@@ -105,7 +103,7 @@ export function DonationForm({ programId, programSlug }: { programId: string; pr
             >
               Lanjutkan Pembayaran
             </Button>
-            <p className="text-xs text-center text-gray-500 mt-4">
+            <p className="text-xs text-center text-text-muted mt-4">
               Dengan berdonasi, Anda menyetujui Syarat dan Ketentuan.
             </p>
           </CardFooter>
@@ -123,7 +121,7 @@ function DonationFormFields({ isPending }: { isPending: boolean }) {
     <>
       {/* Nominal Section */}
       <div>
-        <h3 className="text-lg font-bold text-gray-900 mb-4">Pilih Nominal Donasi</h3>
+        <h3 className="text-lg font-bold text-text-primary mb-4">Pilih Nominal Donasi</h3>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-4">
           {predefinedAmounts.map((amt) => (
             <button
@@ -143,7 +141,7 @@ function DonationFormFields({ isPending }: { isPending: boolean }) {
         
         <div className="relative mt-4">
           <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4 z-10">
-            <span className="text-gray-500 font-medium sm:text-sm">Rp</span>
+            <span className="text-text-secondary font-medium sm:text-sm">Rp</span>
           </div>
           <FormInput
             name="amount"
@@ -155,7 +153,7 @@ function DonationFormFields({ isPending }: { isPending: boolean }) {
         </div>
       </div>
 
-      <hr className="border-gray-100" />
+      <hr className="border-border" />
 
       {/* Metode Pembayaran Section */}
       <FormField
@@ -163,7 +161,7 @@ function DonationFormFields({ isPending }: { isPending: boolean }) {
         type="custom"
         render={({ field }) => (
           <div>
-            <h3 className="text-lg font-bold text-gray-900 mb-4">Metode Pembayaran</h3>
+            <h3 className="text-lg font-bold text-text-primary mb-4">Metode Pembayaran</h3>
             <div className="space-y-3">
               {['BCA_VA', 'MANDIRI_VA', 'GO_PAY', 'QRIS'].map((method) => (
                 <label key={method} className="flex items-center p-4 border border-border rounded-xl cursor-pointer hover:bg-muted has-[:checked]:border-primary has-[:checked]:bg-primary/5 has-[:checked]:ring-1 has-[:checked]:ring-primary transition">
@@ -184,11 +182,11 @@ function DonationFormFields({ isPending }: { isPending: boolean }) {
         )}
       />
 
-      <hr className="border-gray-100" />
+      <hr className="border-border" />
 
       {/* Profile Section */}
       <div>
-        <h3 className="text-lg font-bold text-gray-900 mb-4">Dukungan Anda</h3>
+        <h3 className="text-lg font-bold text-text-primary mb-4">Dukungan Anda</h3>
         
         <FormField
           name="isAnonymous"

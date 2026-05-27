@@ -1,35 +1,17 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
-import { distributionSchema } from "@/features/distributions/validations/distributions.schema";
-import type { DistributionInput } from "@/features/distributions/validations/distributions.schema";
+import { distributionSchema, type DistributionInput } from "@/features/distributions/validations/distributions.schema";
 import { createDistributionAction } from "@/features/distributions/actions/distributions.actions";
-import { Button, Input, Textarea, Card, CardContent, CardFooter, Alert } from "@/components/ui";
+import { Button, Card, CardContent, CardFooter, FormWrapper, FormField } from "@/components/ui";
 import { toast } from "@/stores/toast.store";
 import Link from "next/link";
 
-export function DistributionForm({ programId, programSlug, availableBalance }: { programId: string, programSlug: string, availableBalance: number }) {
+export function DistributionForm({ programId, availableBalance }: { programId: string, availableBalance: number }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
-
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-  } = useForm<DistributionInput>({
-    resolver: zodResolver(distributionSchema) as any,
-    defaultValues: {
-      programId,
-      amount: 0,
-      title: "",
-      description: "",
-      receiptImage: "",
-    },
-  });
 
   const onSubmit = (data: DistributionInput) => {
     setError(null);
@@ -60,67 +42,56 @@ export function DistributionForm({ programId, programSlug, availableBalance }: {
   };
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)}>
-      <Card>
+    <Card>
+      <FormWrapper
+        schema={distributionSchema}
+        onSubmit={onSubmit}
+        defaultValues={{
+          programId,
+          amount: 0,
+          title: "",
+          description: "",
+          receiptImage: "",
+        }}
+        error={error}
+      >
         <CardContent className="space-y-6">
-          {error && (
-            <Alert intent="error">
-              {error}
-            </Alert>
-          )}
+          <FormField
+            name="title"
+            label="Judul Penyaluran"
+            type="input"
+            placeholder="Contoh: Pembelian Material Gelombang 1"
+            disabled={isPending}
+          />
 
-          <div className="grid grid-cols-1 gap-6">
-            <div>
-              <label className="block text-sm font-semibold text-foreground mb-1">Judul Penyaluran</label>
-              <Input
-                {...register("title")}
-                type="text"
-                error={!!errors.title}
-                placeholder="Contoh: Pembelian Material Gelombang 1"
-                disabled={isPending}
-              />
-              {errors.title && <p className="mt-1 text-xs text-red-500">{errors.title.message}</p>}
-            </div>
+          <FormField
+            name="amount"
+            label="Nominal (Rp)"
+            type="input"
+            inputType="number"
+            disabled={isPending}
+          />
 
-            <div>
-              <label className="block text-sm font-semibold text-foreground mb-1">Nominal (Rp)</label>
-              <Input
-                {...register("amount")}
-                type="number"
-                error={!!errors.amount}
-                disabled={isPending}
-              />
-              {errors.amount && <p className="mt-1 text-xs text-red-500">{errors.amount.message}</p>}
-            </div>
+          <FormField
+            name="description"
+            label="Deskripsi & Rincian Penggunaan"
+            type="textarea"
+            rows={5}
+            placeholder="Rincian penggunaan dana..."
+            disabled={isPending}
+          />
 
-            <div>
-              <label className="block text-sm font-semibold text-foreground mb-1">Deskripsi & Rincian Penggunaan</label>
-              <Textarea
-                {...register("description")}
-                rows={5}
-                error={!!errors.description}
-                disabled={isPending}
-              />
-              {errors.description && <p className="mt-1 text-xs text-red-500">{errors.description.message}</p>}
-            </div>
-
-            <div>
-              <label className="block text-sm font-semibold text-foreground mb-1">URL Bukti / Dokumentasi (Opsional)</label>
-              <Input
-                {...register("receiptImage")}
-                type="text"
-                error={!!errors.receiptImage}
-                placeholder="https://example.com/kwitansi.jpg"
-                disabled={isPending}
-              />
-              {errors.receiptImage && <p className="mt-1 text-xs text-red-500">{errors.receiptImage.message}</p>}
-            </div>
-          </div>
-
+          <FormField
+            name="receiptImage"
+            label="URL Bukti / Dokumentasi (Opsional)"
+            type="input"
+            placeholder="https://example.com/kwitansi.jpg"
+            disabled={isPending}
+          />
         </CardContent>
 
-        <CardFooter className="flex items-center justify-end gap-x-4">
-          <Link href={`/dashboard/programs`} className="text-sm font-semibold leading-6 text-foreground hover:text-gray-500 transition">
+        <CardFooter className="flex items-center justify-end gap-x-4 border-t border-border pt-4">
+          <Link href={`/dashboard/programs`} className="text-sm font-semibold leading-6 text-text-secondary hover:text-brand-primary transition">
             Batal
           </Link>
           <Button
@@ -132,7 +103,7 @@ export function DistributionForm({ programId, programSlug, availableBalance }: {
             Ajukan Penyaluran
           </Button>
         </CardFooter>
-      </Card>
-    </form>
+      </FormWrapper>
+    </Card>
   );
 }

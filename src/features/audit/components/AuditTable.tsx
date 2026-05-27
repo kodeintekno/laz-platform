@@ -46,7 +46,7 @@ export function AuditTable({ logs, search, pagination }: AuditTableProps) {
     {
       header: "Waktu",
       cell: (log) => (
-        <span className="text-gray-900 font-medium text-sm">
+        <span className="text-text-primary font-medium text-sm">
           {formatDate(log.createdAt)}
         </span>
       ),
@@ -55,11 +55,11 @@ export function AuditTable({ logs, search, pagination }: AuditTableProps) {
       header: "Operator",
       cell: (log) => log.user ? (
         <div>
-          <div className="font-semibold text-gray-900">{log.user.name}</div>
-          <div className="text-xs text-gray-500">{log.user.email}</div>
+          <div className="font-semibold text-text-primary">{log.user.name}</div>
+          <div className="text-xs text-text-secondary">{log.user.email}</div>
         </div>
       ) : (
-        <span className="italic text-gray-400 font-medium">System</span>
+        <span className="italic text-text-muted font-medium">System</span>
       ),
     },
     {
@@ -74,9 +74,9 @@ export function AuditTable({ logs, search, pagination }: AuditTableProps) {
       header: "Entitas / ID",
       cell: (log) => (
         <div>
-          <span className="font-semibold text-gray-800">{log.entity}</span>
+          <span className="font-semibold text-text-primary">{log.entity}</span>
           {log.entityId && (
-            <span className="block text-xs font-mono text-gray-400 mt-0.5 truncate max-w-[120px]" title={log.entityId}>
+            <span className="block text-xs font-mono text-text-muted mt-0.5 truncate max-w-[120px]" title={log.entityId}>
               {log.entityId}
             </span>
           )}
@@ -86,26 +86,26 @@ export function AuditTable({ logs, search, pagination }: AuditTableProps) {
     {
       header: "Perubahan Data",
       cell: (log) => (log.oldData || log.newData) ? (
-        <details className="text-xs text-slate-500 font-mono cursor-pointer">
-          <summary className="text-xs text-indigo-600 font-semibold hover:underline outline-none">
+        <details className="text-xs text-text-secondary font-mono cursor-pointer">
+          <summary className="text-xs text-brand-primary font-semibold hover:underline outline-none">
             Lihat snapshot
           </summary>
-          <pre className="mt-2 p-2 bg-slate-50 border border-slate-100 rounded-lg max-w-xs overflow-x-auto text-[10px] leading-tight select-all">
+          <pre className="mt-2 p-2 bg-surface-muted border border-border rounded-lg max-w-xs overflow-x-auto text-[10px] leading-tight select-all">
             {JSON.stringify({ sebelum: log.oldData, sesudah: log.newData }, null, 2)}
           </pre>
         </details>
       ) : (
-        <span className="text-xs text-gray-400 italic">No snapshot</span>
+        <span className="text-xs text-text-muted italic">No snapshot</span>
       ),
     },
     {
       header: "Klien Info",
       cell: (log) => (
         <div className="max-w-[200px]">
-          <div className="truncate text-xs font-semibold text-gray-700" title={log.ipAddress}>
+          <div className="truncate text-xs font-semibold text-text-secondary" title={log.ipAddress}>
             IP: {log.ipAddress || "-"}
           </div>
-          <div className="truncate text-[10px] text-gray-400 mt-0.5" title={log.userAgent}>
+          <div className="truncate text-[10px] text-text-muted mt-0.5" title={log.userAgent}>
             Agent: {log.userAgent || "-"}
           </div>
         </div>

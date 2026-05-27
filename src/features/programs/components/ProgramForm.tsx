@@ -1,36 +1,17 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
-import { programSchema } from "@/features/programs/validations/programs.schema";
-import type { ProgramInput } from "@/features/programs/validations/programs.schema";
+import { programSchema, type ProgramInput } from "@/features/programs/validations/programs.schema";
 import { createProgramAction } from "@/features/programs/actions/programs.actions";
 import { ProgramCategory, ProgramStatus } from "@prisma/client";
 import Link from "next/link";
-import { Input, Textarea, Select, Button, Alert } from "@/components/ui";
+import { FormWrapper, FormField, Button, Card, CardContent, CardFooter } from "@/components/ui";
 
 export function ProgramForm() {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
-
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-  } = useForm<ProgramInput>({
-    resolver: zodResolver(programSchema) as any,
-    defaultValues: {
-      title: "",
-      description: "",
-      targetAmount: 0,
-      category: ProgramCategory.INFAK,
-      status: ProgramStatus.DRAFT,
-      image: "",
-    },
-  });
 
   const onSubmit = (data: ProgramInput) => {
     setError(null);
@@ -53,101 +34,100 @@ export function ProgramForm() {
     });
   };
 
+  const categoryOptions = Object.values(ProgramCategory).map((cat) => ({
+    label: cat,
+    value: cat,
+  }));
+
+  const statusOptions = [
+    { label: "Draft (Sembunyikan)", value: ProgramStatus.DRAFT },
+    { label: "Published (Tampilkan Publik)", value: ProgramStatus.PUBLISHED },
+  ];
+
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 bg-white p-6 shadow-sm ring-1 ring-black ring-opacity-5 sm:rounded-lg">
-      {error && (
-        <Alert intent="error">
-          {error}
-        </Alert>
-      )}
-
-      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-        <div className="sm:col-span-2">
-          <label className="block text-sm font-semibold text-foreground mb-1">Judul Program</label>
-          <Input
-            {...register("title")}
-            type="text"
-            error={!!errors.title}
+    <Card>
+      <FormWrapper
+        schema={programSchema}
+        onSubmit={onSubmit}
+        defaultValues={{
+          title: "",
+          description: "",
+          targetAmount: 0,
+          category: ProgramCategory.INFAK,
+          status: ProgramStatus.DRAFT,
+          image: "",
+        }}
+        error={error}
+      >
+        <CardContent className="space-y-6">
+          <FormField
+            name="title"
+            label="Judul Program"
+            type="input"
+            placeholder="Masukkan judul program"
             disabled={isPending}
           />
-          {errors.title && <p className="mt-1 text-xs text-red-500">{errors.title.message}</p>}
-        </div>
 
-        <div className="sm:col-span-2">
-          <label className="block text-sm font-semibold text-foreground mb-1">Deskripsi Lengkap</label>
-          <Textarea
-            {...register("description")}
+          <FormField
+            name="description"
+            label="Deskripsi Lengkap"
+            type="textarea"
             rows={5}
-            error={!!errors.description}
+            placeholder="Tulis deskripsi program lengkap di sini..."
             disabled={isPending}
           />
-          {errors.description && <p className="mt-1 text-xs text-red-500">{errors.description.message}</p>}
-        </div>
 
-        <div>
-          <label className="block text-sm font-semibold text-foreground mb-1">Target Dana (Rp)</label>
-          <Input
-            {...register("targetAmount")}
-            type="number"
-            error={!!errors.targetAmount}
-            disabled={isPending}
-          />
-          {errors.targetAmount && <p className="mt-1 text-xs text-red-500">{errors.targetAmount.message}</p>}
-        </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <FormField
+              name="targetAmount"
+              label="Target Dana (Rp)"
+              type="input"
+              inputType="number"
+              placeholder="0"
+              disabled={isPending}
+            />
 
-        <div>
-          <label className="block text-sm font-semibold text-foreground mb-1">Kategori</label>
-          <Select
-            {...register("category")}
-            error={!!errors.category}
+            <FormField
+              name="category"
+              label="Kategori"
+              type="select"
+              options={categoryOptions}
+              disabled={isPending}
+            />
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <FormField
+              name="status"
+              label="Status Publikasi"
+              type="select"
+              options={statusOptions}
+              disabled={isPending}
+            />
+
+            <FormField
+              name="image"
+              label="URL Gambar Header"
+              type="input"
+              placeholder="https://example.com/image.jpg"
+              disabled={isPending}
+            />
+          </div>
+        </CardContent>
+
+        <CardFooter className="flex items-center justify-end gap-x-4 border-t border-border pt-4">
+          <Link href="/dashboard/programs" className="text-sm font-semibold leading-6 text-text-secondary hover:text-brand-primary transition">
+            Batal
+          </Link>
+          <Button
+            type="submit"
             disabled={isPending}
+            isLoading={isPending}
           >
-            {Object.values(ProgramCategory).map((cat) => (
-              <option key={cat} value={cat}>{cat}</option>
-            ))}
-          </Select>
-          {errors.category && <p className="mt-1 text-xs text-red-500">{errors.category.message}</p>}
-        </div>
-
-        <div>
-          <label className="block text-sm font-semibold text-foreground mb-1">Status Publikasi</label>
-          <Select
-            {...register("status")}
-            error={!!errors.status}
-            disabled={isPending}
-          >
-            <option value={ProgramStatus.DRAFT}>Draft (Sembunyikan)</option>
-            <option value={ProgramStatus.PUBLISHED}>Published (Tampilkan Publik)</option>
-          </Select>
-          {errors.status && <p className="mt-1 text-xs text-red-500">{errors.status.message}</p>}
-        </div>
-
-        <div>
-          <label className="block text-sm font-semibold text-foreground mb-1">URL Gambar Header</label>
-          <Input
-            {...register("image")}
-            type="text"
-            placeholder="https://example.com/image.jpg"
-            error={!!errors.image}
-            disabled={isPending}
-          />
-          {errors.image && <p className="mt-1 text-xs text-red-500">{errors.image.message}</p>}
-        </div>
-      </div>
-
-      <div className="flex items-center justify-end gap-x-4 pt-4 border-t border-gray-200">
-        <Link href="/dashboard/programs" className="text-sm font-semibold leading-6 text-gray-900 hover:text-gray-600 transition-colors">
-          Batal
-        </Link>
-        <Button
-          type="submit"
-          disabled={isPending}
-          isLoading={isPending}
-        >
-          Simpan Program
-        </Button>
-      </div>
-    </form>
+            Simpan Program
+          </Button>
+        </CardFooter>
+      </FormWrapper>
+    </Card>
   );
 }
-

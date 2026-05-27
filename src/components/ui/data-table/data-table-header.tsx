@@ -43,7 +43,7 @@ export function DataTableHeader<TData>({
   };
 
   return (
-    <thead className="bg-gray-50 border-b border-gray-200">
+    <thead className="bg-surface-muted border-b border-border">
       <tr>
         {/* Bulk Selection Column */}
         {enableSelection && (
@@ -52,7 +52,7 @@ export function DataTableHeader<TData>({
               type="checkbox"
               checked={isAllSelected}
               onChange={onSelectAllToggle}
-              className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+              className="h-4 w-4 rounded border-border text-primary focus:ring-primary cursor-pointer"
             />
           </th>
         )}
@@ -72,17 +72,17 @@ export function DataTableHeader<TData>({
             <th
               key={colKey.toString()}
               scope="col"
-              className={`px-3 py-3.5 text-sm font-semibold text-gray-900 ${alignClass}`}
+              className={`px-3 py-3.5 text-sm font-semibold text-text-primary ${alignClass}`}
               style={column.width ? { width: column.width } : undefined}
             >
               {column.sortable && onSortChange ? (
                 <button
                   type="button"
                   onClick={() => handleSortClick(column)}
-                  className="inline-flex items-center gap-1 group hover:text-gray-600 focus:outline-none cursor-pointer"
+                  className="inline-flex items-center gap-1 group hover:text-text-primary focus:outline-none cursor-pointer"
                 >
                   <span>{column.header}</span>
-                  <span className="flex-shrink-0 text-gray-400 group-hover:text-gray-500 transition duration-150">
+                  <span className="flex-shrink-0 text-text-muted group-hover:text-text-secondary transition duration-150">
                     {isSorted ? (
                       sortOrder === "asc" ? (
                         <ArrowUp className="h-4 w-4 text-primary" />

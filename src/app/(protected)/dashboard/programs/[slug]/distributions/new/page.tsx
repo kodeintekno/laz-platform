@@ -47,7 +47,6 @@ export default async function NewDistributionPage({ params }: { params: Promise<
 
       <DistributionForm 
         programId={program.id} 
-        programSlug={program.slug} 
         availableBalance={availableBalance} 
       />
     </div>

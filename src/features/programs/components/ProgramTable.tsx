@@ -23,8 +23,8 @@ export function ProgramTable({ programs }: { programs: ProgramWithCreator[] }) {
       header: "Judul Program",
       cell: (program) => (
         <div>
-          <div className="font-semibold text-gray-900 truncate max-w-[250px]">{program.title}</div>
-          <div className="text-gray-500 text-xs mt-0.5">oleh {program.createdBy.name}</div>
+          <div className="font-semibold text-text-primary truncate max-w-[250px]">{program.title}</div>
+          <div className="text-text-secondary text-xs mt-0.5">oleh {program.createdBy.name}</div>
         </div>
       ),
     },
@@ -40,8 +40,8 @@ export function ProgramTable({ programs }: { programs: ProgramWithCreator[] }) {
       header: "Terkumpul",
       cell: (program) => (
         <div>
-          <div className="font-semibold text-gray-900">{formatRupiah(program.currentAmount as any)}</div>
-          <div className="text-xs text-gray-400 mt-0.5">dari {formatRupiah(program.targetAmount as any)}</div>
+          <div className="font-semibold text-text-primary">{formatRupiah(program.currentAmount as any)}</div>
+          <div className="text-xs text-text-muted mt-0.5">dari {formatRupiah(program.targetAmount as any)}</div>
         </div>
       ),
     },
@@ -68,13 +68,13 @@ export function ProgramTable({ programs }: { programs: ProgramWithCreator[] }) {
         <div className="space-x-4">
           <Link
             href={`/programs/${program.slug}`}
-            className="text-indigo-600 hover:text-indigo-900 font-semibold text-sm"
+            className="text-brand-primary hover:text-brand-secondary font-semibold text-sm"
           >
             Lihat
           </Link>
           <Link
             href={`/dashboard/programs/${program.slug}/distributions/new`}
-            className="text-emerald-600 hover:text-emerald-900 font-semibold text-sm"
+            className="text-brand-accent hover:text-brand-secondary font-semibold text-sm"
           >
             Ajukan Penyaluran
           </Link>

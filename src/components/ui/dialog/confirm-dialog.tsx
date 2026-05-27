@@ -1,7 +1,6 @@
 "use client";
 import React from "react";
 import { Dialog } from "./dialog";
-import { DialogHeader } from "./dialog-header";
 import { DialogBody } from "./dialog-body";
 import { DialogFooter } from "./dialog-footer";
 import { Button } from "../Button";
@@ -31,13 +30,13 @@ export const ConfirmDialog = ({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange} title={title}>
+    <Dialog isOpen={open} onClose={() => onOpenChange(false)} title={title}>
       {description && <DialogBody>{description}</DialogBody>}
       <DialogFooter>
-        <Button variant="secondary" onClick={() => onOpenChange(false)}>
+        <Button intent="outline" onClick={() => onOpenChange(false)}>
           {cancelLabel}
         </Button>
-        <Button variant="primary" onClick={handleConfirm}>
+        <Button intent="primary" onClick={handleConfirm}>
           {confirmLabel}
         </Button>
       </DialogFooter>

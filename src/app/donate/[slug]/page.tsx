@@ -19,15 +19,15 @@ export default async function DonatePage({ params }: { params: Promise<{ slug: s
   }
 
   return (
-    <div className="bg-gray-50 min-h-screen pb-20">
+    <div className="bg-surface-muted min-h-screen pb-20">
       {/* Simple Public Header */}
-      <header className="bg-white shadow-sm">
+      <header className="bg-surface shadow-soft border-b border-border">
         <div className="mx-auto max-w-7xl px-4 py-4 sm:px-6 lg:px-8 flex justify-between items-center">
-          <Link href="/" className="text-xl font-bold text-indigo-600">
+          <Link href="/" className="text-xl font-bold text-brand-primary">
             LAZ Platform
           </Link>
           <div className="flex gap-4">
-            <Link href="/programs" className="text-gray-600 hover:text-gray-900 font-medium">
+            <Link href="/programs" className="text-text-secondary hover:text-brand-primary font-semibold">
               Eksplor Program
             </Link>
           </div>

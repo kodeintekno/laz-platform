@@ -1,31 +1,45 @@
 "use client";
 
-import React, { useState, useTransition } from "react";
+import React, { useState, useTransition, useMemo, useCallback } from "react";
 import { saveRolePermissionsAction } from "@/features/rbac/actions/rbac.actions";
 import { Button } from "@/components/ui";
+import { DataTable, type ColumnDef } from "@/components/ui/data-table";
 import { toast } from "@/stores/toast.store";
-import type { Prisma } from "@prisma/client";
+import type { Role, Permission } from "@prisma/client";
 
 interface RoleMatrixProps {
-  roles: Prisma.RoleGetPayload<{}>[];
-  permissions: Prisma.PermissionGetPayload<{}>[];
+  roles: Role[];
+  permissions: Permission[];
   initialActiveMappings: Set<string>;
 }
+
+type PermissionWithModuleName = Permission & { moduleName: string };
 
 export function RoleMatrix({ roles, permissions, initialActiveMappings }: RoleMatrixProps) {
   const [isPending, startTransition] = useTransition();
   const [activeMappings, setActiveMappings] = useState<Set<string>>(initialActiveMappings);
   const [savingRoleId, setSavingRoleId] = useState<string | null>(null);
 
-  // Group permissions by module (extracted from key like "users.read" -> "users")
-  const groupedPermissions = permissions.reduce((acc, perm) => {
-    const module = perm.key.split(".")[0];
-    if (!acc[module]) acc[module] = [];
-    acc[module].push(perm);
-    return acc;
-  }, {} as Record<string, typeof permissions>);
+  // Group permissions by moduleName (extracted from key like "users.read" -> "users")
+  const groupedPermissions = useMemo(() => {
+    return permissions.reduce((acc, perm) => {
+      const moduleName = perm.key.split(".")[0];
+      if (!acc[moduleName]) acc[moduleName] = [];
+      acc[moduleName].push(perm);
+      return acc;
+    }, {} as Record<string, typeof permissions>);
+  }, [permissions]);
 
-  const togglePermission = (roleId: string, permissionId: string) => {
+  const flatPermissions = useMemo(() => {
+    return Object.entries(groupedPermissions).flatMap(([moduleName, perms]) =>
+      perms.map((perm) => ({
+        ...perm,
+        moduleName,
+      }))
+    );
+  }, [groupedPermissions]);
+
+  const togglePermission = useCallback((roleId: string, permissionId: string) => {
     const key = `${roleId}_${permissionId}`;
     setActiveMappings((prev) => {
       const next = new Set(prev);
@@ -36,9 +50,9 @@ export function RoleMatrix({ roles, permissions, initialActiveMappings }: RoleMa
       }
       return next;
     });
-  };
+  }, []);
 
-  const saveRole = (roleId: string) => {
+  const saveRole = useCallback((roleId: string) => {
     setSavingRoleId(roleId);
     startTransition(async () => {
       const formData = new FormData();
@@ -61,65 +75,60 @@ export function RoleMatrix({ roles, permissions, initialActiveMappings }: RoleMa
       }
       setSavingRoleId(null);
     });
-  };
+  }, [activeMappings]);
+
+  const columns: ColumnDef<PermissionWithModuleName>[] = useMemo(() => [
+    {
+      header: "Module / Permission",
+      cell: (row) => (
+        <div className="font-semibold text-text-primary py-1">
+          {row.key}
+          <div className="text-xs text-text-secondary font-normal mt-0.5">{row.description}</div>
+        </div>
+      ),
+    },
+    ...roles.map((role) => ({
+      header: (
+        <div className="flex flex-col items-center gap-2 py-1">
+          <span className="text-xs font-bold text-text-primary uppercase tracking-wider">{role.name}</span>
+          <Button
+            onClick={() => saveRole(role.id)}
+            size="sm"
+            intent="secondary"
+            isLoading={savingRoleId === role.id}
+            disabled={isPending}
+            className="text-xs py-1 px-2.5 h-auto rounded-lg"
+          >
+            Simpan
+          </Button>
+        </div>
+      ),
+      align: "center" as const,
+      cell: (row: PermissionWithModuleName) => {
+        const permId = row.id;
+        const isChecked = activeMappings.has(`${role.id}_${permId}`);
+        return (
+          <div className="flex justify-center items-center h-full">
+            <input
+              type="checkbox"
+              checked={isChecked}
+              disabled={isPending}
+              onChange={() => togglePermission(role.id, permId)}
+              className="h-4 w-4 rounded border-border text-primary focus:ring-primary cursor-pointer"
+              aria-label={`Berikan izin ${row.key} untuk role ${role.name}`}
+            />
+          </div>
+        );
+      },
+    })),
+  ], [roles, activeMappings, isPending, savingRoleId, saveRole, togglePermission]);
 
   return (
-    <div className="overflow-x-auto">
-      <table className="min-w-full border border-gray-200 rounded-xl bg-white shadow-sm">
-        <thead className="bg-gray-50 border-b border-gray-200">
-          <tr>
-            <th className="px-4 py-2 text-left font-semibold text-gray-900">
-              Module / Permission
-            </th>
-            {roles.map((role) => (
-              <th key={role.id} className="px-4 py-2 text-center font-semibold text-gray-900">
-                <Button
-                  onClick={() => saveRole(role.id)}
-                  size="sm"
-                  intent="secondary"
-                  isLoading={savingRoleId === role.id}
-                  disabled={isPending}
-                >
-                  Simpan
-                </Button>
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-gray-200 bg-white">
-          {Object.entries(groupedPermissions)
-            .flatMap(([module, perms]) =>
-              perms.map((perm) => ({
-                ...perm,
-                module,
-              }))
-            )
-            .map((row) => (
-              <tr key={row.id} className="hover:bg-slate-50 transition-colors">
-                <td className="px-4 py-2 font-medium">
-                  {row.key}
-                  <div className="text-xs text-gray-500">{row.description}</div>
-                </td>
-                {roles.map((role) => {
-                  const permId = row.id;
-                  const isChecked = activeMappings.has(`${role.id}_${permId}`);
-                  return (
-                    <td key={role.id} className="px-4 py-2 text-center align-top">
-                      <input
-                        type="checkbox"
-                        checked={isChecked}
-                        disabled={isPending}
-                        onChange={() => togglePermission(role.id, permId)}
-                        className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
-                        aria-label={`Berikan izin ${row.key} untuk role ${role.name}`}
-                      />
-                    </td>
-                  );
-                })}
-              </tr>
-            ))}
-        </tbody>
-      </table>
-    </div>
+    <DataTable
+      columns={columns}
+      data={flatPermissions}
+      emptyTitle="Tidak ada data permissions"
+      emptyDescription="Sistem RBAC tidak mendeteksi adanya data permissions."
+    />
   );
 }

@@ -2,7 +2,7 @@ import React from "react";
 
 export interface ColumnDef<TData> {
   /** Label for table column header */
-  header: string;
+  header: string | React.ReactNode;
   
   /** Object accessor path (supports nested paths like 'donation.program.title') */
   accessorKey?: string;

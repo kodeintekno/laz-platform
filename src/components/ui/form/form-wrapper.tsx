@@ -5,6 +5,7 @@ import { useForm, FormProvider, type UseFormReturn, type DefaultValues, type Fie
 import { zodResolver } from "@hookform/resolvers/zod";
 import { type z } from "zod";
 import { Alert } from "@/components/ui/Alert";
+import { logger } from "@/lib/logger";
 
 export interface FormWrapperProps<TFieldValues extends FieldValues> {
   schema: z.Schema<TFieldValues> | any;
@@ -39,12 +40,13 @@ export function FormWrapper<TFieldValues extends FieldValues>({
         onSubmit={handleSubmit(async (values) => {
           try {
             await onSubmit(values, form);
-          } catch (err) {
-            console.error("Form submit wrapper captured error:", err);
+          } catch (err: any) {
+            logger.error({ err }, "Form submit wrapper captured error");
           }
         })}
         className={className}
       >
+
         {error && (
           <Alert intent="error" className="mb-4">
             {error}

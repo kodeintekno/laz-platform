@@ -35,12 +35,12 @@ export function DataTableBody<TData>({
 
   if (loading) {
     return (
-      <tbody className="divide-y divide-gray-200 bg-white">
+      <tbody className="divide-y divide-border bg-surface">
         {Array.from({ length: 5 }).map((_, rIdx) => (
           <tr key={`skeleton-row-${rIdx}`} className="animate-pulse">
             {Array.from({ length: totalCols }).map((_, cIdx) => (
               <td key={`skeleton-cell-${cIdx}`} className="px-3 py-4 whitespace-nowrap">
-                <Skeleton className="h-4 w-full max-w-[120px] rounded-md bg-slate-100" />
+                <Skeleton className="h-4 w-full max-w-[120px] rounded-md bg-surface-soft" />
               </td>
             ))}
           </tr>
@@ -50,7 +50,7 @@ export function DataTableBody<TData>({
   }
 
   return (
-    <tbody className="divide-y divide-gray-200 bg-white">
+    <tbody className="divide-y divide-border bg-surface">
       {data.map((item, rIdx) => {
         const id = getRowId ? getRowId(item) : (item as any).id || rIdx.toString();
         const isSelected = selectedRowIds.includes(id);
@@ -58,8 +58,8 @@ export function DataTableBody<TData>({
         return (
           <tr
             key={id}
-            className={`hover:bg-slate-50 transition duration-150 ${
-              isSelected ? "bg-indigo-50/30" : ""
+            className={`hover:bg-surface-muted transition duration-150 ${
+              isSelected ? "bg-brand-primary/5" : ""
             }`}
           >
             {/* Selection Checkbox */}
@@ -69,7 +69,7 @@ export function DataTableBody<TData>({
                   type="checkbox"
                   checked={isSelected}
                   onChange={() => onRowSelectToggle && onRowSelectToggle(id)}
-                  className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+                  className="h-4 w-4 rounded border-border text-primary focus:ring-primary cursor-pointer"
                 />
               </td>
             )}

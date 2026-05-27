@@ -4,6 +4,7 @@ import { useTransition } from "react";
 import { z } from "zod";
 import { FormWrapper, FormField, Button, Card, CardContent, CardFooter } from "@/components/ui";
 import { toast } from "@/stores/toast.store";
+import { logger } from "@/lib/logger";
 
 const createUserSchema = z.object({
   name: z.string().min(2, "Nama minimal 2 karakter"),
@@ -34,10 +35,11 @@ export function UserCreateForm({ roles }: UserCreateFormProps) {
       // Mocking user creation network delay
       await new Promise((resolve) => setTimeout(resolve, 1000));
       
-      console.log("Creating user data:", data);
+      logger.info({ email: data.email, name: data.name }, "Creating user (Simulated)");
       toast.success(`Pengguna "${data.name}" berhasil dibuat (Simulasi)!`);
     });
   };
+
 
   const roleOptions = roles.map((role) => ({
     label: role.name,
@@ -133,7 +135,7 @@ export function UserCreateForm({ roles }: UserCreateFormProps) {
           />
         </CardContent>
 
-        <CardFooter className="flex justify-end gap-3 border-t border-gray-100 pt-4">
+        <CardFooter className="flex justify-end gap-3 border-t border-border pt-4">
           <Button type="button" intent="outline" disabled={isPending}>
             Batal
           </Button>

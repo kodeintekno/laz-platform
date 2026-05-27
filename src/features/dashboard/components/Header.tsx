@@ -35,12 +35,12 @@ export function Header({ user }: HeaderProps) {
   const userInitial = user?.name ? user.name.charAt(0).toUpperCase() : "?";
 
   return (
-    <header className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-6 flex-shrink-0 relative z-20">
+    <header className="h-16 bg-surface border-b border-border flex items-center justify-between px-6 flex-shrink-0 relative z-20">
       {/* Left: Mobile sidebar toggle */}
       <button
         onClick={toggleSidebar}
         aria-label="Toggle sidebar"
-        className="p-2 rounded-md text-gray-500 hover:bg-gray-100 transition-colors lg:hidden cursor-pointer"
+        className="p-2 rounded-xl text-text-secondary hover:bg-surface-muted transition-colors lg:hidden cursor-pointer"
       >
         <span className="sr-only">Toggle sidebar</span>
         <Menu className="w-5 h-5" />
@@ -48,14 +48,14 @@ export function Header({ user }: HeaderProps) {
 
       {/* Center / Left: Page title placeholder */}
       <div className="flex-1 px-4">
-        <p className="text-sm text-gray-500 font-medium">Dashboard</p>
+        <p className="text-sm text-text-secondary font-semibold">Dashboard</p>
       </div>
 
       {/* Right: Actions */}
       <div className="flex items-center gap-4">
         {/* Notification Icon */}
         <button 
-          className="p-1.5 rounded-full text-gray-400 hover:bg-gray-50 hover:text-gray-600 transition-all cursor-pointer"
+          className="p-1.5 rounded-full text-text-muted hover:bg-surface-muted hover:text-text-primary transition-all cursor-pointer"
           aria-label="Notification bell"
         >
           <Bell className="w-5 h-5" />
@@ -65,7 +65,7 @@ export function Header({ user }: HeaderProps) {
         <div className="relative" ref={dropdownRef}>
           <button
             onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-            className="flex items-center gap-2 p-1 rounded-full hover:bg-gray-50 transition-all focus:outline-none cursor-pointer"
+            className="flex items-center gap-2 p-1 rounded-full hover:bg-surface-muted transition-all focus:outline-none cursor-pointer"
             aria-expanded={isDropdownOpen}
             aria-haspopup="true"
           >
@@ -73,10 +73,10 @@ export function Header({ user }: HeaderProps) {
               <img
                 src={user.image}
                 alt={user.name || "User Avatar"}
-                className="w-8 h-8 rounded-full object-cover ring-2 ring-gray-100"
+                className="w-8 h-8 rounded-full object-cover ring-2 ring-surface-soft"
               />
             ) : (
-              <div className="w-8 h-8 rounded-full bg-indigo-600 text-white flex items-center justify-center font-bold text-sm shadow-sm">
+              <div className="w-8 h-8 rounded-full bg-brand-primary text-white flex items-center justify-center font-bold text-sm shadow-soft">
                 {userInitial}
               </div>
             )}
@@ -84,13 +84,13 @@ export function Header({ user }: HeaderProps) {
 
           {/* Dropdown Menu */}
           {isDropdownOpen && (
-            <div className="absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-lg border border-gray-100 py-1.5 z-30 animate-in fade-in slide-in-from-top-2 duration-150">
+            <div className="absolute right-0 mt-2 w-56 bg-surface rounded-xl shadow-soft border border-border py-1.5 z-30 animate-in fade-in slide-in-from-top-2 duration-150">
               {/* User Identity Info */}
-              <div className="px-4 py-2 border-b border-gray-100">
-                <p className="text-sm font-bold text-gray-900 truncate">{user?.name || "User"}</p>
-                <p className="text-xs text-gray-500 truncate mb-1.5">{user?.email || "No email"}</p>
+              <div className="px-4 py-2 border-b border-border">
+                <p className="text-sm font-bold text-text-primary truncate">{user?.name || "User"}</p>
+                <p className="text-xs text-text-secondary truncate mb-1.5">{user?.email || "No email"}</p>
                 {user?.roleName && (
-                  <span className="inline-flex items-center rounded-md bg-indigo-50 px-2 py-0.5 text-xs font-semibold text-indigo-700 ring-1 ring-inset ring-indigo-700/10">
+                  <span className="inline-flex items-center rounded-md bg-brand-primary/10 px-2 py-0.5 text-xs font-semibold text-brand-primary ring-1 ring-inset ring-brand-primary/20">
                     {user.roleName}
                   </span>
                 )}
@@ -100,7 +100,7 @@ export function Header({ user }: HeaderProps) {
               <div className="py-1">
                 <button
                   onClick={() => signOut({ callbackUrl: "/login" })}
-                  className="w-full text-left flex items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors cursor-pointer"
+                  className="w-full text-left flex items-center gap-2 px-4 py-2 text-sm text-error-token hover:bg-error-token/10 transition-colors cursor-pointer"
                 >
                   <LogOut className="w-4 h-4" />
                   <span>Keluar / Sign Out</span>

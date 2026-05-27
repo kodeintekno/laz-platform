@@ -19,10 +19,10 @@ export const AlertDialog = ({
   description,
   okLabel = "OK",
 }: AlertDialogProps) => (
-  <Dialog open={open} onOpenChange={onOpenChange} title={title}>
+  <Dialog isOpen={open} onClose={() => onOpenChange(false)} title={title}>
     {description && <DialogBody>{description}</DialogBody>}
     <DialogFooter>
-      <Button variant="primary" onClick={() => onOpenChange(false)}>{okLabel}</Button>
+      <Button intent="primary" onClick={() => onOpenChange(false)}>{okLabel}</Button>
     </DialogFooter>
   </Dialog>
 );

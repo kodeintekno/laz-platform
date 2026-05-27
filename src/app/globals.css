@@ -1,40 +1,40 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #111827; /* gray-900 */
+  --background: #FFFFFF; /* surface.DEFAULT */
+  --foreground: #1C1C1C; /* text.primary */
   
-  --primary: #4f46e5; /* indigo-600 */
-  --primary-hover: #4338ca; /* indigo-700 */
-  --secondary: #6b7280; /* gray-500 */
-  --destructive: #ef4444; /* red-500 */
-  --destructive-hover: #dc2626; /* red-600 */
-  --success: #10b981; /* emerald-500 */
-  --success-hover: #059669; /* emerald-600 */
-  --warning: #f59e0b; /* amber-500 */
-  --warning-hover: #d97706; /* amber-600 */
-  --muted: #f3f4f6; /* gray-100 */
-  --muted-foreground: #6b7280; /* gray-500 */
-  --border: #e5e7eb; /* gray-200 */
+  --primary: #0F3D2E; /* brand.primary */
+  --primary-hover: #145A3A; /* brand.secondary */
+  --secondary: #6B7280; /* text.secondary */
+  --destructive: #DC2626; /* error */
+  --destructive-hover: #B91C1C;
+  --success: #16A34A; /* success */
+  --success-hover: #15803D;
+  --warning: #F59E0B; /* warning */
+  --warning-hover: #D97706;
+  --muted: #F7F9F8; /* surface.muted */
+  --muted-foreground: #6B7280; /* text.secondary */
+  --border: #EEF3F1; /* surface.soft */
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0f172a; /* slate-900 */
-    --foreground: #f8fafc; /* slate-50 */
+    --background: #091C15; /* dark brand-primary surface */
+    --foreground: #EEF3F1; /* surface.soft */
     
-    --primary: #6366f1; /* indigo-500 */
-    --primary-hover: #4f46e5; /* indigo-600 */
-    --secondary: #94a3b8; /* slate-400 */
-    --destructive: #f87171; /* red-400 */
-    --destructive-hover: #ef4444; /* red-500 */
-    --success: #34d399; /* emerald-400 */
-    --success-hover: #10b981; /* emerald-500 */
-    --warning: #fbbf24; /* amber-400 */
-    --warning-hover: #f59e0b; /* amber-500 */
-    --muted: #1e293b; /* slate-800 */
-    --muted-foreground: #94a3b8; /* slate-400 */
-    --border: #334155; /* slate-700 */
+    --primary: #2A9D8F; /* brand.soft */
+    --primary-hover: #1F7A6B; /* brand.accent */
+    --secondary: #9CA3AF; /* text.muted */
+    --destructive: #F87171;
+    --destructive-hover: #EF4444;
+    --success: #34D399;
+    --success-hover: #10B981;
+    --warning: #FBBF24;
+    --warning-hover: #F59E0B;
+    --muted: #112A20;
+    --muted-foreground: #9CA3AF;
+    --border: #1B3E32;
   }
 }
 
@@ -56,6 +56,29 @@
   --color-muted: var(--muted);
   --color-muted-foreground: var(--muted-foreground);
   --color-border: var(--border);
+
+  /* Brand Colors Custom Properties */
+  --color-brand-primary: #0F3D2E;
+  --color-brand-secondary: #145A3A;
+  --color-brand-accent: #1F7A6B;
+  --color-brand-soft: #2A9D8F;
+
+  --color-surface: #FFFFFF;
+  --color-surface-muted: #F7F9F8;
+  --color-surface-soft: #EEF3F1;
+
+  --color-text-primary: #1C1C1C;
+  --color-text-secondary: #6B7280;
+  --color-text-muted: #9CA3AF;
+
+  --color-success-token: #16A34A;
+  --color-warning-token: #F59E0B;
+  --color-error-token: #DC2626;
+  --color-info-token: #2563EB;
+
+  /* Custom Shadow Tokens */
+  --shadow-soft: 0 4px 12px 0 rgba(0, 0, 0, 0.03), 0 1px 3px 0 rgba(0, 0, 0, 0.02);
+  --shadow-card: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -4px rgba(0, 0, 0, 0.05);
 }
 
 body {
@@ -63,3 +86,4 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+

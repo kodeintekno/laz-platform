@@ -4,6 +4,7 @@ import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { BreadcrumbProvider } from "@/providers/breadcrumb-provider";
 import { Breadcrumbs } from "@/components/ui/breadcrumb";
+import { logger } from "@/lib/logger";
 
 /**
  * Protected Route Group Layout.
@@ -24,9 +25,20 @@ export default async function ProtectedLayout({
     redirect("/login");
   }
 
+  logger.info(
+    {
+      userId: session.user.id,
+      email: session.user.email,
+      roleName: session.user.roleName,
+      permissions: session.user.permissions,
+    },
+    "Protected Layout Loaded"
+  );
+
+
   return (
     <BreadcrumbProvider>
-      <div className="flex h-screen overflow-hidden bg-gray-50">
+      <div className="flex h-screen overflow-hidden bg-surface-muted">
         {/* Sidebar */}
         <Sidebar />
 
