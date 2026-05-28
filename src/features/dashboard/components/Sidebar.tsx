@@ -89,7 +89,7 @@ export function Sidebar() {
         style={{ width: isSidebarCollapsed ? '4rem' : '16rem' }}
         className={`
           flex flex-col h-full text-primary
-          bg-surface/95 backdrop-blur-sm rounded-r-xl shadow-md
+          bg-surface/95 backdrop-blur-sm rounded-r-2xl shadow-md
           transition-transform duration-300
           ${isSidebarCollapsed ? "w-16" : "w-64"}
           fixed inset-y-0 left-0 z-40
@@ -147,7 +147,7 @@ export function Sidebar() {
                     <li key={item.href}>
                       <Link
                         href={item.href}
-                        className={`flex items-center gap-3 px-3 py-2 text-sm ${isActive ? "bg-success/5 text-success font-medium" : "text-primary hover:bg-surface-muted hover:text-primary"}`}
+                        className={`flex items-center gap-3 px-3 py-2 text-sm rounded-xl ${isActive ? "bg-success/5 text-success font-medium" : "text-primary hover:bg-surface-muted hover:text-primary"}`}
                         aria-current={isActive ? "page" : undefined}
                       >
                         <IconComponent className="w-5 h-5 flex-shrink-0 text-primary" />

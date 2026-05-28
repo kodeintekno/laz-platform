@@ -35,7 +35,7 @@ export function Header({ user }: HeaderProps) {
   const userInitial = user?.name ? user.name.charAt(0).toUpperCase() : "?";
 
   return (
-    <header className="h-16 bg-surface flex items-center justify-between px-6 flex-shrink-0 relative z-20">
+    <header className="h-16 bg-surface border-b border-border/40 flex items-center justify-between px-6 flex-shrink-0 relative z-20">
         {/* Mobile sidebar trigger */}
         <button
           onClick={toggleSidebar}
@@ -81,13 +81,13 @@ export function Header({ user }: HeaderProps) {
 
           {/* Dropdown Menu */}
           {isDropdownOpen && (
-            <div className="absolute right-0 mt-2 w-56 bg-surface rounded-xl shadow-soft py-1.5 z-30 animate-in fade-in slide-in-from-top-2 duration-150">
+            <div className="absolute right-0 mt-2 w-56 bg-surface rounded-2xl shadow-soft py-1.5 z-30 animate-in fade-in slide-in-from-top-2 duration-150 border border-border/40">
               {/* User Identity Info */}
               <div className="px-4 py-2 shadow-sm">
                 <p className="text-sm font-bold text-primary truncate">{user?.name || "User"}</p>
                 <p className="text-xs text-secondary truncate mb-1.5">{user?.email || "No email"}</p>
                 {user?.roleName && (
-                  <span className="inline-flex items-center rounded-md bg-brand-primary/10 px-2 py-0.5 text-xs font-semibold text-brand-primary ring-1 ring-inset ring-brand-primary/20">
+                  <span className="inline-flex items-center rounded-xl bg-brand-primary/10 px-2 py-0.5 text-xs font-semibold text-brand-primary ring-1 ring-inset ring-brand-primary/20">
                     {user.roleName}
                   </span>
                 )}

@@ -183,7 +183,7 @@ async function main() {
   // ─── Dummy Programs ─────────────────────────────────────────────────────────
   console.log("\n📦 Seeding dummy programs...");
 
-  const adminUser = await prisma.user.findUnique({ where: { email: "admin@laz.id" } });
+  const adminUser = await prisma.user.findUnique({ where: { email: adminEmail } });
 
   if (adminUser) {
     const dummyPrograms = [

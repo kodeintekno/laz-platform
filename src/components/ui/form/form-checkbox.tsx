@@ -17,7 +17,7 @@ export function FormCheckbox({ name, label, description, disabled, ...props }: F
       name={name}
       control={control}
       render={({ field }) => (
-        <label className="flex items-start gap-3 p-4 rounded-xl bg-muted/30 border border-border cursor-pointer hover:bg-muted/55 transition select-none w-full">
+        <label className="flex items-start gap-3 p-4 rounded-xl bg-surface-muted/30 border border-border/40 cursor-pointer hover:bg-surface-muted/55 transition select-none w-full">
           <div className="flex h-6 items-center">
             <input
               type="checkbox"
@@ -25,7 +25,7 @@ export function FormCheckbox({ name, label, description, disabled, ...props }: F
               onChange={field.onChange}
               onBlur={field.onBlur}
               disabled={disabled || isSubmitting}
-              className="h-4 w-4 rounded border-border text-primary focus:ring-primary cursor-pointer disabled:opacity-50"
+              className="h-4 w-4 rounded-xl border-border/40 text-primary focus:ring-primary cursor-pointer disabled:opacity-50"
               {...props}
             />
           </div>

@@ -38,7 +38,7 @@ export default async function ProtectedLayout({
 
   return (
     <BreadcrumbProvider>
-      <div className="flex h-screen overflow-hidden bg-white">
+      <div className="flex h-screen overflow-hidden bg-surface-muted">
         {/* Sidebar */}
         <Sidebar />
 

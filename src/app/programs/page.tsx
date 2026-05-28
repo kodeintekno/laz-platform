@@ -22,7 +22,7 @@ export default async function PublicProgramsPage() {
   return (
     <div className="bg-surface-muted min-h-screen">
       {/* Simple Public Header */}
-      <header className="bg-surface shadow-soft border-b border-border">
+      <header className="bg-surface shadow-soft border-b border-border/40">
         <div className="mx-auto max-w-7xl px-4 py-4 sm:px-6 lg:px-8 flex justify-between items-center">
           <Link href="/" className="text-xl font-bold text-brand-primary">
             LAZ Platform
@@ -55,13 +55,14 @@ export default async function PublicProgramsPage() {
             const progress = Math.min(100, Math.round((currentAmount / targetAmount) * 100));
 
             return (
-              <div key={program.id} className="group relative bg-surface rounded-xl shadow-soft hover:shadow-card transition overflow-hidden border border-border flex flex-col">
+              <div key={program.id} className="group relative bg-surface rounded-2xl shadow-soft hover:shadow-card transition overflow-hidden border border-border/40 flex flex-col">
                 <div className="aspect-[16/9] w-full overflow-hidden bg-surface-soft relative">
                   {program.image ? (
                     <Image
                       src={program.image}
                       alt={program.title}
                       fill
+                      sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                       className="object-cover"
                     />
                   ) : (

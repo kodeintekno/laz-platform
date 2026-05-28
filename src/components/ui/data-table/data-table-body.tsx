@@ -35,12 +35,12 @@ export function DataTableBody<TData>({
 
   if (loading) {
     return (
-      <tbody className="divide-y divide-border bg-surface">
+      <tbody className="divide-y divide-border/40 bg-surface">
         {Array.from({ length: 5 }).map((_, rIdx) => (
           <tr key={`skeleton-row-${rIdx}`} className="animate-pulse">
             {Array.from({ length: totalCols }).map((_, cIdx) => (
               <td key={`skeleton-cell-${cIdx}`} className="px-3 py-4 whitespace-nowrap">
-                <Skeleton className="h-4 w-full max-w-[120px] rounded-md bg-surface-soft" />
+                <Skeleton className="h-4 w-full max-w-[120px] rounded-xl bg-surface-soft" />
               </td>
             ))}
           </tr>
@@ -50,7 +50,7 @@ export function DataTableBody<TData>({
   }
 
   return (
-    <tbody className="divide-y divide-border bg-surface">
+    <tbody className="divide-y divide-border/40 bg-surface">
       {data.map((item, rIdx) => {
         const id = getRowId ? getRowId(item) : (item as any).id || rIdx.toString();
         const isSelected = selectedRowIds.includes(id);

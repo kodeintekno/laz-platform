@@ -108,9 +108,9 @@ export function DataTable<TData>({
       )}
 
       {/* Main Table Wrapper */}
-      <div className="overflow-hidden rounded-xl bg-surface shadow-sm w-full">
+      <div className="overflow-hidden rounded-2xl bg-surface shadow-sm w-full">
         <div className="overflow-x-auto w-full">
-          <table className="min-w-full divide-y divide-border align-middle">
+          <table className="min-w-full divide-y divide-border/40 align-middle">
             <DataTableHeader
               columns={columns}
               enableSelection={enableSelection}

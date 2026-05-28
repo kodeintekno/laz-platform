@@ -35,7 +35,7 @@ export default async function ProgramDetailPage({ params }: { params: Promise<{ 
   return (
     <div className="bg-surface-muted min-h-screen pb-20">
       {/* Simple Public Header */}
-      <header className="bg-surface shadow-soft border-b border-border">
+      <header className="bg-surface shadow-soft border-b border-border/40">
         <div className="mx-auto max-w-7xl px-4 py-4 sm:px-6 lg:px-8 flex justify-between items-center">
           <Link href="/" className="text-xl font-bold text-brand-primary">
             LAZ Platform
@@ -49,11 +49,11 @@ export default async function ProgramDetailPage({ params }: { params: Promise<{ 
       </header>
 
       <main className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 py-8">
-        <div className="bg-surface rounded-xl shadow-soft border border-border overflow-hidden lg:flex">
+        <div className="bg-surface rounded-2xl shadow-soft border border-border/40 overflow-hidden lg:flex">
           {/* Image Section */}
           <div className="lg:w-7/12 relative aspect-[4/3] lg:aspect-auto bg-surface-soft">
             {program.image ? (
-              <Image src={program.image} alt={program.title} fill className="object-cover" />
+              <Image src={program.image} alt={program.title} fill sizes="(max-width: 1024px) 100vw, 60vw" className="object-cover" />
             ) : (
               <div className="w-full h-full flex items-center justify-center text-muted">Tidak ada gambar</div>
             )}
@@ -79,11 +79,11 @@ export default async function ProgramDetailPage({ params }: { params: Promise<{ 
             </div>
 
             <div className="grid grid-cols-2 gap-4 mb-8">
-              <div className="bg-surface-muted p-4 rounded-xl border border-border text-center">
+              <div className="bg-surface-muted p-4 rounded-2xl border border-border/40 text-center">
                 <p className="text-sm text-secondary mb-1">Donatur</p>
                 <p className="text-xl font-bold text-primary">{program.donations.length}</p>
               </div>
-              <div className="bg-surface-muted p-4 rounded-xl border border-border text-center">
+              <div className="bg-surface-muted p-4 rounded-2xl border border-border/40 text-center">
                 <p className="text-sm text-secondary mb-1">Sisa Waktu</p>
                 <p className="text-xl font-bold text-primary">
                   {program.endDate ? Math.max(0, Math.ceil((new Date(program.endDate).getTime() - now) / (1000 * 60 * 60 * 24))) : "∞"} Hari
@@ -105,8 +105,8 @@ export default async function ProgramDetailPage({ params }: { params: Promise<{ 
         <div className="mt-8 grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Story */}
           <div className="lg:col-span-2">
-            <div className="bg-surface rounded-xl shadow-soft border border-border p-6 sm:p-8">
-              <h2 className="text-xl font-bold text-primary mb-4 pb-4 border-b border-border">Cerita Penggalangan Dana</h2>
+            <div className="bg-surface rounded-2xl shadow-soft border border-border/40 p-6 sm:p-8">
+              <h2 className="text-xl font-bold text-primary mb-4 pb-4 border-b border-border/40">Cerita Penggalangan Dana</h2>
               <div className="prose prose-emerald max-w-none text-secondary whitespace-pre-wrap">
                 {program.description}
               </div>
@@ -116,8 +116,8 @@ export default async function ProgramDetailPage({ params }: { params: Promise<{ 
           {/* Donaturs & Distributions Sidebar */}
           <div className="lg:col-span-1 space-y-8">
             {/* Donaturs */}
-            <div className="bg-surface rounded-xl shadow-soft border border-border p-6">
-              <h2 className="text-lg font-bold text-primary mb-4 pb-4 border-b border-border">Donasi Terbaru</h2>
+            <div className="bg-surface rounded-2xl shadow-soft border border-border/40 p-6">
+              <h2 className="text-lg font-bold text-primary mb-4 pb-4 border-b border-border/40">Donasi Terbaru</h2>
               <div className="space-y-4">
                 {program.donations.length > 0 ? (
                   program.donations.map((donation) => (
@@ -134,8 +134,8 @@ export default async function ProgramDetailPage({ params }: { params: Promise<{ 
                           {new Intl.DateTimeFormat('id-ID', { dateStyle: 'medium' }).format(new Date(donation.createdAt))}
                         </p>
                         {donation.message && (
-                          <p className="text-sm text-secondary italic mt-2 bg-surface-muted p-2 rounded border border-border">
-                            "{donation.message}"
+                          <p className="text-sm text-secondary italic mt-2 bg-surface-muted p-2 rounded-xl border border-border/40">
+                             "{donation.message}"
                           </p>
                         )}
                       </div>
@@ -148,8 +148,8 @@ export default async function ProgramDetailPage({ params }: { params: Promise<{ 
             </div>
 
             {/* Kabar Penyaluran */}
-            <div className="bg-surface rounded-xl shadow-soft border border-border p-6">
-              <h2 className="text-lg font-bold text-primary mb-4 pb-4 border-b border-border">Kabar Penyaluran</h2>
+            <div className="bg-surface rounded-2xl shadow-soft border border-border/40 p-6">
+              <h2 className="text-lg font-bold text-primary mb-4 pb-4 border-b border-border/40">Kabar Penyaluran</h2>
               <div className="space-y-6">
                 {program.distributions && program.distributions.length > 0 ? (
                   program.distributions.filter(d => d.status === "COMPLETED").map((dist) => (
