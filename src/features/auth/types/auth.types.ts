@@ -21,6 +21,7 @@ declare module "next-auth" {
       roleName?: RoleName;
       roleId?: string;
       permissions: PermissionKey[];
+      lazId?: string;
     } & DefaultSession["user"];
   }
 
@@ -29,5 +30,6 @@ declare module "next-auth" {
     roleName?: RoleName;
     roleId?: string;
     permissions?: PermissionKey[];
+    lazId?: string;
   }
 }

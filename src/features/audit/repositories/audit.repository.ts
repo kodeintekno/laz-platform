@@ -13,10 +13,22 @@ export const auditRepository = {
   /**
    * Create an immutable audit log entry.
    */
-  async create(input: CreateAuditLogInput) {
+  async create(input: CreateAuditLogInput & { lazId?: string }) {
+    let lazId = input.lazId;
+    if (!lazId && input.userId) {
+      const user = await prisma.user.findUnique({
+        where: { id: input.userId },
+        select: { lazId: true },
+      });
+      if (user) {
+        lazId = user.lazId;
+      }
+    }
+
     return prisma.auditLog.create({
       data: {
         userId: input.userId,
+        lazId: lazId || undefined,
         action: input.action as never, // Prisma enum cast
         entity: input.entity,
         entityId: input.entityId,
@@ -31,9 +43,9 @@ export const auditRepository = {
   /**
    * Find audit logs for a specific entity — read-only.
    */
-  async findByEntity(entity: string, entityId: string) {
+  async findByEntity(entity: string, entityId: string, lazId?: string) {
     return prisma.auditLog.findMany({
-      where: { entity, entityId },
+      where: { entity, entityId, lazId },
       orderBy: { createdAt: "desc" },
     });
   },
@@ -41,9 +53,9 @@ export const auditRepository = {
   /**
    * Find audit logs by user — read-only.
    */
-  async findByUser(userId: string, limit = 50) {
+  async findByUser(userId: string, limit = 50, lazId?: string) {
     return prisma.auditLog.findMany({
-      where: { userId },
+      where: { userId, lazId },
       orderBy: { createdAt: "desc" },
       take: limit,
     });
@@ -52,10 +64,13 @@ export const auditRepository = {
   /**
    * Find paged and searchable audit logs.
    */
-  async getAuditLogs(page: number = 1, limit: number = 10, search?: string) {
+  async getAuditLogs(page: number = 1, limit: number = 10, search?: string, lazId?: string) {
     const skip = (page - 1) * limit;
 
     const where: any = {};
+    if (lazId) {
+      where.lazId = lazId;
+    }
     if (search) {
       const isActionEnum = [
         "LOGIN", "LOGOUT", "CREATE", "UPDATE", "DELETE",

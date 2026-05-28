@@ -23,6 +23,7 @@ import {
   Settings,
   LogOut,
   HelpCircle,
+  Building2,
 } from "lucide-react";
 
 const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
@@ -36,6 +37,7 @@ const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   Shield,
   ScrollText,
   Settings,
+  Building2,
 };
 
 /**

@@ -52,7 +52,7 @@ export const userRepository = {
    * Find a role by name.
    */
   async findRoleByName(name: string) {
-    return prisma.role.findUnique({
+    return prisma.role.findFirst({
       where: { name },
     });
   },

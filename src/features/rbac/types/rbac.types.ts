@@ -36,6 +36,7 @@ export interface RBACSessionUser {
   roleId?: string;
   roleName?: RoleName;
   permissions: PermissionKey[];
+  lazId?: string;
 }
 
 // ─── Permission Check Context ────────────────────────────────────────────────

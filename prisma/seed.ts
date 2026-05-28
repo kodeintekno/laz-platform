@@ -57,6 +57,8 @@ const PERMISSION_DEFINITIONS = [
   { key: "permissions.manage", description: "Manage permissions" },
   // Settings
   { key: "settings.manage", description: "Manage system settings" },
+  // LAZ Management
+  { key: "laz.manage", description: "Manage LAZ tenants" },
 ];
 
 // ─── Role ↔ Permission matrix (from docs/user-roles-rbac.md) ─────────────────
@@ -106,6 +108,20 @@ const ROLE_DEFINITIONS = [
 async function main() {
   console.log("🌱 Seeding LAZ Platform...\n");
 
+  // 0. Upsert default LAZ organization
+  console.log("🏢 Seeding default LAZ organization...");
+  const defaultLaz = await prisma.laz.upsert({
+    where: { slug: "laz-peduli" },
+    update: { name: "LAZ Peduli" },
+    create: {
+      name: "LAZ Peduli",
+      slug: "laz-peduli",
+      logo: "https://example.com/logo.png",
+      status: "ACTIVE",
+    },
+  });
+  console.log(` ✓ Default LAZ created: ${defaultLaz.name}\n`);
+
   // 1. Upsert all permissions
   console.log("📋 Seeding permissions...");
   const permissionMap: Record<string, string> = {};
@@ -127,9 +143,9 @@ async function main() {
 
   for (const role of ROLE_DEFINITIONS) {
     const created = await prisma.role.upsert({
-      where: { name: role.name },
+      where: { lazId_name: { lazId: defaultLaz.id, name: role.name } },
       update: { description: role.description },
-      create: { name: role.name, description: role.description },
+      create: { name: role.name, description: role.description, lazId: defaultLaz.id },
     });
     roleMap[role.name] = created.id;
     process.stdout.write(".");
@@ -169,6 +185,7 @@ async function main() {
     update: {
       roleId: superAdminRoleId,
       status: "ACTIVE",
+      lazId: defaultLaz.id,
     },
     create: {
       email: adminEmail,
@@ -176,6 +193,7 @@ async function main() {
       password: hashedPassword,
       status: "ACTIVE",
       roleId: superAdminRoleId,
+      lazId: defaultLaz.id,
     },
   });
   console.log(" ✓ Super admin created");
@@ -230,9 +248,12 @@ async function main() {
 
     for (const prog of dummyPrograms) {
       await prisma.program.upsert({
-        where: { slug: prog.slug },
+        where: { lazId_slug: { lazId: defaultLaz.id, slug: prog.slug } },
         update: {},
-        create: prog,
+        create: {
+          ...prog,
+          lazId: defaultLaz.id,
+        },
       });
     }
     console.log(" ✓ Dummy programs seeded");

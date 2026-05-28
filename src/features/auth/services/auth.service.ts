@@ -3,6 +3,7 @@ import { userRepository } from "@/features/auth/repositories/user.repository";
 import { auditService } from "@/features/audit/services/audit.service";
 import { AuditAction } from "@/features/audit/types/audit.types";
 import type { LoginInput, RegisterInput } from "@/features/auth/validations/auth.schema";
+import { prisma } from "@/lib/prisma";
 import type { RBACSessionUser, PermissionKey } from "@/types";
 import { logger } from "@/lib/logger";
 
@@ -47,6 +48,7 @@ export const authService = {
       roleId: user.roleId ?? undefined,
       roleName: (user.role?.name as RBACSessionUser["roleName"]) ?? undefined,
       permissions,
+      lazId: user.lazId,
     };
   },
 
@@ -66,6 +68,12 @@ export const authService = {
       throw new Error("Role konfigurasi sistem tidak ditemukan (DONATUR)");
     }
 
+    // 2.5 Get default LAZ tenant
+    const defaultLaz = await prisma.laz.findFirst();
+    if (!defaultLaz) {
+      throw new Error("Sistem belum memiliki data LAZ aktif");
+    }
+
     // 3. Hash password
     const hashedPassword = await bcrypt.hash(data.password, 12);
 
@@ -76,6 +84,7 @@ export const authService = {
       password: hashedPassword,
       roleId: donaturRole.id,
       status: "ACTIVE",
+      lazId: defaultLaz.id,
     });
 
     // 5. Write audit log

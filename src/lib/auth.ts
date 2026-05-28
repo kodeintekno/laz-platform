@@ -40,6 +40,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         token.roleId = rbacUser.roleId;
         token.roleName = rbacUser.roleName;
         token.permissions = rbacUser.permissions;
+        token.lazId = rbacUser.lazId;
       }
       return token;
     },
@@ -49,6 +50,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         session.user.roleId = token.roleId as string | undefined;
         session.user.roleName = token.roleName as RBACSessionUser["roleName"] | undefined;
         session.user.permissions = (token.permissions as PermissionKey[]) ?? [];
+        session.user.lazId = token.lazId as string | undefined;
       }
       return session;
     },

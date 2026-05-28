@@ -72,6 +72,12 @@ export const NAV_ITEMS: NavItem[] = [
     permission: PERMISSIONS.AUDIT_READ,
   },
   {
+    label: "LAZ Management",
+    href: "/dashboard/laz",
+    icon: "Building2",
+    permission: PERMISSIONS.LAZ_MANAGE,
+  },
+  {
     label: "Settings",
     href: "/dashboard/settings",
     icon: "Settings",

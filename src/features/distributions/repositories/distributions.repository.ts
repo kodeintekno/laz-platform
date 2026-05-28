@@ -48,6 +48,14 @@ export const distributionsRepository = {
    * Create a new distribution request.
    */
   async create(data: DistributionInput, userId: string) {
+    const program = await prisma.program.findUnique({
+      where: { id: data.programId },
+      select: { lazId: true },
+    });
+    if (!program) {
+      throw new Error("Program tidak ditemukan");
+    }
+
     return prisma.distribution.create({
       data: {
         amount: data.amount,
@@ -57,6 +65,7 @@ export const distributionsRepository = {
         programId: data.programId,
         createdById: userId,
         status: "PENDING",
+        lazId: program.lazId,
       },
     });
   },

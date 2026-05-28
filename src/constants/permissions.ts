@@ -50,6 +50,9 @@ export const PERMISSIONS = {
 
   // ── System Settings ──────────────────────────────────────────────
   SETTINGS_MANAGE: "settings.manage",
+
+  // ── Tenant (LAZ) Management ──────────────────────────────────────
+  LAZ_MANAGE: "laz.manage",
 } as const;
 
 export type PermissionKey = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];

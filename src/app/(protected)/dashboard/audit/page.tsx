@@ -23,7 +23,7 @@ export default async function AuditPage({
   const page = typeof resolvedSearchParams.page === "string" ? parseInt(resolvedSearchParams.page) : 1;
   const search = typeof resolvedSearchParams.search === "string" ? resolvedSearchParams.search : undefined;
 
-  const { items: logs, metadata: paginatedMetadata } = await auditService.getLogs(page, 10, search);
+  const { items: logs, metadata: paginatedMetadata } = await auditService.getLogs(page, 10, search, session.user.lazId);
 
   return (
     <div className="space-y-6">

@@ -56,6 +56,15 @@ export const donationsRepository = {
     paymentMethod: string;
   }) {
     return prisma.$transaction(async (tx) => {
+      // 0. Fetch parent program's lazId
+      const program = await tx.program.findUnique({
+        where: { id: data.programId },
+        select: { lazId: true },
+      });
+      if (!program) {
+        throw new Error("Program tidak ditemukan");
+      }
+
       // 1. Create Donation (status PENDING by default)
       const donation = await tx.donation.create({
         data: {
@@ -64,6 +73,7 @@ export const donationsRepository = {
           isAnonymous: data.isAnonymous,
           userId: data.userId,
           programId: data.programId,
+          lazId: program.lazId,
         },
       });
 
@@ -74,6 +84,7 @@ export const donationsRepository = {
           amount: data.amount,
           paymentMethod: data.paymentMethod,
           gatewayRef: `MOCK-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+          lazId: program.lazId,
         },
       });
 

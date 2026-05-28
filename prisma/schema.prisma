@@ -1,8 +1,7 @@
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
-// LAZ Platform — Phase 1: Foundation Schema
-// Stub models and enums only. Relations and full fields added per phase.
+// LAZ Platform — Proper Multi-Tenant Schema
 
 generator client {
   provider = "prisma-client-js"
@@ -10,7 +9,6 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  // url = env("DATABASE_URL") // moved to prisma/config.ts
 }
 
 // ─────────────────────────────────────────
@@ -74,6 +72,26 @@ enum DistributionStatus {
 // MODELS
 // ─────────────────────────────────────────
 
+model Laz {
+  id        String   @id @default(cuid())
+  name      String
+  slug      String   @unique
+  logo      String?
+  status    String   @default("ACTIVE")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  users         User[]         @relation("LazUsers")
+  roles         Role[]         @relation("LazRoles")
+  programs      Program[]      @relation("LazPrograms")
+  donations     Donation[]     @relation("LazDonations")
+  payments      Payment[]      @relation("LazPayments")
+  distributions Distribution[] @relation("LazDistributions")
+  auditLogs     AuditLog[]     @relation("LazAuditLogs")
+
+  @@map("lazs")
+}
+
 model User {
   id             String     @id @default(cuid())
   email          String     @unique
@@ -84,10 +102,12 @@ model User {
   status         UserStatus @default(ACTIVE)
   lastLoginAt    DateTime?
   roleId         String?
+  lazId          String
   createdAt      DateTime   @default(now())
   updatedAt      DateTime   @updatedAt
 
   role      Role?      @relation("UserRole", fields: [roleId], references: [id])
+  laz       Laz        @relation("LazUsers", fields: [lazId], references: [id], onDelete: Cascade)
   auditLogs AuditLog[] @relation("UserAuditLogs")
   donations Donation[] @relation("UserDonations")
   programs  Program[]  @relation("ProgramCreator")
@@ -99,14 +119,17 @@ model User {
 
 model Role {
   id          String   @id @default(cuid())
-  name        String   @unique
+  name        String
   description String?
+  lazId       String
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
+  laz             Laz              @relation("LazRoles", fields: [lazId], references: [id], onDelete: Cascade)
   users           User[]           @relation("UserRole")
   rolePermissions RolePermission[] @relation("RoleToRolePermission")
 
+  @@unique([lazId, name])
   @@map("roles")
 }
 
@@ -127,8 +150,8 @@ model RolePermission {
   permissionId String
   createdAt    DateTime @default(now())
 
-  role       Role       @relation("RoleToRolePermission", fields: [roleId], references: [id])
-  permission Permission @relation("PermissionToRolePermission", fields: [permissionId], references: [id])
+  role       Role       @relation("RoleToRolePermission", fields: [roleId], references: [id], onDelete: Cascade)
+  permission Permission @relation("PermissionToRolePermission", fields: [permissionId], references: [id], onDelete: Cascade)
 
   @@unique([roleId, permissionId])
   @@map("role_permissions")
@@ -137,6 +160,7 @@ model RolePermission {
 model AuditLog {
   id        String      @id @default(cuid())
   userId    String?
+  lazId     String?
   action    AuditAction
   entity    String // e.g. "User", "Program", "Donation"
   entityId  String?
@@ -147,6 +171,7 @@ model AuditLog {
   createdAt DateTime    @default(now())
 
   user User? @relation("UserAuditLogs", fields: [userId], references: [id], onDelete: SetNull)
+  laz  Laz?  @relation("LazAuditLogs", fields: [lazId], references: [id], onDelete: SetNull)
 
   @@map("audit_logs")
 }
@@ -154,7 +179,7 @@ model AuditLog {
 model Program {
   id            String          @id @default(cuid())
   title         String
-  slug          String          @unique
+  slug          String
   description   String          @db.Text
   targetAmount      Decimal         @db.Decimal(12, 2)
   currentAmount     Decimal         @default(0) @db.Decimal(12, 2)
@@ -165,13 +190,16 @@ model Program {
   startDate         DateTime?
   endDate           DateTime?
   createdById       String
+  lazId             String
   createdAt         DateTime        @default(now())
   updatedAt         DateTime        @updatedAt
 
   createdBy     User           @relation("ProgramCreator", fields: [createdById], references: [id])
+  laz           Laz            @relation("LazPrograms", fields: [lazId], references: [id], onDelete: Cascade)
   donations     Donation[]     @relation("ProgramDonations")
   distributions Distribution[] @relation("ProgramDistributions")
 
+  @@unique([lazId, slug])
   @@map("programs")
 }
 
@@ -183,12 +211,14 @@ model Donation {
   status      DonationStatus @default(PENDING)
   userId      String?
   programId   String
+  lazId       String
   createdAt   DateTime       @default(now())
   updatedAt   DateTime       @updatedAt
 
   user    User?    @relation("UserDonations", fields: [userId], references: [id], onDelete: SetNull)
   program Program  @relation("ProgramDonations", fields: [programId], references: [id], onDelete: Restrict)
   payment Payment? @relation("DonationPayment")
+  laz     Laz      @relation("LazDonations", fields: [lazId], references: [id], onDelete: Cascade)
 
   @@map("donations")
 }
@@ -201,10 +231,12 @@ model Payment {
   paymentMethod String?
   status        PaymentStatus @default(PENDING)
   metadata      Json?
+  lazId         String
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
 
   donation Donation @relation("DonationPayment", fields: [donationId], references: [id], onDelete: Cascade)
+  laz      Laz      @relation("LazPayments", fields: [lazId], references: [id], onDelete: Cascade)
 
   @@map("payments")
 }
@@ -219,12 +251,14 @@ model Distribution {
   status       DistributionStatus @default(PENDING)
   createdById  String
   approvedById String?
+  lazId        String
   createdAt    DateTime           @default(now())
   updatedAt    DateTime           @updatedAt
 
   program    Program @relation("ProgramDistributions", fields: [programId], references: [id], onDelete: Restrict)
   createdBy  User    @relation("DistributionCreator", fields: [createdById], references: [id], onDelete: Restrict)
   approvedBy User?   @relation("DistributionApprover", fields: [approvedById], references: [id], onDelete: SetNull)
+  laz        Laz     @relation("LazDistributions", fields: [lazId], references: [id], onDelete: Cascade)
 
   @@map("distributions")
 }

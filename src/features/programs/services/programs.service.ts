@@ -2,6 +2,7 @@ import { programsRepository } from "@/features/programs/repositories/programs.re
 import { auditService } from "@/features/audit/services/audit.service";
 import { AuditAction } from "@/features/audit/types/audit.types";
 import type { ProgramInput } from "@/features/programs/validations/programs.schema";
+import { prisma } from "@/lib/prisma";
 
 /**
  * Generate a unique slug from a title.
@@ -32,6 +33,15 @@ export const programsService = {
   async createProgram(data: ProgramInput, adminId: string) {
     const slug = generateSlug(data.title);
 
+    const admin = await prisma.user.findUnique({
+      where: { id: adminId },
+      select: { lazId: true },
+    });
+
+    if (!admin) {
+      throw new Error("Admin tidak ditemukan");
+    }
+
     const newProgram = await programsRepository.create({
       title: data.title,
       slug,
@@ -43,6 +53,7 @@ export const programsService = {
       startDate: data.startDate ? new Date(data.startDate) : null,
       endDate: data.endDate ? new Date(data.endDate) : null,
       createdById: adminId,
+      lazId: admin.lazId,
     });
 
     await auditService.log({

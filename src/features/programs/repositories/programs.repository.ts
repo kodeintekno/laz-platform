@@ -55,7 +55,7 @@ export const programsRepository = {
    * Find a specific program by its slug.
    */
   async getProgramBySlug(slug: string) {
-    return prisma.program.findUnique({
+    return prisma.program.findFirst({
       where: { slug },
       include: {
         createdBy: { select: { name: true, image: true } },
