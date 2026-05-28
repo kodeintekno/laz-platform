@@ -49,7 +49,7 @@ export const programsService = {
       targetAmount: data.targetAmount,
       category: data.category,
       status: data.status,
-      image: data.image || null,
+      imageUrl: data.image || null,
       startDate: data.startDate ? new Date(data.startDate) : null,
       endDate: data.endDate ? new Date(data.endDate) : null,
       createdById: adminId,

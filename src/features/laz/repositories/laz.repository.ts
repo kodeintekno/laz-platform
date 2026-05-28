@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import type { Prisma } from "@prisma/client";
+import { CloudinaryProvider } from "@/lib/upload/cloudinaryProvider";
 
 export const lazRepository = {
   /**
@@ -64,6 +65,17 @@ export const lazRepository = {
    * Update an existing LAZ organization's details.
    */
   async update(id: string, data: Prisma.LazUpdateInput) {
+    // Fetch existing record to manage previous logo cleanup
+    const existing = await prisma.laz.findUnique({ where: { id } });
+    if (existing?.logoPublicId && data.logoPublicId && data.logoPublicId !== existing.logoPublicId) {
+      // Delete old logo file directly via Cloudinary server-side SDK
+      try {
+        const provider = new CloudinaryProvider();
+        await provider.delete(existing.logoPublicId);
+      } catch (e) {
+        console.error("Failed to delete old logo from Cloudinary:", e);
+      }
+    }
     return prisma.laz.update({
       where: { id },
       data,
@@ -74,6 +86,16 @@ export const lazRepository = {
    * Delete a LAZ organization by id.
    */
   async delete(id: string) {
+    // Retrieve record to delete associated logo file
+    const existing = await prisma.laz.findUnique({ where: { id } });
+    if (existing?.logoPublicId) {
+      try {
+        const provider = new CloudinaryProvider();
+        await provider.delete(existing.logoPublicId);
+      } catch (e) {
+        console.error("Failed to delete logo on record removal from Cloudinary:", e);
+      }
+    }
     return prisma.laz.delete({
       where: { id },
     });

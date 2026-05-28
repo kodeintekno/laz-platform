@@ -76,7 +76,8 @@ model Laz {
   id        String   @id @default(cuid())
   name      String
   slug      String   @unique
-  logo      String?
+  logoUrl      String?   @map("logo_url")
+  logoPublicId String?
   status    String   @default("ACTIVE")
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -97,7 +98,7 @@ model User {
   email          String     @unique
   name           String?
   password       String?
-  image          String?
+  avatarUrl          String?
   emailVerified  DateTime?
   status         UserStatus @default(ACTIVE)
   lastLoginAt    DateTime?
@@ -186,7 +187,7 @@ model Program {
   distributedAmount Decimal         @default(0) @db.Decimal(12, 2)
   category          ProgramCategory
   status            ProgramStatus   @default(DRAFT)
-  image             String?
+  imageUrl             String?
   startDate         DateTime?
   endDate           DateTime?
   createdById       String
@@ -247,7 +248,7 @@ model Distribution {
   amount       Decimal            @db.Decimal(12, 2)
   title        String
   description  String             @db.Text
-  receiptImage String?
+  receiptImageUrl String?
   status       DistributionStatus @default(PENDING)
   createdById  String
   approvedById String?

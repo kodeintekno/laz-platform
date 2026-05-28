@@ -53,8 +53,8 @@ export default async function ProgramDetailPage({ params }: { params: Promise<{ 
         <div className="bg-surface rounded-2xl shadow-soft border border-border/40 overflow-hidden lg:flex">
           {/* Image Section */}
           <div className="lg:w-7/12 relative aspect-[4/3] lg:aspect-auto bg-surface-soft">
-            {program.image ? (
-              <Image src={program.image} alt={program.title} fill sizes="(max-width: 1024px) 100vw, 60vw" className="object-cover" />
+            {program.imageUrl ? (
+              <Image src={program.imageUrl} alt={program.title} fill sizes="(max-width: 1024px) 100vw, 60vw" className="object-cover" />
             ) : (
               <div className="w-full h-full flex items-center justify-center text-muted">Tidak ada gambar</div>
             )}
@@ -164,8 +164,8 @@ export default async function ProgramDetailPage({ params }: { params: Promise<{ 
                         Tersalurkan: {formatRupiah(Number(dist.amount))}
                       </p>
                       <p className="text-sm text-secondary line-clamp-3 mb-2">{dist.description}</p>
-                      {dist.receiptImage && (
-                        <a href={dist.receiptImage} target="_blank" rel="noreferrer" className="text-xs text-brand-primary hover:underline font-semibold">
+                      {dist.receiptImageUrl && (
+                        <a href={dist.receiptImageUrl} target="_blank" rel="noreferrer" className="text-xs text-brand-primary hover:underline font-semibold">
                           Lihat Bukti Penyaluran &rarr;
                         </a>
                       )}

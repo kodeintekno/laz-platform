@@ -116,7 +116,7 @@ async function main() {
     create: {
       name: "LAZ Peduli",
       slug: "laz-peduli",
-      logo: "https://example.com/logo.png",
+      logoUrl: "https://example.com/logo.png",
       status: "ACTIVE",
     },
   });

@@ -58,13 +58,13 @@ export const programsRepository = {
     return prisma.program.findFirst({
       where: { slug },
       include: {
-        createdBy: { select: { name: true, image: true } },
+        createdBy: { select: { name: true, avatarUrl: true } },
         donations: {
           where: { status: "PAID" },
           orderBy: { createdAt: "desc" },
           take: 20,
           include: {
-            user: { select: { name: true, image: true } },
+            user: { select: { name: true, avatarUrl: true } },
           },
         },
         distributions: {

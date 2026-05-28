@@ -58,9 +58,9 @@ export default async function PublicProgramsPage() {
             return (
               <div key={program.id} className="group relative bg-surface rounded-2xl shadow-soft hover:shadow-card transition overflow-hidden border border-border/40 flex flex-col">
                 <div className="aspect-[16/9] w-full overflow-hidden bg-surface-soft relative">
-                  {program.image ? (
+                  {program.imageUrl ? (
                     <Image
-                      src={program.image}
+                      src={program.imageUrl}
                       alt={program.title}
                       fill
                       sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"

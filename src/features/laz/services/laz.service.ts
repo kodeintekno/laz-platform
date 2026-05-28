@@ -25,7 +25,8 @@ export const lazService = {
     const laz = await lazRepository.create({
       name: input.name,
       slug: input.slug,
-      logo: input.logo || null,
+      logoUrl: input.logoUrl || null,
+      logoPublicId: input.logoPublicId || null,
       status: input.status,
     });
 
@@ -62,6 +63,7 @@ export const lazService = {
 
     return deleted;
   },
+
   /**
    * Update an existing LAZ organization and write an audit log.
    */
@@ -74,7 +76,8 @@ export const lazService = {
     const updated = await lazRepository.update(id, {
       name: input.name,
       slug: input.slug,
-      logo: input.logo ?? null,
+      logoUrl: input.logoUrl ?? null,
+      logoPublicId: input.logoPublicId ?? null,
       status: input.status,
     });
 
@@ -97,5 +100,4 @@ export const lazService = {
 
     return updated;
   },
-
 };

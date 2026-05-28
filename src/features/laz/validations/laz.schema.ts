@@ -9,7 +9,8 @@ export const lazSchema = z.object({
     .min(3, "Slug minimal 3 karakter")
     .max(50, "Slug maksimal 50 karakter")
     .regex(/^[a-z0-9-]+$/, "Slug hanya boleh berisi huruf kecil, angka, dan tanda hubung (-)"),
-  logo: z.string().url("Format URL logo tidak valid").optional().or(z.literal("")),
+  logoUrl: z.string().url("Format URL logo tidak valid").optional().or(z.literal("")),
+  logoPublicId: z.string().optional().or(z.literal("")),
   status: z.enum(LAZ_STATUSES).default("ACTIVE"),
 });
 

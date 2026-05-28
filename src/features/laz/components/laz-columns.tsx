@@ -17,8 +17,8 @@ export function getLazColumns({ onEdit, onDelete }: GetLazColumnsProps): ColumnD
       header: "Logo",
       cell: (laz) => (
         <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-surface-soft text-secondary font-bold text-sm border border-surface-soft overflow-hidden">
-          {laz.logo ? (
-            <img src={laz.logo} alt={laz.name} className="w-full h-full object-cover" />
+          {laz.logoUrl ? (
+            <img src={laz.logoUrl} alt={laz.name} className="w-full h-full object-cover" />
           ) : (
             laz.name.slice(0, 2).toUpperCase()
           )}

@@ -61,7 +61,7 @@ export const distributionsRepository = {
         amount: data.amount,
         title: data.title,
         description: data.description,
-        receiptImage: data.receiptImage,
+        receiptImageUrl: data.receiptImageUrl,
         programId: data.programId,
         createdById: userId,
         status: "PENDING",
