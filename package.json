@@ -2,7 +2,7 @@
   "name": "laz-platform",
   "version": "0.1.0",
   "private": true,
-    "scripts": {
+  "scripts": {
     "postinstall": "prisma generate",
     "dev": "next dev",
     "build": "prisma generate && next build",
@@ -32,6 +32,7 @@
     "react": "19.2.4",
     "react-dom": "19.2.4",
     "react-hook-form": "^7.76.0",
+    "use-debounce": "^10.1.1",
     "zod": "^4.4.3",
     "zustand": "^5.0.13"
   },

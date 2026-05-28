@@ -3,12 +3,34 @@ import type { Prisma } from "@prisma/client";
 
 export const lazRepository = {
   /**
-   * Find all LAZ organizations.
+   * Find all LAZ organizations with pagination and search.
    */
-  async findMany() {
-    return prisma.laz.findMany({
-      orderBy: { createdAt: "desc" },
-    });
+  async findMany(page: number = 1, pageSize: number = 10, search?: string) {
+    const skip = (page - 1) * pageSize;
+    const where: Prisma.LazWhereInput = search
+      ? {
+          OR: [
+            { name: { contains: search, mode: "insensitive" } },
+            { slug: { contains: search, mode: "insensitive" } },
+          ],
+        }
+      : {};
+
+    const [items, total] = await Promise.all([
+      prisma.laz.findMany({
+        where,
+        orderBy: { createdAt: "desc" },
+        skip,
+        take: pageSize,
+      }),
+      prisma.laz.count({ where }),
+    ]);
+
+    return {
+      items,
+      total,
+      totalPages: Math.ceil(total / pageSize) || 1,
+    };
   },
 
   /**
@@ -45,6 +67,15 @@ export const lazRepository = {
     return prisma.laz.update({
       where: { id },
       data,
+    });
+  },
+
+  /**
+   * Delete a LAZ organization by id.
+   */
+  async delete(id: string) {
+    return prisma.laz.delete({
+      where: { id },
     });
   },
 };

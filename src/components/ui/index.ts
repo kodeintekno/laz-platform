@@ -20,6 +20,7 @@ export { Pagination } from "./Pagination";
 export { ToastContainer } from "./Toast";
 export { Breadcrumbs } from "./breadcrumb";
 export { DataTable } from "./data-table/data-table";
+export { ActionDropdown } from "./ActionDropdown";
 export * from "./form";
 
 

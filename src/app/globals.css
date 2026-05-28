@@ -90,6 +90,15 @@
   animation: flash 0.3s forwards;
 }
 
+@keyframes scaleIn {
+  0% { opacity: 0; transform: scale(0.95) translateY(-4px); }
+  100% { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.animate-scale-in {
+  animation: scaleIn 0.15s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
 /* Data table row softening */
 /* Add subtle bottom border to each row */
 table.min-w-full > tbody > tr {

@@ -5,10 +5,10 @@ import { AuditAction } from "@/features/audit/types/audit.types";
 
 export const lazService = {
   /**
-   * Get all LAZ tenants.
+   * Get all LAZ tenants with pagination and search parameters.
    */
-  async getLazs() {
-    return lazRepository.findMany();
+  async getLazs(page?: number, pageSize?: number, search?: string) {
+    return lazRepository.findMany(page, pageSize, search);
   },
 
   /**
@@ -39,5 +39,27 @@ export const lazService = {
     });
 
     return laz;
+  },
+
+  /**
+   * Delete a LAZ organization and write to audit logs.
+   */
+  async deleteLaz(id: string, executorUserId: string) {
+    const existing = await lazRepository.findById(id);
+    if (!existing) {
+      throw new Error("Lembaga amil zakat tidak ditemukan");
+    }
+
+    const deleted = await lazRepository.delete(id);
+
+    await auditService.log({
+      userId: executorUserId,
+      action: AuditAction.DELETE,
+      entity: "Laz",
+      entityId: deleted.id,
+      oldData: { name: deleted.name, slug: deleted.slug, status: deleted.status },
+    });
+
+    return deleted;
   },
 };

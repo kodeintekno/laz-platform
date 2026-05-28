@@ -33,3 +33,24 @@ export async function createLazAction(formData: FormData) {
     return { error: error.message || "Terjadi kesalahan saat menambahkan LAZ baru" };
   }
 }
+
+/**
+ * Server Action to delete a LAZ organization.
+ * Restricted to users with LAZ_MANAGE permission (Super Admins).
+ */
+export async function deleteLazAction(id: string) {
+  try {
+    const session = await auth();
+    if (!session?.user?.permissions.includes(PERMISSIONS.LAZ_MANAGE)) {
+      return { error: "Akses ditolak: Anda tidak memiliki izin untuk mengelola LAZ" };
+    }
+
+    await lazService.deleteLaz(id, session.user.id);
+
+    revalidatePath("/dashboard/laz");
+
+    return { success: true };
+  } catch (error: any) {
+    return { error: error.message || "Terjadi kesalahan saat menghapus LAZ" };
+  }
+}

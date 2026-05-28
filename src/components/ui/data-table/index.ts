@@ -27,6 +27,6 @@ export { DataTable } from "./data-table";
 export { DataTableHeader } from "./data-table-header";
 export { DataTableBody } from "./data-table-body";
 export { DataTableCell } from "./data-table-cell";
-export { DataTableToolbar } from "./data-table-toolbar";
+export { DataTableToolbar, DataTableToolbarSkeleton } from "./data-table-toolbar";
 export { DataTablePagination } from "./data-table-pagination";
 export { DataTableEmpty } from "./data-table-empty";

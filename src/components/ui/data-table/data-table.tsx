@@ -3,7 +3,7 @@
 import React from "react";
 import { DataTableHeader } from "./data-table-header";
 import { DataTableBody } from "./data-table-body";
-import { DataTableToolbar } from "./data-table-toolbar";
+import { DataTableToolbar, DataTableToolbarSkeleton } from "./data-table-toolbar";
 import { DataTablePagination } from "./data-table-pagination";
 import { DataTableEmpty } from "./data-table-empty";
 import type { ColumnDef } from "./index";
@@ -99,12 +99,14 @@ export function DataTable<TData>({
     <div className="space-y-4 w-full">
       {/* Toolbar (Search Input & Filters Slot) */}
       {(onSearchChange || searchValue || filterSlot) && (
-        <DataTableToolbar
-          searchValue={searchValue}
-          onSearchChange={onSearchChange}
-          searchPlaceholder={searchPlaceholder}
-          filterSlot={filterSlot}
-        />
+        <React.Suspense fallback={<DataTableToolbarSkeleton />}>
+          <DataTableToolbar
+            searchValue={searchValue}
+            onSearchChange={onSearchChange}
+            searchPlaceholder={searchPlaceholder}
+            filterSlot={filterSlot}
+          />
+        </React.Suspense>
       )}
 
       {/* Main Table Wrapper */}
@@ -145,7 +147,7 @@ export function DataTable<TData>({
       </div>
 
       {/* Pagination Controls */}
-      {pagination && pagination.totalPages > 1 && (
+      {pagination && pagination.totalCount > 0 && (
         <DataTablePagination
           currentPage={pagination.currentPage}
           totalPages={pagination.totalPages}

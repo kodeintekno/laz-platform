@@ -21,7 +21,7 @@ export const NAV_ITEMS: NavItem[] = [
     label: "Dashboard",
     href: "/dashboard",
     icon: "LayoutDashboard",
-    permission: PERMISSIONS.DONATIONS_READ, // All roles with any read access see dashboard
+    permission: PERMISSIONS.DONATIONS_READ,
   },
   {
     label: "Programs",
@@ -59,6 +59,13 @@ export const NAV_ITEMS: NavItem[] = [
     icon: "Users",
     permission: PERMISSIONS.USERS_READ,
   },
+  
+  {
+    label: "LAZ Management",
+    href: "/dashboard/laz",
+    icon: "Building2",
+    permission: PERMISSIONS.LAZ_MANAGE,
+  },
   {
     label: "RBAC",
     href: "/dashboard/rbac",
@@ -70,12 +77,6 @@ export const NAV_ITEMS: NavItem[] = [
     href: "/dashboard/audit",
     icon: "ScrollText",
     permission: PERMISSIONS.AUDIT_READ,
-  },
-  {
-    label: "LAZ Management",
-    href: "/dashboard/laz",
-    icon: "Building2",
-    permission: PERMISSIONS.LAZ_MANAGE,
   },
   {
     label: "Settings",

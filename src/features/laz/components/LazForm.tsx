@@ -4,7 +4,6 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { lazSchema, type LazInput } from "../validations/laz.schema";
 import { createLazAction } from "../actions/laz.actions";
-import Link from "next/link";
 import { FormWrapper, FormField, Button, Card, CardContent, CardFooter } from "@/components/ui";
 
 export function LazForm() {
@@ -51,7 +50,7 @@ export function LazForm() {
         }}
         error={error}
       >
-        <CardContent className="space-y-6">
+        <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full">
           <FormField
             name="name"
             label="Nama Lembaga Amil Zakat (LAZ)"
@@ -90,11 +89,6 @@ export function LazForm() {
         </CardContent>
 
         <CardFooter className="flex justify-end gap-3 border-t border-surface-soft pt-6 mt-6">
-          <Link href="/dashboard/laz">
-            <Button type="button" intent="outline" disabled={isPending}>
-              Batal
-            </Button>
-          </Link>
           <Button type="submit" disabled={isPending}>
             {isPending ? "Menyimpan..." : "Daftarkan LAZ"}
           </Button>
