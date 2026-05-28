@@ -88,7 +88,7 @@ export function DataTableToolbar({
   return (
     <form
       onSubmit={handleSubmit}
-      className="flex flex-col sm:flex-row items-center justify-between gap-4 w-full rounded-xl border border-border/40 bg-surface p-3"
+      className="flex flex-col sm:flex-row items-center justify-between gap-4 w-full rounded-2xl border border-border/20 bg-surface p-4 shadow-soft"
     >
       <div className="relative max-w-md w-full">
         <Input
@@ -127,7 +127,7 @@ export function DataTableToolbar({
 
 export function DataTableToolbarSkeleton() {
   return (
-    <div className="flex flex-col sm:flex-row items-center justify-between gap-4 w-full rounded-xl border border-border/40 bg-surface p-3 animate-pulse">
+    <div className="flex flex-col sm:flex-row items-center justify-between gap-4 w-full rounded-2xl border border-border/20 bg-surface p-4 shadow-soft animate-pulse">
       <div className="relative max-w-md w-full">
         <div className="h-10 w-full bg-surface-soft rounded-lg border border-border/20" />
       </div>
