@@ -40,7 +40,7 @@ export default async function DashboardHomePage() {
 
       {/* KPI Metrics */}
       <dl className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
-        <div className="relative overflow-hidden rounded-xl bg-surface px-4 pb-12 pt-5 shadow-soft sm:px-6 sm:pt-6 border border-border">
+        <div className="relative overflow-hidden rounded-md bg-surface px-4 pb-12 pt-5 sm:px-6 sm:pt-6 border border-border/20">
           <dt>
             <div className="absolute rounded-xl bg-brand-primary/10 p-3">
               <Wallet className="h-6 w-6 text-brand-primary" aria-hidden="true" />
@@ -52,7 +52,7 @@ export default async function DashboardHomePage() {
           </dd>
         </div>
 
-        <div className="relative overflow-hidden rounded-xl bg-surface px-4 pb-12 pt-5 shadow-soft sm:px-6 sm:pt-6 border border-border">
+        <div className="relative overflow-hidden rounded-md bg-surface px-4 pb-12 pt-5 sm:px-6 sm:pt-6 border border-border/20">
           <dt>
             <div className="absolute rounded-xl bg-success/10 p-3">
               <HeartHandshake className="h-6 w-6 text-success" aria-hidden="true" />
@@ -64,7 +64,7 @@ export default async function DashboardHomePage() {
           </dd>
         </div>
 
-        <div className="relative overflow-hidden rounded-xl bg-surface px-4 pb-12 pt-5 shadow-soft sm:px-6 sm:pt-6 border border-border">
+        <div className="relative overflow-hidden rounded-md bg-surface px-4 pb-12 pt-5 sm:px-6 sm:pt-6 border border-border/20">
           <dt>
             <div className="absolute rounded-xl bg-warning/10 p-3">
               <Activity className="h-6 w-6 text-warning" aria-hidden="true" />
@@ -76,7 +76,7 @@ export default async function DashboardHomePage() {
           </dd>
         </div>
 
-        <div className="relative overflow-hidden rounded-xl bg-surface px-4 pb-12 pt-5 shadow-soft sm:px-6 sm:pt-6 border border-border">
+        <div className="relative overflow-hidden rounded-md bg-surface px-4 pb-12 pt-5 sm:px-6 sm:pt-6 border border-border/20">
           <dt>
             <div className="absolute rounded-xl bg-info-token/10 p-3">
               <Users className="h-6 w-6 text-info-token" aria-hidden="true" />
@@ -93,7 +93,7 @@ export default async function DashboardHomePage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         
         {/* Recent Donations */}
-        <div className="bg-surface rounded-xl shadow-soft border border-border">
+        <div className="bg-surface rounded-md border border-border/20">
           <div className="p-6 border-b border-border flex justify-between items-center">
             <h2 className="text-lg font-bold text-primary">Donasi Terbaru</h2>
             <Link href="/dashboard/donations" className="text-sm font-semibold text-brand-primary hover:text-brand-secondary flex items-center gap-1">
@@ -124,7 +124,7 @@ export default async function DashboardHomePage() {
         </div>
 
         {/* Recent Distributions */}
-        <div className="bg-surface rounded-xl shadow-soft border border-border">
+        <div className="bg-surface rounded-md border border-border/20">
           <div className="p-6 border-b border-border flex justify-between items-center">
             <h2 className="text-lg font-bold text-primary">Penyaluran Selesai</h2>
             <Link href="/dashboard/distributions" className="text-sm font-semibold text-brand-primary hover:text-brand-secondary flex items-center gap-1">
