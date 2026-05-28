@@ -2,7 +2,7 @@ import React from "react";
 
 export function Card({ children, className = "" }: { children: React.ReactNode; className?: string }) {
   return (
-    <div className={`bg-surface rounded-md border border-border/20 overflow-hidden flex flex-col ${className}`}>
+    <div className={`bg-surface rounded-2xl border border-border/40 overflow-hidden flex flex-col ${className}`}>
       {children}
     </div>
   );
