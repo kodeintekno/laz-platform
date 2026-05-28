@@ -1,12 +1,14 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
 import { useUIStore } from "@/stores/ui.store";
 import { usePermission } from "@/hooks/usePermission";
 import { NAV_ITEMS } from "@/constants/nav";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { Skeleton } from "@/components/ui/Skeleton";
 import { logger } from "@/lib/logger";
 import {
   LayoutDashboard,
@@ -19,11 +21,8 @@ import {
   Shield,
   ScrollText,
   Settings,
-  ChevronLeft,
-  ChevronRight,
   LogOut,
   HelpCircle,
-  Menu,
 } from "lucide-react";
 
 const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
@@ -54,6 +53,7 @@ export function Sidebar() {
   const { isSidebarOpen, toggleSidebar, isSidebarCollapsed, toggleSidebarCollapsed } = useUIStore();
   const { can, isLoading, permissions, roleName } = usePermission();
   const { data: session } = useSession();
+  const [isLogoutConfirmOpen, setIsLogoutConfirmOpen] = useState(false);
 
   const userInitial = session?.user?.name ? session.user.name.charAt(0).toUpperCase() : "?";
 
@@ -77,20 +77,20 @@ export function Sidebar() {
   return (
     <>
       {/* Mobile overlay backdrop */}
-      {isSidebarOpen && (
-        <div
-          className="fixed inset-0 bg-black/30 lg:hidden"
-          onClick={toggleSidebar}
-          aria-label="Close sidebar overlay"
-        />
-      )}
+      <div
+        className={`fixed inset-0 bg-black/30 lg:hidden transition-opacity duration-300 ease-in-out z-30 ${
+          isSidebarOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
+        }`}
+        onClick={toggleSidebar}
+        aria-label="Close sidebar overlay"
+      />
 
       <aside
         style={{ width: isSidebarCollapsed ? '4rem' : '16rem' }}
         className={`
           flex flex-col h-full text-primary
           bg-surface/95 backdrop-blur-sm rounded-r-2xl shadow-md
-          transition-transform duration-300
+          transition-all duration-300 ease-in-out
           ${isSidebarCollapsed ? "w-16" : "w-64"}
           fixed inset-y-0 left-0 z-40
           ${isSidebarOpen ? "translate-x-0" : "-translate-x-full"}
@@ -99,41 +99,36 @@ export function Sidebar() {
         aria-label="Dashboard navigation"
       >
         {/* Header with mobile hamburger */}
-        <div className="flex items-center justify-between p-4 h-16 bg-surface/80 backdrop-blur-sm">
-          {/* Mobile hamburger toggle */}
-          <button
-            onClick={toggleSidebar}
-            aria-label="Toggle sidebar"
-            className="p-2 rounded-xl text-secondary hover:bg-surface-muted transition-colors lg:hidden"
-          >
-            <Menu className="w-5 h-5" />
-          </button>
-
-          {/* Logo */}
-          {!isSidebarCollapsed && (
-            <span className="text-lg font-bold tracking-tight text-primary">
+        <div className="flex items-center px-5 h-16 bg-surface/80 backdrop-blur-sm overflow-hidden flex-shrink-0">
+          <div className="flex items-center w-full justify-start">
+            <img src="/icon.png" alt="LAZ Platform Logo" className="w-6 h-6 object-contain flex-shrink-0" />
+            <span className={`text-lg font-bold tracking-tight text-primary transition-all duration-300 ease-in-out truncate ${isSidebarCollapsed ? "opacity-0 max-w-0 ml-0 pointer-events-none" : "opacity-100 max-w-[180px] ml-3"}`}>
               LAZ Platform
             </span>
-          )}
-
-          {/* Collapse/Expand button */}
-          <button
-            onClick={toggleSidebarCollapsed}
-            aria-label={isSidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
-            className="p-1.5 rounded-xl hover:bg-surface-muted transition-colors ml-auto cursor-pointer flex items-center justify-center"
-          >
-            {isSidebarCollapsed ? (
-              <ChevronRight className="h-4 w-4 text-brand-soft" />
-            ) : (
-              <ChevronLeft className="h-4 w-4 text-brand-soft" />
-            )}
-          </button>
+          </div>
         </div>
 
         {/* Nav Items */}
-        <nav className="flex-1 overflow-y-auto py-4 px-2">
+        <nav className={`flex-1 py-4 px-2 ${isSidebarCollapsed ? "overflow-y-visible overflow-x-visible" : "overflow-y-auto"}`}>
           {isLoading ? (
-            <div className="px-3 py-2 text-xs text-secondary">Loading...</div>
+            <div className="space-y-1">
+              {Array.from({ length: 6 }).map((_, idx) => (
+                <div
+                  key={idx}
+                  className="flex items-center px-3 py-2.5 rounded-xl"
+                >
+                  <Skeleton variant="rectangular" className="w-5 h-5 flex-shrink-0" />
+                  <Skeleton
+                    variant="text"
+                    className={`transition-all duration-300 ease-in-out ${
+                      isSidebarCollapsed 
+                        ? "opacity-0 max-w-0 ml-0 pointer-events-none" 
+                        : "opacity-100 max-w-[120px] ml-3 h-4 w-24"
+                    }`}
+                  />
+                </div>
+              ))}
+            </div>
           ) : (
             <>
               <ul className="space-y-1" role="list">
@@ -147,12 +142,19 @@ export function Sidebar() {
                     <li key={item.href}>
                       <Link
                         href={item.href}
-                        className={`flex items-center gap-3 px-3 py-2 text-sm rounded-xl ${isActive ? "bg-success/5 text-success font-medium" : "text-primary hover:bg-surface-muted hover:text-primary"}`}
+                        className={`relative group flex items-center px-3 py-2 text-sm rounded-xl ${isActive ? "bg-success/5 text-success font-medium" : "text-primary hover:bg-surface-muted hover:text-primary"}`}
                         aria-current={isActive ? "page" : undefined}
                       >
                         <IconComponent className="w-5 h-5 flex-shrink-0 text-primary" />
-                        {!isSidebarCollapsed && (
-                          <span className="truncate">{item.label}</span>
+                        <span className={`transition-all duration-300 ease-in-out truncate ${isSidebarCollapsed ? "opacity-0 max-w-0 ml-0 pointer-events-none" : "opacity-100 max-w-[180px] ml-3"}`}>
+                          {item.label}
+                        </span>
+
+                        {/* Tooltip on Collapsed Hover */}
+                        {isSidebarCollapsed && (
+                          <div className="absolute left-full ml-3 px-2 py-1 bg-text-primary text-white text-[11px] font-medium rounded-lg shadow-soft pointer-events-none opacity-0 translate-x-[-4px] group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-150 whitespace-nowrap z-50">
+                            {item.label}
+                          </div>
                         )}
                       </Link>
                     </li>
@@ -164,46 +166,50 @@ export function Sidebar() {
         </nav>
 
         {/* Profile Footer */}
-        <div className="p-4 mt-auto flex flex-col gap-4 bg-surface/80 backdrop-blur-sm">
-          <div className="flex items-center gap-3">
-            {session?.user?.image ? (
-              <img
-                src={session.user.image}
-                alt={session.user.name || "User Avatar"}
-                className="w-8 h-8 rounded-full object-cover shadow-sm"
-              />
-            ) : (
-              <div className="w-8 h-8 rounded-full bg-surface-muted text-primary flex items-center justify-center font-bold text-sm shadow-soft">
-                {userInitial}
-              </div>
-            )}
-            {!isSidebarCollapsed && (
-              <div className="min-w-0 flex-1">
+        <div className="p-4 mt-auto flex flex-col gap-4 bg-surface/80 backdrop-blur-sm overflow-hidden flex-shrink-0">
+          <div className="flex items-center w-full justify-between">
+            <div className="flex items-center min-w-0 flex-1">
+              {session?.user?.image ? (
+                <img
+                  src={session.user.image}
+                  alt={session.user.name || "User Avatar"}
+                  className="w-8 h-8 rounded-full object-cover shadow-sm flex-shrink-0"
+                />
+              ) : (
+                <div className="w-8 h-8 rounded-full bg-surface-muted text-primary flex items-center justify-center font-bold text-sm shadow-soft flex-shrink-0">
+                  {userInitial}
+                </div>
+              )}
+              <div className={`min-w-0 flex-1 transition-all duration-300 ease-in-out ${isSidebarCollapsed ? "opacity-0 max-w-0 ml-0 pointer-events-none" : "opacity-100 max-w-[180px] ml-3"}`}>
                 <p className="text-sm font-semibold text-primary truncate">{session?.user?.name || "Admin"}</p>
                 <p className="text-xs text-secondary truncate">{session?.user?.roleName || "Staff"}</p>
               </div>
-            )}
-            {!isSidebarCollapsed && (
-              <button
-                onClick={() => signOut({ callbackUrl: "/login" })}
-                className="p-1.5 rounded-xl hover:bg-surface-muted text-primary hover:text-primary transition-colors cursor-pointer"
-                aria-label="Sign out"
-              >
-                <LogOut className="w-4 h-4" />
-              </button>
-            )}
-            {isSidebarCollapsed && (
-              <button
-                onClick={() => signOut({ callbackUrl: "/login" })}
-                className="mx-auto p-1.5 rounded-xl hover:bg-surface-muted text-primary hover:text-primary transition-colors cursor-pointer"
-                aria-label="Sign out"
-              >
-                <LogOut className="w-4 h-4" />
-              </button>
-            )}
+            </div>
+            <button
+              onClick={() => setIsLogoutConfirmOpen(true)}
+              className={`rounded-xl hover:bg-surface-muted text-primary hover:text-primary flex-shrink-0 flex items-center justify-center transition-all duration-300 ease-in-out ${
+                isSidebarCollapsed 
+                  ? "opacity-0 max-w-0 p-0 pointer-events-none overflow-hidden" 
+                  : "opacity-100 max-w-10 p-1.5"
+              }`}
+              aria-label="Sign out"
+            >
+              <LogOut className="w-4 h-4" />
+            </button>
           </div>
         </div>
       </aside>
+
+      <ConfirmDialog
+        isOpen={isLogoutConfirmOpen}
+        onClose={() => setIsLogoutConfirmOpen(false)}
+        onConfirm={() => signOut({ callbackUrl: "/login" })}
+        title="Konfirmasi Keluar"
+        message="Apakah Anda yakin ingin keluar dari akun Anda?"
+        confirmText="Keluar"
+        cancelText="Batal"
+        intent="destructive"
+      />
     </>
   );
 }

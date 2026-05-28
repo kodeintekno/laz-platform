@@ -131,7 +131,7 @@ function DonationFormFields({ isPending }: { isPending: boolean }) {
               className={`py-3 px-2 text-sm font-semibold rounded-xl border transition cursor-pointer ${
                 Number(selectedAmount) === amt 
                   ? "bg-primary/5 border-primary text-primary ring-1 ring-primary" 
-                  : "bg-background border-border text-foreground hover:border-primary-hover"
+                  : "bg-surface border-border/40 text-primary hover:border-primary/40"
               }`}
             >
               {formatRupiah(amt)}
@@ -174,7 +174,7 @@ function DonationFormFields({ isPending }: { isPending: boolean }) {
                     className="h-4 w-4 text-primary border-border focus:ring-primary cursor-pointer"
                     disabled={isPending}
                   />
-                  <span className="ml-3 font-semibold text-foreground">{method.replace('_', ' ')}</span>
+                  <span className="ml-3 font-semibold text-primary">{method.replace('_', ' ')}</span>
                 </label>
               ))}
             </div>

@@ -43,7 +43,7 @@ export function DataTableHeader<TData>({
   };
 
   return (
-    <thead className="bg-surface-muted shadow-sm">
+    <thead className="bg-surface-soft">
       <tr>
         {/* Bulk Selection Column */}
         {enableSelection && (

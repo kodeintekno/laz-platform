@@ -53,7 +53,7 @@ export function Dialog({ isOpen, onClose, title, children }: DialogProps) {
         <div className="flex items-center justify-between p-6 shadow-sm">
           <h3
             id="modal-title"
-            className="text-lg font-bold leading-6 text-foreground"
+            className="text-lg font-bold leading-6 text-primary"
           >
             {title}
           </h3>

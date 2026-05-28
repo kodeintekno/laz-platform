@@ -27,8 +27,9 @@ export default async function Home() {
       {/* Header */}
       <header className="bg-surface/80 backdrop-blur-md sticky top-0 z-50 shadow-soft shadow-sm border-b border-border/40">
         <div className="mx-auto max-w-7xl px-4 py-4 sm:px-6 lg:px-8 flex justify-between items-center">
-          <Link href="/" className="text-xl font-bold text-primary">
-            LAZ Platform
+          <Link href="/" className="flex items-center gap-2">
+            <Image src="/icon.png" alt="LAZ Platform Logo" width={28} height={28} className="w-7 h-7 object-contain" />
+            <span className="text-xl font-bold text-primary">LAZ Platform</span>
           </Link>
           <div className="flex gap-6 items-center">
             <Link href="/programs" className="text-sm text-secondary hover:text-primary font-semibold transition">

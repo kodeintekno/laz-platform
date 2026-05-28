@@ -37,8 +37,9 @@ export default async function ProgramDetailPage({ params }: { params: Promise<{ 
       {/* Simple Public Header */}
       <header className="bg-surface shadow-soft border-b border-border/40">
         <div className="mx-auto max-w-7xl px-4 py-4 sm:px-6 lg:px-8 flex justify-between items-center">
-          <Link href="/" className="text-xl font-bold text-brand-primary">
-            LAZ Platform
+          <Link href="/" className="flex items-center gap-2">
+            <Image src="/icon.png" alt="LAZ Platform Logo" width={28} height={28} className="w-7 h-7 object-contain" />
+            <span className="text-xl font-bold text-brand-primary">LAZ Platform</span>
           </Link>
           <div className="flex gap-4">
             <Link href="/programs" className="text-secondary hover:text-brand-primary font-semibold">

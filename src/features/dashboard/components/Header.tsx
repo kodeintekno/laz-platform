@@ -4,6 +4,7 @@ import { useUIStore } from "@/stores/ui.store";
 import { useState, useRef, useEffect } from "react";
 import { signOut } from "next-auth/react";
 import { LogOut, Bell, Menu } from "lucide-react";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 
 interface HeaderProps {
   user?: {
@@ -15,8 +16,9 @@ interface HeaderProps {
 }
 
 export function Header({ user }: HeaderProps) {
-  const { toggleSidebar } = useUIStore();
+  const { toggleSidebar, toggleSidebarCollapsed } = useUIStore();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [isLogoutConfirmOpen, setIsLogoutConfirmOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   // Close dropdown when clicking outside
@@ -36,14 +38,20 @@ export function Header({ user }: HeaderProps) {
 
   return (
     <header className="h-16 bg-surface border-b border-border/40 flex items-center justify-between px-6 flex-shrink-0 relative z-20">
-        {/* Mobile sidebar trigger */}
-        <button
-          onClick={toggleSidebar}
-          aria-label="Open sidebar"
-          className="p-2 rounded-xl text-secondary hover:bg-surface-muted transition-colors lg:hidden"
-        >
-          <Menu className="w-5 h-5" />
-        </button>
+      {/* Sidebar trigger */}
+      <button
+        onClick={() => {
+          if (window.innerWidth < 1024) {
+            toggleSidebar();
+          } else {
+            toggleSidebarCollapsed();
+          }
+        }}
+        aria-label="Toggle sidebar"
+        className="p-2 rounded-xl text-secondary hover:bg-surface-muted transition-colors cursor-pointer"
+      >
+        <Menu className="w-5 h-5" />
+      </button>
 
       {/* Center / Left: Empty spacer for alignment */}
       <div className="flex-1" />
@@ -96,17 +104,31 @@ export function Header({ user }: HeaderProps) {
               {/* Actions */}
               <div className="py-1">
                 <button
-                  onClick={() => signOut({ callbackUrl: "/login" })}
+                  onClick={() => {
+                    setIsDropdownOpen(false);
+                    setIsLogoutConfirmOpen(true);
+                  }}
                   className="w-full text-left flex items-center gap-2 px-4 py-2 text-sm text-error-token hover:bg-error-token/10 transition-colors cursor-pointer"
                 >
                   <LogOut className="w-4 h-4" />
-                  <span>Keluar / Sign Out</span>
+                  <span>Keluar</span>
                 </button>
               </div>
             </div>
           )}
         </div>
       </div>
+
+      <ConfirmDialog
+        isOpen={isLogoutConfirmOpen}
+        onClose={() => setIsLogoutConfirmOpen(false)}
+        onConfirm={() => signOut({ callbackUrl: "/login" })}
+        title="Konfirmasi Keluar"
+        message="Apakah Anda yakin ingin keluar dari akun Anda?"
+        confirmText="Keluar"
+        cancelText="Batal"
+        intent="destructive"
+      />
     </header>
   );
 }
