@@ -48,7 +48,7 @@ export function FormWrapper<TFieldValues extends FieldValues>({
       >
 
         {error && (
-          <Alert intent="error" className="mb-4">
+          <Alert intent="error" className="mt-4 mb-4 w-full max-w-xl mx-auto">
             {error}
           </Alert>
         )}

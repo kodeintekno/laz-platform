@@ -62,4 +62,40 @@ export const lazService = {
 
     return deleted;
   },
+  /**
+   * Update an existing LAZ organization and write an audit log.
+   */
+  async updateLaz(id: string, input: LazInput, executorUserId: string) {
+    const existing = await lazRepository.findById(id);
+    if (!existing) {
+      throw new Error("Lembaga amil zakat tidak ditemukan");
+    }
+
+    const updated = await lazRepository.update(id, {
+      name: input.name,
+      slug: input.slug,
+      logo: input.logo ?? null,
+      status: input.status,
+    });
+
+    await auditService.log({
+      userId: executorUserId,
+      action: AuditAction.UPDATE,
+      entity: "Laz",
+      entityId: updated.id,
+      oldData: {
+        name: existing.name,
+        slug: existing.slug,
+        status: existing.status,
+      },
+      newData: {
+        name: updated.name,
+        slug: updated.slug,
+        status: updated.status,
+      },
+    });
+
+    return updated;
+  },
+
 };
