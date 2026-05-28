@@ -20,6 +20,8 @@ export function RoleMatrix({ roles, permissions, initialActiveMappings }: RoleMa
   const [activeMappings, setActiveMappings] = useState<Set<string>>(initialActiveMappings);
   const [savingRoleId, setSavingRoleId] = useState<string | null>(null);
 
+  const [selectedRoleId, setSelectedRoleId] = useState<string>(roles[0]?.id || "");
+
   // Group permissions by moduleName (extracted from key like "users.read" -> "users")
   const groupedPermissions = useMemo(() => {
     return permissions.reduce((acc, perm) => {
@@ -79,30 +81,32 @@ export function RoleMatrix({ roles, permissions, initialActiveMappings }: RoleMa
 
   const columns: ColumnDef<PermissionWithModuleName>[] = useMemo(() => [
     {
-      header: "Module / Permission",
+      header: "Izin Akses",
+      width: "350px",
       cell: (row) => (
-        <div className="font-semibold text-primary py-1">
-          {row.key}
-          <div className="text-xs text-secondary font-normal mt-0.5">{row.description}</div>
+        <div className="py-1">
+          <div className="font-semibold text-primary text-sm">{row.description || row.key}</div>
+          <div className="text-xs text-secondary font-mono mt-0.5">{row.key}</div>
         </div>
       ),
     },
     ...roles.map((role) => ({
       header: (
-        <div className="flex flex-col items-center gap-2 py-1">
+        <div className="flex flex-col items-center gap-2 py-2">
           <span className="text-xs font-bold text-primary uppercase tracking-wider">{role.name}</span>
           <Button
             onClick={() => saveRole(role.id)}
             size="sm"
-            intent="secondary"
+            intent="outline"
             isLoading={savingRoleId === role.id}
             disabled={isPending}
-            className="text-xs py-1 px-2.5 h-auto rounded-lg"
+            className="text-[10px] py-1 px-3 h-auto rounded-xl font-bold"
           >
             Simpan
           </Button>
         </div>
       ),
+      width: "150px",
       align: "center" as const,
       cell: (row: PermissionWithModuleName) => {
         const permId = row.id;
@@ -114,7 +118,7 @@ export function RoleMatrix({ roles, permissions, initialActiveMappings }: RoleMa
               checked={isChecked}
               disabled={isPending}
               onChange={() => togglePermission(role.id, permId)}
-              className="h-4 w-4 rounded border-border text-primary focus:ring-primary cursor-pointer"
+              className="h-4 w-4 rounded border border-secondary/40 accent-brand-primary cursor-pointer transition"
               aria-label={`Berikan izin ${row.key} untuk role ${role.name}`}
             />
           </div>
@@ -123,12 +127,106 @@ export function RoleMatrix({ roles, permissions, initialActiveMappings }: RoleMa
     })),
   ], [roles, activeMappings, isPending, savingRoleId, saveRole, togglePermission]);
 
+  const getModuleLabel = (name: string) => {
+    const labels: Record<string, string> = {
+      users: "Pengguna & Keanggotaan",
+      roles: "Hak Akses & Role",
+      laz: "Lembaga Amil Zakat (LAZ)",
+      donations: "Transaksi Donasi & Zakat",
+      programs: "Program Pendayagunaan",
+      distributions: "Penyaluran Dana",
+    };
+    return labels[name.toLowerCase()] || name.toUpperCase();
+  };
+
+  const selectedRoleName = roles.find((r) => r.id === selectedRoleId)?.name || "";
+
   return (
-    <DataTable
-      columns={columns}
-      data={flatPermissions}
-      emptyTitle="Tidak ada data permissions"
-      emptyDescription="Sistem RBAC tidak mendeteksi adanya data permissions."
-    />
+    <div className="w-full space-y-6">
+      {/* Desktop view (>= 1024px) */}
+      <div className="hidden lg:block w-full">
+        <DataTable
+          columns={columns}
+          data={flatPermissions}
+          emptyTitle="Tidak ada data permissions"
+          emptyDescription="Sistem RBAC tidak mendeteksi adanya data permissions."
+        />
+      </div>
+
+      {/* Mobile & Tablet view (< 1024px) */}
+      <div className="lg:hidden space-y-6 w-full">
+        {/* Role Horizontal Tab Scroll */}
+        <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-none -mx-4 px-4 sm:-mx-6 sm:px-6">
+          {roles.map((role) => {
+            const isActive = selectedRoleId === role.id;
+            return (
+              <button
+                key={role.id}
+                type="button"
+                onClick={() => setSelectedRoleId(role.id)}
+                className={`flex-shrink-0 px-4 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider transition cursor-pointer ${
+                  isActive
+                    ? "bg-brand-primary text-white shadow-sm"
+                    : "bg-surface text-secondary hover:text-primary border border-border/50"
+                }`}
+              >
+                {role.name}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Permissions Lists Grouped by Module */}
+        <div className="space-y-6 pb-20">
+          {Object.entries(groupedPermissions).map(([moduleName, perms]) => (
+            <div key={moduleName} className="bg-surface rounded-2xl border border-border/40 shadow-sm overflow-hidden">
+              {/* Module Header */}
+              <div className="bg-surface-soft px-4 py-3 border-b border-border/40">
+                <h3 className="text-sm font-bold text-primary">{getModuleLabel(moduleName)}</h3>
+              </div>
+              
+              {/* Module Items */}
+              <div className="divide-y divide-border/20">
+                {perms.map((perm) => {
+                  const isChecked = activeMappings.has(`${selectedRoleId}_${perm.id}`);
+                  return (
+                    <label
+                      key={perm.id}
+                      className="flex items-start gap-3 p-4 hover:bg-surface-muted transition cursor-pointer select-none"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={isChecked}
+                        disabled={isPending}
+                        onChange={() => togglePermission(selectedRoleId, perm.id)}
+                        className="h-5 w-5 mt-0.5 rounded border border-secondary/40 accent-brand-primary cursor-pointer transition flex-shrink-0"
+                        aria-label={`Berikan izin ${perm.key} untuk role ${selectedRoleName}`}
+                      />
+                      <div className="flex-1 min-w-0">
+                        <div className="text-sm font-semibold text-primary leading-tight">{perm.description || perm.key}</div>
+                        <div className="text-xs text-secondary font-mono mt-1">{perm.key}</div>
+                      </div>
+                    </label>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Floating/Sticky Save Button Bar at the bottom */}
+        <div className="fixed bottom-0 left-0 right-0 lg:hidden p-4 bg-surface/90 backdrop-blur-md border-t border-border/40 shadow-lg z-30 flex justify-end">
+          <Button
+            onClick={() => saveRole(selectedRoleId)}
+            isLoading={savingRoleId === selectedRoleId}
+            disabled={isPending}
+            size="md"
+            className="w-full sm:w-auto px-6 py-2.5 rounded-xl font-bold bg-brand-primary text-white text-sm"
+          >
+            Simpan Hak Akses: {selectedRoleName}
+          </Button>
+        </div>
+      </div>
+    </div>
   );
 }

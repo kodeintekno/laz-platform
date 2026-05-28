@@ -25,7 +25,7 @@ export function FormCheckbox({ name, label, description, disabled, ...props }: F
               onChange={field.onChange}
               onBlur={field.onBlur}
               disabled={disabled || isSubmitting}
-              className="h-4 w-4 rounded-xl border-border/40 text-primary focus:ring-primary cursor-pointer disabled:opacity-50"
+              className="h-4 w-4 rounded border border-secondary/40 accent-brand-primary cursor-pointer disabled:opacity-50"
               {...props}
             />
           </div>

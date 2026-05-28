@@ -19,7 +19,7 @@ export const ROUTE_LABELS: Record<string, string> = {
   payments: "Pembayaran",
   programs: "Program",
   new: "Tambah Baru",
-  rbac: "Hak Akses (RBAC)",
+  rbac: "Hak Akses",
   reports: "Laporan",
   settings: "Pengaturan",
   users: "Pengguna",

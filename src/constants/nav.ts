@@ -67,7 +67,7 @@ export const NAV_ITEMS: NavItem[] = [
     permission: PERMISSIONS.LAZ_MANAGE,
   },
   {
-    label: "RBAC",
+    label: "Hak Akses",
     href: "/dashboard/rbac",
     icon: "Shield",
     permission: PERMISSIONS.ROLES_MANAGE,

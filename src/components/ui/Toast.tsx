@@ -10,7 +10,7 @@ export function ToastContainer() {
   if (toasts.length === 0) return null;
 
   return (
-    <div className="fixed bottom-4 right-4 z-50 flex flex-col gap-2 max-w-sm w-full pointer-events-none">
+    <div className="fixed bottom-4 right-4 z-[9999] flex flex-col gap-2 max-w-sm w-full pointer-events-none">
       {toasts.map((t) => (
         <ToastItem key={t.id} toast={t} onClose={() => removeToast(t.id)} />
       ))}
@@ -27,10 +27,10 @@ function ToastItem({ toast, onClose }: { toast: ToastMessage; onClose: () => voi
   };
 
   const bgMap = {
-    success: "bg-success/10 border-success/20 text-primary",
-    error: "bg-destructive/10 border-destructive/20 text-primary",
-    warning: "bg-warning/10 border-warning/20 text-primary",
-    info: "bg-info-token/10 border-info-token/20 text-primary",
+    success: "bg-surface border-success/30 text-primary",
+    error: "bg-surface border-destructive/30 text-primary",
+    warning: "bg-surface border-warning/30 text-primary",
+    info: "bg-surface border-info-token/30 text-primary",
   };
 
   return (

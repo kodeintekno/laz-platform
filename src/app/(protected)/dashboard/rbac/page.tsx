@@ -22,7 +22,7 @@ export default async function RBACPage() {
     <div className="space-y-6">
       <div className="sm:flex sm:items-center">
         <div className="sm:flex-auto">
-          <h1 className="text-2xl font-semibold leading-6 text-primary">Role & Permissions (RBAC)</h1>
+          <h1 className="text-2xl font-semibold leading-6 text-primary">Role & Permissions</h1>
           <p className="mt-2 text-sm text-secondary">
             Kelola akses sistem. Centang kotak untuk memberikan izin kepada sebuah Role, lalu klik tombol Simpan di bawah nama Role tersebut.
           </p>

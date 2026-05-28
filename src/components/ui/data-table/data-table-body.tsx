@@ -69,7 +69,7 @@ export function DataTableBody<TData>({
                   type="checkbox"
                   checked={isSelected}
                   onChange={() => onRowSelectToggle && onRowSelectToggle(id)}
-                  className="h-4 w-4 rounded-xl shadow-sm text-primary focus:ring-primary cursor-pointer"
+                  className="h-4 w-4 rounded border border-secondary/40 accent-brand-primary cursor-pointer"
                 />
               </td>
             )}
