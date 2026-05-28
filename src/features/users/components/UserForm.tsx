@@ -1,0 +1,204 @@
+"use client";
+
+import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
+import { createUserSchema, updateUserSchema, type CreateUserInput, type UpdateUserInput } from "../validations/users.schema";
+import { createUserAction } from "../actions/users.actions";
+import { type User } from "@prisma/client";
+import { FormWrapper, FormField, Button, Card, CardContent, CardFooter } from "@/components/ui";
+
+interface UserFormProps {
+  initialData?: User;
+  roles: { id: string; name: string }[];
+  lazs?: { id: string; name: string }[];
+  isSuperAdmin?: boolean;
+  currentUserId: string;
+  action?: (id: string, prevState: any, formData: FormData) => Promise<any>;
+}
+
+export function UserForm({
+  initialData,
+  roles,
+  lazs = [],
+  isSuperAdmin = false,
+  currentUserId,
+  action,
+}: UserFormProps) {
+  const router = useRouter();
+  const [isPending, startTransition] = useTransition();
+  const [error, setError] = useState<string | null>(null);
+
+  const isSelf = initialData?.id === currentUserId;
+
+  const onSubmit = (data: any, _form: any) => {
+    setError(null);
+    startTransition(async () => {
+      const formData = new FormData();
+      
+      Object.entries(data).forEach(([key, value]) => {
+        if (value !== undefined && value !== null && value !== "") {
+          formData.append(key, value.toString());
+        }
+      });
+
+      let result;
+      if (action && initialData) {
+        result = await action(initialData.id, null, formData);
+      } else {
+        result = await createUserAction(formData);
+      }
+
+      if (result?.error) {
+        setError(result.error);
+      } else if (result?.success) {
+        router.push("/dashboard/users");
+        router.refresh();
+      }
+    });
+  };
+
+  const roleOptions = [
+    { label: "Pilih Role / Peran...", value: "" },
+    ...roles.map((role) => ({
+      label: role.name,
+      value: role.id,
+    })),
+  ];
+
+  const lazOptions = [
+    { label: "Pilih Lembaga Amil Zakat...", value: "" },
+    ...lazs.map((laz) => ({
+      label: laz.name,
+      value: laz.id,
+    })),
+  ];
+
+  const STATUS_OPTIONS = [
+    { label: "Aktif", value: "ACTIVE" },
+    { label: "Tidak Aktif", value: "INACTIVE" },
+    { label: "Ditangguhkan", value: "SUSPENDED" },
+  ];
+
+  return (
+    <Card>
+      <FormWrapper<any>
+        schema={initialData ? updateUserSchema : createUserSchema}
+        onSubmit={onSubmit}
+        defaultValues={
+          initialData
+            ? {
+                name: initialData.name || "",
+                email: initialData.email,
+                roleId: initialData.roleId || "",
+                lazId: initialData.lazId,
+                status: initialData.status,
+                password: "",
+                confirmPassword: "",
+              }
+            : {
+                name: "",
+                email: "",
+                roleId: "",
+                lazId: isSuperAdmin ? "" : (lazs[0]?.id || ""),
+                status: "ACTIVE",
+                password: "",
+                confirmPassword: "",
+              }
+        }
+        error={error}
+      >
+        <CardContent className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full">
+            <FormField
+              name="name"
+              label="Nama Lengkap"
+              type="input"
+              placeholder="Contoh: Ahmad Fauzi"
+              disabled={isPending}
+              description="Nama lengkap pengguna yang akan didaftarkan."
+            />
+
+            <FormField
+              name="email"
+              label="Alamat Email"
+              type="input"
+              inputType="email"
+              placeholder="ahmad@domain.com"
+              disabled={isPending}
+              description="Alamat email aktif untuk pengiriman notifikasi dan login."
+            />
+
+            <FormField
+              name="roleId"
+              label="Peran / Role Pengguna"
+              type="select"
+              options={roleOptions}
+              disabled={isPending || isSelf}
+              description={isSelf ? "Anda tidak dapat mengubah peran akun Anda sendiri." : "Hak akses yang diberikan kepada pengguna ini."}
+            />
+
+            <FormField
+              name="status"
+              label="Status Akun"
+              type="select"
+              options={STATUS_OPTIONS}
+              disabled={isPending || isSelf}
+              description={isSelf ? "Anda tidak dapat mengubah status akun Anda sendiri." : "Menentukan apakah akun aktif atau nonaktif."}
+            />
+
+            {isSuperAdmin && (
+              <div className="md:col-span-2">
+                <FormField
+                  name="lazId"
+                  label="Lembaga Amil Zakat (LAZ)"
+                  type="select"
+                  options={lazOptions}
+                  disabled={isPending || isSelf}
+                  description={isSelf ? "Super Admin terkunci pada LAZ default." : "Pilih lembaga amil zakat tempat pengguna ini bernaung."}
+                />
+              </div>
+            )}
+          </div>
+
+          <hr className="border-border/40 my-6" />
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full">
+            <FormField
+              name="password"
+              label={initialData ? "Password Baru (Opsional)" : "Password"}
+              type="input"
+              inputType="password"
+              placeholder="••••••••"
+              disabled={isPending}
+              description={initialData ? "Biarkan kosong jika tidak ingin mengubah password." : "Minimal 6 karakter."}
+            />
+
+            <FormField
+              name="confirmPassword"
+              label={initialData ? "Konfirmasi Password Baru" : "Konfirmasi Password"}
+              type="input"
+              inputType="password"
+              placeholder="••••••••"
+              disabled={isPending}
+              description="Ulangi password untuk verifikasi."
+            />
+          </div>
+        </CardContent>
+
+        <CardFooter className="flex justify-end gap-3 border-t border-surface-soft pt-6 mt-6">
+          <Button
+            type="button"
+            intent="secondary"
+            onClick={() => router.back()}
+            disabled={isPending}
+          >
+            Batal
+          </Button>
+          <Button type="submit" isLoading={isPending} disabled={isPending}>
+            {initialData ? "Simpan Perubahan" : "Tambah Pengguna"}
+          </Button>
+        </CardFooter>
+      </FormWrapper>
+    </Card>
+  );
+}
