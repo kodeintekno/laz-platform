@@ -2,6 +2,7 @@
 
 import { useState, useTransition, useRef } from "react";
 import { useRouter } from "next/navigation";
+import { logger } from "@/lib/logger";
 import { lazSchema, type LazInput } from "../validations/laz.schema";
 import { createLazAction } from "../actions/laz.actions";
 import { type Laz } from "@prisma/client";
@@ -135,7 +136,7 @@ export function LazForm({ initialData, action }: { initialData?: Laz; action?: (
                   const { deleteFile } = await import("@/lib/upload/uploadService");
                   await deleteFile(uploadedLogoPublicId);
                 } catch (e) {
-                  console.error('Failed to delete uploaded logo', e);
+                  logger.error({ err: e }, "Failed to delete uploaded logo");
                 }
                 setUploadedLogoUrl('');
                 setUploadedLogoPublicId('');

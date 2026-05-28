@@ -5,6 +5,7 @@ import React, { useState, useEffect } from "react";
 import { X } from "lucide-react";
 import { FormLabel } from "./form/form-label";
 import { LoadingSpinner } from "./LoadingSpinner";
+import { logger } from "@/lib/logger";
 
 interface FileUploadProps {
   name: string;
@@ -64,7 +65,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({
     const file = e.target.files?.[0];
     if (!file) return;
     if (file.size > 2 * 1024 * 1024) {
-      console.error("File terlalu besar. Maksimum 2 MB.");
+      logger.error("File terlalu besar. Maksimum 2 MB.");
       return;
     }
     // abort any previous upload
@@ -76,11 +77,11 @@ export const FileUpload: React.FC<FileUploadProps> = ({
     // Keep track of the newly-uploaded file we need to clean up if this upload succeeds
     const oldPublicIdToDelete = (currentPublicId && currentPublicId !== initialPublicId) ? currentPublicId : null;
 
-    console.log("handleChange: Upload starting...", {
+    logger.info({
       currentPublicId,
       initialPublicId,
       oldPublicIdToDelete
-    });
+    }, "FileUpload handleChange: Upload starting");
 
     try {
       // use uploadService to handle Cloudinary upload
@@ -90,17 +91,17 @@ export const FileUpload: React.FC<FileUploadProps> = ({
         folder: folder
       });
 
-      console.log("handleChange: Upload succeeded", result);
+      logger.info({ result }, "FileUpload handleChange: Upload succeeded");
 
       // If the new upload succeeded, delete the previous newly-uploaded file from Cloudinary
       if (oldPublicIdToDelete) {
-        console.log("handleChange: Deleting replaced temporary file:", oldPublicIdToDelete);
+        logger.info({ oldPublicIdToDelete }, "FileUpload handleChange: Deleting replaced temporary file");
         try {
           const { deleteFile } = await import("@/lib/upload/uploadService");
           await deleteFile(oldPublicIdToDelete);
-          console.log("handleChange: Successfully deleted replaced temporary file");
+          logger.info("FileUpload handleChange: Successfully deleted replaced temporary file");
         } catch (delErr) {
-          console.error("Gagal menghapus file lama yang ditimpa:", delErr);
+          logger.error({ err: delErr }, "FileUpload handleChange: Gagal menghapus file lama yang ditimpa");
         }
       }
 
@@ -109,9 +110,9 @@ export const FileUpload: React.FC<FileUploadProps> = ({
       onUpload({ url: result.url, publicId: result.publicId });
     } catch (err: any) {
       if (err.name === "AbortError") {
-        console.log("Upload dibatalkan");
+        logger.info("FileUpload handleChange: Upload dibatalkan");
       } else {
-        console.error(err);
+        logger.error({ err }, "FileUpload handleChange error");
       }
     } finally {
       setUploading(false);
@@ -128,7 +129,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({
         const { deleteFile } = await import("@/lib/upload/uploadService");
         await deleteFile(currentPublicId);
       } catch (err) {
-        console.error("Gagal menghapus file dari Cloudinary:", err);
+        logger.error({ err }, "FileUpload handleRemove: Gagal menghapus file dari Cloudinary");
       } finally {
         setDeleting(false);
       }

@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import type { Prisma } from "@prisma/client";
 import { CloudinaryProvider } from "@/lib/upload/cloudinaryProvider";
+import { logger } from "@/lib/logger";
 
 export const lazRepository = {
   /**
@@ -73,7 +74,7 @@ export const lazRepository = {
         const provider = new CloudinaryProvider();
         await provider.delete(existing.logoPublicId);
       } catch (e) {
-        console.error("Failed to delete old logo from Cloudinary:", e);
+        logger.error({ err: e, id, oldLogoPublicId: existing.logoPublicId }, "Failed to delete old logo from Cloudinary");
       }
     }
     return prisma.laz.update({
@@ -93,7 +94,7 @@ export const lazRepository = {
         const provider = new CloudinaryProvider();
         await provider.delete(existing.logoPublicId);
       } catch (e) {
-        console.error("Failed to delete logo on record removal from Cloudinary:", e);
+        logger.error({ err: e, id, logoPublicId: existing.logoPublicId }, "Failed to delete logo on record removal from Cloudinary");
       }
     }
     return prisma.laz.delete({

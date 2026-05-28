@@ -1,4 +1,5 @@
 import type { UploadResult } from "./provider";
+import { logger } from "@/lib/logger";
 
 /**
  * Options accepted by the upload service – folder is optional and an AbortSignal can be provided.
@@ -47,7 +48,7 @@ export async function replaceFile(
     try {
       await deleteFile(oldPublicId);
     } catch (e) {
-      console.error("Failed to delete old file", e);
+      logger.error({ err: e }, "Failed to delete old file");
     }
   }
   return newResult;
