@@ -4,7 +4,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { programSchema, type ProgramInput } from "@/features/programs/validations/programs.schema";
 import { createProgramAction } from "@/features/programs/actions/programs.actions";
-import { ProgramCategory, ProgramStatus } from "@prisma/client";
+// Removed Prisma enum import – using static values for client component
 import Link from "next/link";
 import { FormWrapper, FormField, Button, Card, CardContent, CardFooter } from "@/components/ui";
 
@@ -34,15 +34,18 @@ export function ProgramForm() {
     });
   };
 
-  const categoryOptions = Object.values(ProgramCategory).map((cat) => ({
+  const PROGRAM_CATEGORIES = ["ZAKAT", "INFAK", "SEDEKAH", "WAKAF"] as const;
+  const PROGRAM_STATUSES = [{ label: "Draft (Sembunyikan)", value: "DRAFT" }, { label: "Published (Tampilkan Publik)", value: "PUBLISHED" }] as const;
+
+  const categoryOptions = PROGRAM_CATEGORIES.map((cat) => ({
     label: cat,
     value: cat,
   }));
 
-  const statusOptions = [
-    { label: "Draft (Sembunyikan)", value: ProgramStatus.DRAFT },
-    { label: "Published (Tampilkan Publik)", value: ProgramStatus.PUBLISHED },
-  ];
+  const statusOptions = PROGRAM_STATUSES.map((s) => ({
+    label: s.label,
+    value: s.value,
+  }));
 
   return (
     <Card>
@@ -53,8 +56,8 @@ export function ProgramForm() {
           title: "",
           description: "",
           targetAmount: 0,
-          category: ProgramCategory.INFAK,
-          status: ProgramStatus.DRAFT,
+          category: "INFAK",
+          status: "DRAFT",
           image: "",
         }}
         error={error}
