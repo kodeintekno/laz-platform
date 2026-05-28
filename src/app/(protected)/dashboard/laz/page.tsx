@@ -40,7 +40,7 @@ export default async function LazsPage({
         <div className="sm:flex-auto">
           <h1 className="text-2xl font-semibold leading-6 text-primary">LAZ Management</h1>
           <p className="mt-2 text-sm text-secondary">
-            Kelola lembaga-lembaga amil zakat (LAZ) yang terdaftar di platform multi-tenant.
+            Kelola lembaga-lembaga amil zakat (LAZ) yang terdaftar.
           </p>
         </div>
         <div className="mt-4 sm:ml-16 sm:mt-0 sm:flex-none">
