@@ -144,10 +144,18 @@ export function Sidebar() {
                     <li key={item.href}>
                       <Link
                         href={item.href}
-                        className={`relative group flex items-center px-3 py-2 text-sm rounded-xl ${isActive ? "bg-success/5 text-success font-medium" : "text-primary hover:bg-surface-muted hover:text-primary"}`}
+                        className={`relative group flex items-center px-3 py-2.5 text-sm rounded-xl transition-all duration-200 ${
+                          isActive
+                            ? "bg-surface-soft text-brand-primary font-semibold"
+                            : "text-secondary hover:bg-surface-muted hover:text-primary"
+                        }`}
                         aria-current={isActive ? "page" : undefined}
                       >
-                        <IconComponent className="w-5 h-5 flex-shrink-0 text-primary" />
+                        <IconComponent
+                          className={`w-5 h-5 flex-shrink-0 transition-colors duration-200 ${
+                            isActive ? "text-brand-primary" : "text-secondary group-hover:text-primary"
+                          }`}
+                        />
                         <span className={`transition-all duration-300 ease-in-out truncate ${isSidebarCollapsed ? "opacity-0 max-w-0 ml-0 pointer-events-none" : "opacity-100 max-w-[180px] ml-3"}`}>
                           {item.label}
                         </span>
