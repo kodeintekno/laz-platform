@@ -8,7 +8,6 @@ import { logger } from "@/lib/logger";
  */
 export interface UploadOptions {
   folder?: string;
-  signal?: AbortSignal;
 }
 
 /**
@@ -28,7 +27,6 @@ export async function handleUpload(
   const response = await fetch(absoluteUrl, {
     method: "POST",
     body: form,
-    signal: opts?.signal,
   });
 
   if (!response.ok) {

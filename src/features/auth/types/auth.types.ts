@@ -36,4 +36,15 @@ declare module "next-auth" {
       avatarUrl?: string;
       avatarPublicId?: string;
     }
-}
+
+    // Extend the AdapterUser (returned by the adapter) with avatar fields
+    interface User {
+      avatarUrl?: string;
+      avatarPublicId?: string;
+    }
+
+    interface AdapterUser {
+      avatarUrl?: string;
+      avatarPublicId?: string;
+    }
+  }
