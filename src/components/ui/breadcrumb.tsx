@@ -40,7 +40,7 @@ export function Breadcrumbs() {
           if (item.href === "/dashboard") return null;
 
           return (
-            <li key={item.href} className="inline-flex items-center">
+            <li key={item.key} className="inline-flex items-center">
               <ChevronRight className="h-4 w-4 text-muted mx-1 flex-shrink-0" />
               {item.isLast ? (
                 <span

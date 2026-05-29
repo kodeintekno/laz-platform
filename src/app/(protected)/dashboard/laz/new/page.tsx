@@ -19,17 +19,10 @@ export default async function NewLazPage() {
 
   return (
     <div className="space-y-6 w-full">
-      <div className="flex items-center gap-4">
-        <Link href="/dashboard/laz" className="p-2 text-muted hover:text-primary bg-surface rounded-full shadow-sm ring-1 ring-border flex-shrink-0">
-          <ArrowLeft className="w-5 h-5" />
-        </Link>
-        <div className="flex-1">
-          <PageHeader
-            title="Daftarkan LAZ Baru"
-            description="Tambahkan organisasi Lembaga Amil Zakat baru ke dalam platform."
-          />
-        </div>
-      </div>
+      <PageHeader
+        title="Daftarkan LAZ Baru"
+        description="Tambahkan organisasi Lembaga Amil Zakat baru ke dalam platform."
+      />
 
       <LazForm />
     </div>

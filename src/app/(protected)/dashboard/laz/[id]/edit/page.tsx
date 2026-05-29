@@ -7,6 +7,10 @@ import { type Laz } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { PageHeader } from "@/components/ui";
 
+export const metadata = {
+  title: "Ubah Data LAZ",
+};
+
 /**
  * Edit LAZ page – uses the numeric/UUID ID (not slug) from the URL.
  */
@@ -35,7 +39,7 @@ export default async function EditLazPage({
   return (
     <div className="space-y-6 w-full">
       <PageHeader
-        title={`Edit LAZ – ${laz.name}`}
+        title="Ubah Data LAZ"
         description="Perbarui data organisasi LAZ di sini."
       />
 

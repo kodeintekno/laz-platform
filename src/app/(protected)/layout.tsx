@@ -49,6 +49,7 @@ export default async function ProtectedLayout({
 
           {/* Page content */}
           <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 w-full" id="main-content">
+            {/* Force hot-reload trigger */}
             <div className="mb-4">
               <Breadcrumbs />
             </div>
