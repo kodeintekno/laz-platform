@@ -4,7 +4,7 @@ import { usersService } from "@/features/users/services/users.service";
 import { UserTable } from "@/features/users/components/UserTable";
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { Button } from "@/components/ui";
+import { Button, PageHeader } from "@/components/ui";
 import { logger } from "@/lib/logger";
 import { Suspense } from "react";
 import { DataTableToolbar, DataTableToolbarSkeleton } from "@/components/ui/data-table";
@@ -39,21 +39,17 @@ export default async function UsersPage({
 
   return (
     <div className="space-y-6">
-      <div className="sm:flex sm:items-center">
-        <div className="sm:flex-auto">
-          <h1 className="text-2xl font-semibold leading-6 text-primary">User Management</h1>
-          <p className="mt-2 text-sm text-secondary">
-            Daftar semua pengguna terdaftar, termasuk donatur, admin, dan relawan.
-          </p>
-        </div>
-        {canCreate && (
-          <div className="mt-4 sm:ml-16 sm:mt-0 sm:flex-none">
+      <PageHeader
+        title="User Management"
+        description="Daftar semua pengguna terdaftar, termasuk donatur, admin, dan relawan."
+        action={
+          canCreate && (
             <Link href="/dashboard/users/new">
               <Button size="md">Tambah Pengguna</Button>
             </Link>
-          </div>
-        )}
-      </div>
+          )
+        }
+      />
 
       <Suspense fallback={<DataTableToolbarSkeleton />}>
         <DataTableToolbar searchValue={search} searchPlaceholder="Cari nama atau email..." />

@@ -2,6 +2,7 @@ import { auth } from "@/lib/auth";
 import { analyticsService } from "@/features/analytics/services/analytics.service";
 import Link from "next/link";
 import { ArrowRight, Wallet, Users, Activity, HeartHandshake } from "lucide-react";
+import { PageHeader } from "@/components/ui";
 
 export const metadata = {
   title: "Dashboard Overview",
@@ -29,14 +30,10 @@ export default async function DashboardHomePage() {
 
   return (
     <div className="space-y-8">
-      <div>
-        <h1 className="text-2xl font-bold leading-7 text-primary sm:truncate sm:text-3xl sm:tracking-tight">
-          Selamat datang, {session?.user?.name || "Admin"}
-        </h1>
-        <p className="mt-2 text-sm text-secondary">
-          Berikut adalah ringkasan performa platform pengelolaan dana Anda.
-        </p>
-      </div>
+      <PageHeader
+        title={`Selamat datang, ${session?.user?.name || "Admin"}`}
+        description="Berikut adalah ringkasan performa platform pengelolaan dana Anda."
+      />
 
       {/* KPI Metrics */}
       <dl className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">

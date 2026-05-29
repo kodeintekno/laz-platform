@@ -3,6 +3,7 @@ import { PERMISSIONS } from "@/constants/permissions";
 import { redirect } from "next/navigation";
 import { auditService } from "@/features/audit/services/audit.service";
 import { AuditTable } from "@/features/audit/components/AuditTable";
+import { PageHeader } from "@/components/ui";
 
 export const metadata = {
   title: "Audit Logs",
@@ -27,14 +28,10 @@ export default async function AuditPage({
 
   return (
     <div className="space-y-6">
-      <div className="sm:flex sm:items-center">
-        <div className="sm:flex-auto">
-          <h1 className="text-2xl font-semibold leading-6 text-primary">Audit Logs</h1>
-          <p className="mt-2 text-sm text-secondary">
-            Riwayat log audit aktivitas mutasi admin dan pengelolaan sistem secara realtime.
-          </p>
-        </div>
-      </div>
+      <PageHeader
+        title="Audit Logs"
+        description="Riwayat log audit aktivitas mutasi admin dan pengelolaan sistem secara realtime."
+      />
 
       <AuditTable
         logs={logs}

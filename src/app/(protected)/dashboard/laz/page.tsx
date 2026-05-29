@@ -4,7 +4,7 @@ import { lazService } from "@/features/laz/services/laz.service";
 import { LazTable } from "@/features/laz/components/LazTable";
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { Button } from "@/components/ui";
+import { Button, PageHeader } from "@/components/ui";
 import { logger } from "@/lib/logger";
 import { Suspense } from "react";
 import { DataTableToolbar, DataTableToolbarSkeleton } from "@/components/ui/data-table";
@@ -36,19 +36,15 @@ export default async function LazsPage({
 
   return (
     <div className="space-y-6">
-      <div className="sm:flex sm:items-center">
-        <div className="sm:flex-auto">
-          <h1 className="text-2xl font-semibold leading-6 text-primary">LAZ Management</h1>
-          <p className="mt-2 text-sm text-secondary">
-            Kelola lembaga-lembaga amil zakat (LAZ) yang terdaftar.
-          </p>
-        </div>
-        <div className="mt-4 sm:ml-16 sm:mt-0 sm:flex-none">
+      <PageHeader
+        title="LAZ Management"
+        description="Kelola lembaga-lembaga amil zakat (LAZ) yang terdaftar."
+        action={
           <Link href="/dashboard/laz/new">
             <Button size="md">Tambah LAZ</Button>
           </Link>
-        </div>
-      </div>
+        }
+      />
 
       <Suspense fallback={<DataTableToolbarSkeleton />}>
         <DataTableToolbar searchValue={search} searchPlaceholder="Cari nama organisasi atau slug..." />

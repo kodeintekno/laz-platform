@@ -2,6 +2,7 @@ import { auth } from "@/lib/auth";
 import { PERMISSIONS } from "@/constants/permissions";
 import { redirect } from "next/navigation";
 import { BarChart3 } from "lucide-react";
+import { PageHeader } from "@/components/ui";
 
 export const metadata = {
   title: "Reports",
@@ -16,14 +17,10 @@ export default async function ReportsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="sm:flex sm:items-center">
-        <div className="sm:flex-auto">
-          <h1 className="text-2xl font-semibold leading-6 text-primary">Laporan Keuangan & Kinerja</h1>
-          <p className="mt-2 text-sm text-secondary">
-            Lihat dan ekspor laporan pendistribusian zakat, statistik donasi, serta audit kepatuhan syariah.
-          </p>
-        </div>
-      </div>
+      <PageHeader
+        title="Laporan Keuangan & Kinerja"
+        description="Lihat dan ekspor laporan pendistribusian zakat, statistik donasi, serta audit kepatuhan syariah."
+      />
 
       <div className="bg-surface rounded-2xl border border-border p-12 text-center shadow-sm">
         <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-brand-primary/10 mb-4">

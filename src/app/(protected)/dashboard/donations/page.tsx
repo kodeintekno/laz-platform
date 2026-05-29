@@ -3,7 +3,7 @@ import { PERMISSIONS } from "@/constants/permissions";
 import { donationsService } from "@/features/donations/services/donations.service";
 import { DonationTable } from "@/features/donations/components/DonationTable";
 import { redirect } from "next/navigation";
-import { Pagination } from "@/components/ui/Pagination";
+import { Pagination, PageHeader } from "@/components/ui";
 
 export const metadata = {
   title: "Donation Management",
@@ -28,14 +28,10 @@ export default async function DonationsPage({
 
   return (
     <div className="space-y-6">
-      <div className="sm:flex sm:items-center">
-        <div className="sm:flex-auto">
-          <h1 className="text-2xl font-semibold leading-6 text-primary">Data Donasi Masuk</h1>
-          <p className="mt-2 text-sm text-secondary">
-            Daftar semua transaksi donasi yang masuk ke platform.
-          </p>
-        </div>
-      </div>
+      <PageHeader
+        title="Data Donasi Masuk"
+        description="Daftar semua transaksi donasi yang masuk ke platform."
+      />
 
       <DonationTable donations={donations} />
 

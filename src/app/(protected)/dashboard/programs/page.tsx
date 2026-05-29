@@ -4,7 +4,7 @@ import { programsService } from "@/features/programs/services/programs.service";
 import { ProgramTable } from "@/features/programs/components/ProgramTable";
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { Button, Pagination } from "@/components/ui";
+import { Button, Pagination, PageHeader } from "@/components/ui";
 
 export const metadata = {
   title: "Program Management",
@@ -30,21 +30,17 @@ export default async function ProgramsPage({
 
   return (
     <div className="space-y-6">
-      <div className="sm:flex sm:items-center">
-        <div className="sm:flex-auto">
-          <h1 className="text-2xl font-semibold leading-6 text-primary">Program Management</h1>
-          <p className="mt-2 text-sm text-secondary">
-            Kelola semua program kampanye zakat, infak, dan sedekah.
-          </p>
-        </div>
-        {canCreate && (
-          <div className="mt-4 sm:ml-16 sm:mt-0 sm:flex-none">
+      <PageHeader
+        title="Program Management"
+        description="Kelola semua program kampanye zakat, infak, dan sedekah."
+        action={
+          canCreate ? (
             <Link href="/dashboard/programs/new">
               <Button size="sm">Buat Program</Button>
             </Link>
-          </div>
-        )}
-      </div>
+          ) : undefined
+        }
+      />
 
       <ProgramTable programs={programs} />
 

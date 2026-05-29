@@ -2,6 +2,7 @@ import { auth } from "@/lib/auth";
 import { PERMISSIONS } from "@/constants/permissions";
 import { redirect } from "next/navigation";
 import { Settings } from "lucide-react";
+import { PageHeader } from "@/components/ui";
 
 export const metadata = {
   title: "Settings",
@@ -16,14 +17,10 @@ export default async function SettingsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="sm:flex sm:items-center">
-        <div className="sm:flex-auto">
-          <h1 className="text-2xl font-semibold leading-6 text-primary">Pengaturan Sistem</h1>
-          <p className="mt-2 text-sm text-secondary">
-            Kelola konfigurasi platform, informasi LAZ, limit donasi, dan pengaturan integrasi pihak ketiga.
-          </p>
-        </div>
-      </div>
+      <PageHeader
+        title="Pengaturan Sistem"
+        description="Kelola konfigurasi platform, informasi LAZ, limit donasi, dan pengaturan integrasi pihak ketiga."
+      />
 
       <div className="bg-surface rounded-2xl border border-border p-12 text-center shadow-sm">
         <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-brand-primary/10 mb-4">

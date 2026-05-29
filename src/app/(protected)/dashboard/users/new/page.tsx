@@ -3,6 +3,7 @@ import { PERMISSIONS } from "@/constants/permissions";
 import { usersService } from "@/features/users/services/users.service";
 import { UserForm } from "@/features/users/components/UserForm";
 import { redirect } from "next/navigation";
+import { PageHeader } from "@/components/ui";
 
 export const metadata = {
   title: "Tambah Pengguna Baru",
@@ -25,12 +26,10 @@ export default async function NewUserPage() {
 
   return (
     <div className="space-y-6 w-full">
-      <div>
-        <h1 className="text-2xl font-semibold leading-6 text-primary">Tambah Pengguna Baru</h1>
-        <p className="mt-2 text-sm text-secondary">
-          Buat akun baru untuk pengelola LAZ, relawan, donatur, atau administrator.
-        </p>
-      </div>
+      <PageHeader
+        title="Tambah Pengguna Baru"
+        description="Buat akun baru untuk pengelola LAZ, relawan, donatur, atau administrator."
+      />
 
       <UserForm
         roles={roles}

@@ -6,6 +6,7 @@ import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { BreadcrumbOverride } from "@/providers/breadcrumb-provider";
+import { PageHeader } from "@/components/ui";
 
 export const metadata = {
   title: "Ajukan Penyaluran",
@@ -34,14 +35,18 @@ export default async function NewDistributionPage({ params }: { params: Promise<
         label={program.title} 
       />
       <div className="flex items-center gap-4">
-        <Link href="/dashboard/programs" className="p-2 text-muted hover:text-primary bg-surface rounded-full shadow-sm ring-1 ring-border">
+        <Link href="/dashboard/programs" className="p-2 text-muted hover:text-primary bg-surface rounded-full shadow-sm ring-1 ring-border flex-shrink-0">
           <ArrowLeft className="w-5 h-5" />
         </Link>
-        <div>
-          <h1 className="text-2xl font-semibold leading-6 text-primary">Ajukan Penyaluran Dana</h1>
-          <p className="mt-2 text-sm text-secondary">
-            Program: <span className="font-semibold">{program.title}</span> (Saldo: Rp {availableBalance.toLocaleString("id-ID")})
-          </p>
+        <div className="flex-1">
+          <PageHeader
+            title="Ajukan Penyaluran Dana"
+            description={
+              <>
+                Program: <span className="font-semibold">{program.title}</span> (Saldo: Rp {availableBalance.toLocaleString("id-ID")})
+              </>
+            }
+          />
         </div>
       </div>
 

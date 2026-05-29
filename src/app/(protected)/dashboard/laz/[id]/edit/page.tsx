@@ -5,6 +5,7 @@ import { redirect, notFound } from "next/navigation";
 import { EditLazAction } from "@/features/laz/actions/laz.actions";
 import { type Laz } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import { PageHeader } from "@/components/ui";
 
 /**
  * Edit LAZ page – uses the numeric/UUID ID (not slug) from the URL.
@@ -33,16 +34,10 @@ export default async function EditLazPage({
 
   return (
     <div className="space-y-6 w-full">
-      <div className="flex items-center gap-4">
-        <div>
-          <h1 className="text-2xl font-semibold leading-6 text-primary">
-            Edit LAZ – {laz.name}
-          </h1>
-          <p className="mt-2 text-sm text-secondary">
-            Perbarui data organisasi LAZ di sini.
-          </p>
-        </div>
-      </div>
+      <PageHeader
+        title={`Edit LAZ – ${laz.name}`}
+        description="Perbarui data organisasi LAZ di sini."
+      />
 
       <LazForm
         initialData={laz as Laz}

@@ -3,6 +3,7 @@ import { PERMISSIONS } from "@/constants/permissions";
 import { redirect } from "next/navigation";
 import { paymentsService } from "@/features/payments/services/payments.service";
 import { PaymentTable } from "@/features/payments/components/PaymentTable";
+import { PageHeader } from "@/components/ui";
 
 export const metadata = {
   title: "Payments",
@@ -27,14 +28,10 @@ export default async function PaymentsPage({
 
   return (
     <div className="space-y-6">
-      <div className="sm:flex sm:items-center">
-        <div className="sm:flex-auto">
-          <h1 className="text-2xl font-semibold leading-6 text-primary">Manajemen Pembayaran</h1>
-          <p className="mt-2 text-sm text-secondary">
-            Kelola transaksi pembayaran donasi, detail invoice, dan integrasi payment gateway.
-          </p>
-        </div>
-      </div>
+      <PageHeader
+        title="Manajemen Pembayaran"
+        description="Kelola transaksi pembayaran donasi, detail invoice, dan integrasi payment gateway."
+      />
 
       <PaymentTable
         payments={payments}

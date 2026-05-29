@@ -4,6 +4,7 @@ import { UserForm } from "@/features/users/components/UserForm";
 import { redirect, notFound } from "next/navigation";
 import { updateUserAction } from "@/features/users/actions/users.actions";
 import { usersService } from "@/features/users/services/users.service";
+import { PageHeader } from "@/components/ui";
 
 export const metadata = {
   title: "Ubah Data Pengguna",
@@ -45,14 +46,10 @@ export default async function EditUserPage({
 
   return (
     <div className="space-y-6 w-full">
-      <div>
-        <h1 className="text-2xl font-semibold leading-6 text-primary">
-          Ubah Data Pengguna
-        </h1>
-        <p className="mt-2 text-sm text-secondary">
-          Perbarui informasi profil, peran, status, atau password pengguna di sini.
-        </p>
-      </div>
+      <PageHeader
+        title="Ubah Data Pengguna"
+        description="Perbarui informasi profil, peran, status, atau password pengguna di sini."
+      />
 
       <UserForm
         initialData={user as any}

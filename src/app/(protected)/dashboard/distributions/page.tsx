@@ -3,6 +3,7 @@ import { PERMISSIONS } from "@/constants/permissions";
 import { distributionsService } from "@/features/distributions/services/distributions.service";
 import { DistributionTable } from "@/features/distributions/components/DistributionTable";
 import { redirect } from "next/navigation";
+import { PageHeader } from "@/components/ui";
 
 export const metadata = {
   title: "Penyaluran Dana",
@@ -27,14 +28,10 @@ export default async function DistributionsPage({
 
   return (
     <div className="space-y-6">
-      <div className="sm:flex sm:items-center">
-        <div className="sm:flex-auto">
-          <h1 className="text-2xl font-semibold leading-6 text-primary">Manajemen Penyaluran Dana</h1>
-          <p className="mt-2 text-sm text-secondary">
-            Daftar pengajuan penyaluran dana dari berbagai program kampanye.
-          </p>
-        </div>
-      </div>
+      <PageHeader
+        title="Manajemen Penyaluran Dana"
+        description="Daftar pengajuan penyaluran dana dari berbagai program kampanye."
+      />
 
       <DistributionTable distributions={distributions} />
 
