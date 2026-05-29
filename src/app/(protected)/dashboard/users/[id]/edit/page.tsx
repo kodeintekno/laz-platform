@@ -47,7 +47,7 @@ export default async function EditUserPage({
     <div className="space-y-6 w-full">
       <div>
         <h1 className="text-2xl font-semibold leading-6 text-primary">
-          Ubah Data Pengguna – {user.name || user.email}
+          Ubah Data Pengguna
         </h1>
         <p className="mt-2 text-sm text-secondary">
           Perbarui informasi profil, peran, status, atau password pengguna di sini.

@@ -13,7 +13,7 @@ interface UserFormProps {
   lazs?: { id: string; name: string }[];
   isSuperAdmin?: boolean;
   currentUserId: string;
-  action?: (id: string, prevState: any, formData: FormData) => Promise<any>;
+  action?: (prevState: any, formData: FormData) => Promise<any>;
 }
 
 export function UserForm({
@@ -43,7 +43,7 @@ export function UserForm({
 
       let result;
       if (action && initialData) {
-        result = await action(initialData.id, null, formData);
+        result = await action(null, formData);
       } else {
         result = await createUserAction(formData);
       }
