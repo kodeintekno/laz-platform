@@ -1,4 +1,6 @@
 import { Sidebar } from "@/features/dashboard/components/Sidebar";
+import { NAV_ITEMS, type NavItem } from "@/constants/nav";
+import { hasPermission } from "@/features/rbac/lib/permissions";
 import { Header } from "@/features/dashboard/components/Header";
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
@@ -19,6 +21,14 @@ export default async function ProtectedLayout({
   children: React.ReactNode;
 }) {
   const session = await auth();
+  // Build initial menu based on server‑side permissions so the sidebar renders immediately
+  const initialMenu: NavItem[] = NAV_ITEMS.filter((item) =>
+    !item.permission ||
+    hasPermission(
+      { permissions: session?.user?.permissions ?? [], roleName: session?.user?.roleName },
+      item.permission
+    )
+  );
 
   // Guard: Redirect unauthenticated users
   if (!session?.user) {
@@ -40,7 +50,7 @@ export default async function ProtectedLayout({
     <BreadcrumbProvider>
       <div className="flex h-screen overflow-hidden bg-surface-muted">
         {/* Sidebar */}
-        <Sidebar />
+        <Sidebar initialItems={initialMenu} />
 
         {/* Main content area */}
         <div className="flex flex-col flex-1 overflow-hidden">

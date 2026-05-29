@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
 import { useUIStore } from "@/stores/ui.store";
 import { usePermission } from "@/hooks/usePermission";
+import type { NavItem } from "@/constants/nav";
 import { NAV_ITEMS } from "@/constants/nav";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { Skeleton } from "@/components/ui/Skeleton";
@@ -50,17 +51,19 @@ const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
  * Sidebar collapse state is from Zustand UIStore.
  * Visible nav items are filtered by usePermission.
  */
-export function Sidebar() {
+export function Sidebar({ initialItems }: { initialItems?: NavItem[] } = {}) {
   const pathname = usePathname();
   const { isSidebarOpen, toggleSidebar, isSidebarCollapsed, toggleSidebarCollapsed } = useUIStore();
   const { can, isLoading, permissions, roleName } = usePermission();
+  // When initialItems are provided (from server), skip permission checks
+  const visibleItems = initialItems ?? NAV_ITEMS.filter((item) => !item.permission || can(item.permission));
   const { data: session } = useSession();
   const [isLogoutConfirmOpen, setIsLogoutConfirmOpen] = useState(false);
 
   const userInitial = session?.user?.name ? session.user.name.charAt(0).toUpperCase() : "?";
 
   // Filter nav items the current user has permission to see
-  const visibleItems = NAV_ITEMS.filter((item) => !item.permission || can(item.permission));
+  // removed original visibleItems calculation – now handled above
 
   useEffect(() => {
     logger.info(
