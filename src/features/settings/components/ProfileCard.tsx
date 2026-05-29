@@ -11,14 +11,19 @@ import {
   Input,
 } from "@/components/ui";
 import { toast } from "@/stores/toast.store";
+import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
 import { updateProfileAction } from "../actions/settings.actions";
 import { updateProfileSchema } from "../validations/settings.schema";
+import { updateAvatarAction } from "../actions/avatar.actions";
+import { Pencil } from "lucide-react";
 
 interface ProfileCardProps {
   user: {
     name: string | null;
     email: string;
     phoneNumber: string | null;
+    avatarUrl?: string;
+    avatarPublicId?: string;
   };
 }
 
@@ -26,6 +31,42 @@ export function ProfileCard({ user }: ProfileCardProps) {
   const [isPending, startTransition] = useTransition();
   const [name, setName] = useState(user.name || "");
   const [phoneNumber, setPhoneNumber] = useState(user.phoneNumber || "");
+  const [avatarUrl, setAvatarUrl] = useState(user.avatarUrl || "");
+  const [avatarPublicId, setAvatarPublicId] = useState(user.avatarPublicId || "");
+  const [isAvatarUploading, setIsAvatarUploading] = useState(false);
+
+  const handleAvatarUpload = async (payload: { url: string; publicId: string }) => {
+    const formData = new FormData();
+    formData.append("url", payload.url);
+    formData.append("publicId", payload.publicId);
+    const res = await updateAvatarAction(formData);
+    if (res.error) {
+      toast.error(res.error);
+    } else {
+      toast.success("Avatar berhasil diperbarui!");
+      setAvatarUrl(payload.url);
+      setAvatarPublicId(payload.publicId);
+    }
+  };
+
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error("File terlalu besar. Maksimum 2 MB.");
+      return;
+    }
+    setIsAvatarUploading(true);
+    try {
+      const { handleUpload: upload } = await import("@/lib/upload/uploadService");
+      const result = await upload(file, { folder: "laz-avatars" });
+      await handleAvatarUpload({ url: result.url, publicId: result.publicId });
+    } catch (err: any) {
+      toast.error(err.message || "Gagal mengupload avatar.");
+    } finally {
+      setIsAvatarUploading(false);
+    }
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -57,6 +98,53 @@ export function ProfileCard({ user }: ProfileCardProps) {
         <CardTitle>Profil Pengguna</CardTitle>
       </CardHeader>
       <form onSubmit={handleSubmit}>
+        {/* Avatar preview and upload – responsive and styled */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+          {/* Avatar preview */}
+          <div className="relative flex flex-col items-center justify-center col-span-1 md:col-span-3">
+            <div className="relative w-28 h-28">
+              {/* Avatar image or initials */}
+              {avatarUrl ? (
+                <img
+                  src={avatarUrl}
+                  alt="Avatar"
+                  className="w-28 h-28 rounded-full object-cover ring-2 ring-primary/30 shadow-lg"
+                />
+              ) : (
+                <div className="w-28 h-28 rounded-full bg-primary/20 flex items-center justify-center ring-2 ring-primary/30 shadow-lg text-primary font-medium text-4xl">
+                  {user.name ? user.name.charAt(0).toUpperCase() : "?"}
+                </div>
+              )}
+              {/* Loading spinner overlay */}
+              {isAvatarUploading && (
+                <div className="absolute inset-0 flex items-center justify-center z-20">
+                  <LoadingSpinner size="sm" className="border-t-primary" />
+                </div>
+              )}
+              {/* Pencil icon overlay */}
+              <button
+                type="button"
+                onClick={() => document.getElementById('avatar')?.click()}
+                className="absolute bottom-0 right-0 flex items-center bg-white rounded-md px-2 py-1 shadow-md hover:bg-surface-muted transition transform translate-x-2"
+                aria-label="Ubah avatar"
+              >
+                <Pencil className="h-5 w-5 text-primary" />
+                <span className="ml-1 text-sm text-primary">Edit</span>
+              </button>
+            </div>
+            <p className="mt-2 text-sm text-secondary">Foto Profil</p>
+          </div>
+
+          {/* Hidden native file input for avatar upload */}
+          <input
+            id="avatar"
+            name="avatar"
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={handleFileSelect}
+          />
+        </div>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
