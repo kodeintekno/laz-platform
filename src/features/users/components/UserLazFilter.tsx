@@ -38,7 +38,7 @@ export function UserLazFilter({ lazs }: UserLazFilterProps) {
         value={selectedLazId}
         onChange={handleChange}
         disabled={isPending}
-        className="h-10 text-sm py-1.5"
+        className="text-sm"
       >
         <option value="">Semua Lembaga Zakat (LAZ)</option>
         {lazs.map((laz) => (

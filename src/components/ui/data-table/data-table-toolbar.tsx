@@ -129,10 +129,10 @@ export function DataTableToolbarSkeleton({ showFilter = false }: { showFilter?: 
   return (
     <div className="flex flex-col sm:flex-row items-center justify-between gap-4 w-full rounded-2xl border border-border/20 bg-surface p-4 shadow-soft animate-pulse">
       <div className="relative max-w-md w-full">
-        <div className="h-10 w-full bg-surface-soft rounded-lg border border-border/20" />
+        <div className="h-[46px] w-full bg-surface-soft rounded-lg border border-border/20" />
       </div>
       {showFilter && (
-        <div className="w-full sm:w-64 h-10 bg-surface-soft rounded-lg border border-border/20" />
+        <div className="w-full sm:w-64 h-[46px] bg-surface-soft rounded-lg border border-border/20" />
       )}
     </div>
   );
