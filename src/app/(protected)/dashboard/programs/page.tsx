@@ -4,7 +4,8 @@ import { programsService } from "@/features/programs/services/programs.service";
 import { ProgramTable } from "@/features/programs/components/ProgramTable";
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { Button, Pagination, PageHeader } from "@/components/ui";
+import { Button, Pagination, PageHeader, TableSkeleton } from "@/components/ui";
+import { Suspense } from "react";
 
 export const metadata = {
   title: "Program Management",
@@ -26,7 +27,6 @@ export default async function ProgramsPage({
   const search = typeof resolvedSearchParams.search === "string" ? resolvedSearchParams.search : undefined;
 
   const canCreate = session.user.permissions.includes(PERMISSIONS.PROGRAMS_CREATE);
-  const { items: programs, metadata } = await programsService.getDashboardPrograms(page, 10, search);
 
   return (
     <div className="space-y-6">
@@ -42,6 +42,27 @@ export default async function ProgramsPage({
         }
       />
 
+      <Suspense
+        key={`${search}-${page}`}
+        fallback={
+          <TableSkeleton
+            headers={["Judul Program", "Kategori", "Terkumpul", "Status", "Aksi"]}
+            rowCount={10}
+            columnTypes={["text", "text", "text", "text", "action"]}
+          />
+        }
+      >
+        <ProgramsTableSection page={page} search={search} />
+      </Suspense>
+    </div>
+  );
+}
+
+async function ProgramsTableSection({ page, search }: { page: number; search?: string }) {
+  const { items: programs, metadata } = await programsService.getDashboardPrograms(page, 10, search);
+
+  return (
+    <>
       <ProgramTable programs={programs} />
 
       {/* Pagination Controls */}
@@ -53,6 +74,7 @@ export default async function ProgramsPage({
           pageSize={10}
         />
       )}
-    </div>
+    </>
   );
 }
+

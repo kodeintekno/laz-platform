@@ -3,7 +3,8 @@ import { PERMISSIONS } from "@/constants/permissions";
 import { distributionsService } from "@/features/distributions/services/distributions.service";
 import { DistributionTable } from "@/features/distributions/components/DistributionTable";
 import { redirect } from "next/navigation";
-import { PageHeader } from "@/components/ui";
+import { PageHeader, TableSkeleton } from "@/components/ui";
+import { Suspense } from "react";
 
 export const metadata = {
   title: "Penyaluran Dana",
@@ -24,8 +25,6 @@ export default async function DistributionsPage({
   const page = typeof resolvedSearchParams.page === "string" ? parseInt(resolvedSearchParams.page) : 1;
   const search = typeof resolvedSearchParams.search === "string" ? resolvedSearchParams.search : undefined;
 
-  const { items: distributions, metadata } = await distributionsService.getDashboardDistributions(page, 10, search);
-
   return (
     <div className="space-y-6">
       <PageHeader
@@ -33,6 +32,27 @@ export default async function DistributionsPage({
         description="Daftar pengajuan penyaluran dana dari berbagai program kampanye."
       />
 
+      <Suspense
+        key={`${search}-${page}`}
+        fallback={
+          <TableSkeleton
+            headers={["Program", "Rincian Penyaluran", "Nominal", "Pemohon", "Status", "Aksi"]}
+            rowCount={10}
+            columnTypes={["text", "text", "text", "text", "text", "action"]}
+          />
+        }
+      >
+        <DistributionsTableSection page={page} search={search} />
+      </Suspense>
+    </div>
+  );
+}
+
+async function DistributionsTableSection({ page, search }: { page: number; search?: string }) {
+  const { items: distributions, metadata } = await distributionsService.getDashboardDistributions(page, 10, search);
+
+  return (
+    <>
       <DistributionTable distributions={distributions} />
 
       {/* Pagination Controls */}
@@ -43,6 +63,7 @@ export default async function DistributionsPage({
           </p>
         </div>
       )}
-    </div>
+    </>
   );
 }
+

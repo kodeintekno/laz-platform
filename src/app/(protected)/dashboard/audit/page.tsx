@@ -3,7 +3,8 @@ import { PERMISSIONS } from "@/constants/permissions";
 import { redirect } from "next/navigation";
 import { auditService } from "@/features/audit/services/audit.service";
 import { AuditTable } from "@/features/audit/components/AuditTable";
-import { PageHeader } from "@/components/ui";
+import { PageHeader, TableSkeleton } from "@/components/ui";
+import { Suspense } from "react";
 
 export const metadata = {
   title: "Audit Logs",
@@ -24,8 +25,6 @@ export default async function AuditPage({
   const page = typeof resolvedSearchParams.page === "string" ? parseInt(resolvedSearchParams.page) : 1;
   const search = typeof resolvedSearchParams.search === "string" ? resolvedSearchParams.search : undefined;
 
-  const { items: logs, metadata: paginatedMetadata } = await auditService.getLogs(page, 10, search, session.user.lazId);
-
   return (
     <div className="space-y-6">
       <PageHeader
@@ -33,17 +32,37 @@ export default async function AuditPage({
         description="Riwayat log audit aktivitas mutasi admin dan pengelolaan sistem secara realtime."
       />
 
-      <AuditTable
-        logs={logs}
-        search={search}
-        pagination={{
-          currentPage: page,
-          totalPages: paginatedMetadata.totalPages,
-          totalCount: paginatedMetadata.total,
-          pageSize: 10,
-        }}
-      />
+      <Suspense
+        key={`${search}-${page}`}
+        fallback={
+          <TableSkeleton
+            headers={["Waktu", "Operator", "Aktivitas", "Entitas / ID", "Perubahan Data", "Klien Info"]}
+            rowCount={10}
+            columnTypes={["text", "avatar", "text", "text", "text", "text"]}
+          />
+        }
+      >
+        <AuditTableSection page={page} search={search} lazId={session.user.lazId} />
+      </Suspense>
     </div>
   );
 }
+
+async function AuditTableSection({ page, search, lazId }: { page: number; search?: string; lazId?: string }) {
+  const { items: logs, metadata: paginatedMetadata } = await auditService.getLogs(page, 10, search, lazId);
+
+  return (
+    <AuditTable
+      logs={logs}
+      search={search}
+      pagination={{
+        currentPage: page,
+        totalPages: paginatedMetadata.totalPages,
+        totalCount: paginatedMetadata.total,
+        pageSize: 10,
+      }}
+    />
+  );
+}
+
 

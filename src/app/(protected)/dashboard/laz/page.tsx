@@ -4,11 +4,10 @@ import { lazService } from "@/features/laz/services/laz.service";
 import { LazTable } from "@/features/laz/components/LazTable";
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { Button, PageHeader } from "@/components/ui";
+import { Button, PageHeader, TableSkeleton } from "@/components/ui";
 import { logger } from "@/lib/logger";
 import { Suspense } from "react";
 import { DataTableToolbar, DataTableToolbarSkeleton } from "@/components/ui/data-table";
-import { Skeleton } from "@/components/ui/Skeleton";
 
 export const metadata = {
   title: "LAZ Management",
@@ -50,7 +49,16 @@ export default async function LazsPage({
         <DataTableToolbar searchValue={search} searchPlaceholder="Cari nama organisasi atau slug..." />
       </Suspense>
 
-      <Suspense key={`${search}-${page}-${limit}`} fallback={<TableSkeleton limit={limit} />}>
+      <Suspense
+        key={`${search}-${page}-${limit}`}
+        fallback={
+          <TableSkeleton
+            headers={["Logo", "Nama Organisasi", "Slug", "Status", "Tanggal Terdaftar", "Aksi"]}
+            rowCount={limit}
+            columnTypes={["image", "text", "text", "text", "text", "action"]}
+          />
+        }
+      >
         <LazTableSection page={page} limit={limit} search={search} />
       </Suspense>
     </div>
@@ -74,36 +82,3 @@ async function LazTableSection({ page, limit, search }: { page: number; limit: n
   );
 }
 
-function TableSkeleton({ limit = 3 }: { limit?: number }) {
-  const skeletonCount = Math.min(limit, 3);
-  return (
-    <div className="space-y-4 w-full">
-      <div className="overflow-hidden rounded-2xl bg-surface shadow-sm w-full">
-        <table className="min-w-full divide-y divide-border/40 align-middle">
-          <thead className="bg-surface-soft">
-            <tr>
-              <th scope="col" className="px-3 py-3.5 text-sm font-semibold text-primary text-left">Logo</th>
-              <th scope="col" className="px-3 py-3.5 text-sm font-semibold text-primary text-left">Nama Organisasi</th>
-              <th scope="col" className="px-3 py-3.5 text-sm font-semibold text-primary text-left">Slug</th>
-              <th scope="col" className="px-3 py-3.5 text-sm font-semibold text-primary text-left">Status</th>
-              <th scope="col" className="px-3 py-3.5 text-sm font-semibold text-primary text-left">Tanggal Terdaftar</th>
-              <th scope="col" className="px-3 py-3.5 text-sm font-semibold text-primary text-right font-mono">Aksi</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-border/40 bg-surface">
-            {Array.from({ length: skeletonCount }).map((_, rIdx) => (
-              <tr key={rIdx}>
-                <td className="px-3 py-4"><Skeleton className="h-10 w-10 rounded-lg" /></td>
-                <td className="px-3 py-4"><Skeleton className="h-5 w-48" /></td>
-                <td className="px-3 py-4"><Skeleton className="h-5 w-24" /></td>
-                <td className="px-3 py-4"><Skeleton className="h-5 w-16" /></td>
-                <td className="px-3 py-4"><Skeleton className="h-5 w-28" /></td>
-                <td className="px-3 py-4 text-right"><Skeleton className="h-5 w-8 ml-auto" /></td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  );
-}
