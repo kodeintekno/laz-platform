@@ -78,8 +78,12 @@ model User {
   password       String?
   avatarUrl      String?
   emailVerified  DateTime?
+  phoneNumber    String?
   status         UserStatus @default(ACTIVE)
   lastLoginAt    DateTime?
+
+  emailNotifications Boolean @default(true)
+  waNotifications    Boolean @default(true)
 
   roleId         String
 
