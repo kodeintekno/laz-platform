@@ -43,7 +43,7 @@ export function ProfileCard({ user }: ProfileCardProps) {
     if (res.error) {
       toast.error(res.error);
     } else {
-      toast.success("Avatar berhasil diperbarui!");
+      toast.success("Foto Profil berhasil diperbarui!");
       setAvatarUrl(payload.url);
       setAvatarPublicId(payload.publicId);
     }
@@ -62,7 +62,7 @@ export function ProfileCard({ user }: ProfileCardProps) {
       const result = await upload(file, { folder: "laz-avatars" });
       await handleAvatarUpload({ url: result.url, publicId: result.publicId });
     } catch (err: any) {
-      toast.error(err.message || "Gagal mengupload avatar.");
+      toast.error(err.message || "Gagal mengupload foto profil.");
     } finally {
       setIsAvatarUploading(false);
     }
@@ -107,7 +107,7 @@ export function ProfileCard({ user }: ProfileCardProps) {
               {avatarUrl ? (
                 <img
                   src={avatarUrl}
-                  alt="Avatar"
+                  alt="Foto Profil"
                   className="w-28 h-28 rounded-full object-cover ring-2 ring-primary/30 shadow-lg"
                 />
               ) : (
@@ -126,7 +126,7 @@ export function ProfileCard({ user }: ProfileCardProps) {
                 type="button"
                 onClick={() => document.getElementById('avatar')?.click()}
                 className="absolute bottom-0 right-0 flex items-center bg-white rounded-md px-2 py-1 shadow-md hover:bg-surface-muted transition transform translate-x-2"
-                aria-label="Ubah avatar"
+                aria-label="Ubah foto profil"
               >
                 <Pencil className="h-5 w-5 text-primary" />
                 <span className="ml-1 text-sm text-primary">Edit</span>

@@ -1,5 +1,6 @@
 import type { UploadResult } from "./provider";
 import { logger } from "@/lib/logger";
+// CloudinaryProvider is loaded dynamically in deleteFile to keep it server‑only
 
 /**
  * Options accepted by the upload service – folder is optional and an AbortSignal can be provided.
@@ -56,12 +57,13 @@ export async function replaceFile(
 
 /** Delete a stored asset by its publicId via the server route. */
 export async function deleteFile(publicId: string): Promise<void> {
-  const response = await fetch(
-    `/api/upload?publicId=${encodeURIComponent(publicId)}`,
-    { method: "DELETE" }
-  );
-  if (!response.ok) {
-    const txt = await response.text();
-    throw new Error(`Delete failed: ${txt}`);
+  // Load provider only on the server
+  // CloudinaryProvider loaded dynamically in deleteFile);
+  const provider = new CloudinaryProvider();
+  try {
+    await provider.delete(publicId);
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    throw new Error(`Delete failed: ${msg}`);
   }
 }

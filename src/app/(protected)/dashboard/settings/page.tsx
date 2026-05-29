@@ -26,6 +26,8 @@ export default async function SettingsPage() {
       phoneNumber: true,
       emailNotifications: true,
       waNotifications: true,
+      avatarUrl: true,
+      avatarPublicId: true,
     },
   });
 
