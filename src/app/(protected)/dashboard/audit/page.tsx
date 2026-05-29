@@ -4,8 +4,9 @@ import { redirect } from "next/navigation";
 import { auditService } from "@/features/audit/services/audit.service";
 import { AuditTable } from "@/features/audit/components/AuditTable";
 import { PageHeader, TableSkeleton } from "@/components/ui";
-import { DateRangeFilter } from "@/components/ui/DateRangeFilter";
+import { DateRangeFilter } from "@/components/ui";
 import { Suspense } from "react";
+import React from "react";
 
 export const metadata = {
   title: "Audit Logs",
@@ -33,7 +34,6 @@ export default async function AuditPage({
       <PageHeader
         title="Audit Logs"
         description="Riwayat log audit aktivitas mutasi admin dan pengelolaan sistem secara realtime."
-        action={<DateRangeFilter startDate={startDate} endDate={endDate} search={search} page={page} />}
       />
 
       <Suspense
@@ -46,17 +46,17 @@ export default async function AuditPage({
           />
         }
       >
-        <AuditTableSection page={page} search={search} lazId={session.user.lazId} startDate={startDate} endDate={endDate} />
+        <AuditTableSection page={page} search={search} lazId={session.user.lazId} startDate={startDate} endDate={endDate} filterSlot={<DateRangeFilter startDate={startDate} endDate={endDate} search={search} page={page} />} />
       </Suspense>
     </div>
   );
 }
 
-async function AuditTableSection({ page, search, lazId, startDate, endDate }: { page: number; search?: string; lazId?: string; startDate?: string; endDate?: string }) {
+async function AuditTableSection({ page, search, lazId, startDate, endDate, filterSlot }: { page: number; search?: string; lazId?: string; startDate?: string; endDate?: string; filterSlot?: React.ReactNode }) {
   const { items: logs, metadata: paginatedMetadata } = await auditService.getLogs(page, 10, search, lazId, startDate, endDate);
 
   return (
-    <AuditTable
+    <AuditTable filterSlot={filterSlot}
       logs={logs}
       search={search}
       pagination={{
