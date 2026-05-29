@@ -76,11 +76,35 @@ export function getUserColumns({
     {
       header: "Role / Peran",
       accessorKey: "role.name",
-      cell: (user) => (
-        <Badge intent="muted">
-          {user.role?.name || "N/A"}
-        </Badge>
-      ),
+      cell: (user) => {
+        const roleName = user.role?.name || "N/A";
+        let intent: "success" | "warning" | "destructive" | "info" | "muted" = "muted";
+        let label = roleName;
+
+        const normalized = roleName.toUpperCase().replace(/\s+/g, "_");
+        if (normalized === "SUPER_ADMIN") {
+          intent = "destructive";
+          label = "Super Admin";
+        } else if (normalized === "ADMIN") {
+          intent = "info";
+          label = "Admin";
+        } else if (normalized === "FINANCE") {
+          intent = "warning";
+          label = "Finance";
+        } else if (normalized === "RELAWAN") {
+          intent = "success";
+          label = "Relawan";
+        } else if (normalized === "DONATUR") {
+          intent = "muted";
+          label = "Donatur";
+        }
+
+        return (
+          <Badge intent={intent}>
+            {label}
+          </Badge>
+        );
+      },
     },
   ];
 
