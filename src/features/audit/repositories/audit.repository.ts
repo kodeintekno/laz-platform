@@ -64,12 +64,18 @@ export const auditRepository = {
   /**
    * Find paged and searchable audit logs.
    */
-  async getAuditLogs(page: number = 1, limit: number = 10, search?: string, lazId?: string) {
+  async getAuditLogs(page: number = 1, limit: number = 10, search?: string, lazId?: string, startDate?: string, endDate?: string) {
     const skip = (page - 1) * limit;
 
     const where: any = {};
     if (lazId) {
       where.lazId = lazId;
+    }
+    if (startDate) {
+      where.createdAt = { gte: new Date(startDate) };
+    }
+    if (endDate) {
+      where.createdAt = { ...(where.createdAt || {}), lte: new Date(endDate) };
     }
     if (search) {
       const isActionEnum = [

@@ -30,8 +30,7 @@ export const auditService = {
   /**
    * Retrieve paged and searchable audit logs.
    */
-  async getLogs(page: number = 1, limit: number = 10, search?: string, lazId?: string) {
-    return auditRepository.getAuditLogs(page, limit, search, lazId);
+  async getLogs(page: number = 1, limit: number = 10, search?: string, lazId?: string, startDate?: string, endDate?: string) {
+    return auditRepository.getAuditLogs(page, limit, search, lazId, startDate, endDate);
   },
 };
-

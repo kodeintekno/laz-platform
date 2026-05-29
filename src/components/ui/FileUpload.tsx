@@ -86,10 +86,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({
     try {
       // use uploadService to handle Cloudinary upload
       const { handleUpload: upload } = await import("@/lib/upload/uploadService");
-      const result = await upload(file, { 
-        signal: controller.signal,
-        folder: folder
-      });
+      const result = await upload(file, { folder });
 
       logger.info({ result }, "FileUpload handleChange: Upload succeeded");
 
