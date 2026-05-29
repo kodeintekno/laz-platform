@@ -21,8 +21,8 @@ export const usersService = {
   /**
    * Fetch available roles for assignment.
    */
-  async getRoles(lazId?: string) {
-    return usersRepository.findRoles(lazId);
+  async getRoles() {
+    return usersRepository.findRoles();
   },
 
   /**

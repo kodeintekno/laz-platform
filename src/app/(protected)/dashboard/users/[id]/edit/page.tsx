@@ -37,7 +37,7 @@ export default async function EditUserPage({
   }
 
   const [roles, lazs] = await Promise.all([
-    usersService.getRoles(queryLazId),
+    usersService.getRoles(),
     isSuperAdmin ? usersService.getAllLazs() : Promise.resolve([]),
   ]);
 

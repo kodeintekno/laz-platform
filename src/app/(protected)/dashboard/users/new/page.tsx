@@ -19,7 +19,7 @@ export default async function NewUserPage() {
   const queryLazId = isSuperAdmin ? undefined : session.user.lazId;
 
   const [roles, lazs] = await Promise.all([
-    usersService.getRoles(queryLazId),
+    usersService.getRoles(),
     isSuperAdmin ? usersService.getAllLazs() : Promise.resolve([]),
   ]);
 

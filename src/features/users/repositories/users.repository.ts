@@ -68,12 +68,10 @@ export const usersRepository = {
   },
 
   /**
-   * Find all active roles (optionally scoped to a specific LAZ tenant).
+   * Find all active roles.
    */
-  async findRoles(lazId?: string) {
-    const where = lazId ? { lazId } : {};
+  async findRoles() {
     return prisma.role.findMany({
-      where,
       orderBy: { name: "asc" },
     });
   },

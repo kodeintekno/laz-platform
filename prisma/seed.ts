@@ -143,9 +143,9 @@ async function main() {
 
   for (const role of ROLE_DEFINITIONS) {
     const created = await prisma.role.upsert({
-      where: { lazId_name: { lazId: defaultLaz.id, name: role.name } },
+      where: { name: role.name },
       update: { description: role.description },
-      create: { name: role.name, description: role.description, lazId: defaultLaz.id },
+      create: { name: role.name, description: role.description },
     });
     roleMap[role.name] = created.id;
     process.stdout.write(".");

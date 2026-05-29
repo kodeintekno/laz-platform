@@ -92,7 +92,7 @@ async function UserTableSection({
 
   const [{ items: users, metadata }, roles] = await Promise.all([
     usersService.getUsers(page, limit, search, queryLazId),
-    usersService.getRoles(queryLazId),
+    usersService.getRoles(),
   ]);
 
   return (
