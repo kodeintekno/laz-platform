@@ -1,6 +1,7 @@
+"use server";
 import type { UploadResult } from "./provider";
 import { logger } from "@/lib/logger";
-// CloudinaryProvider is loaded dynamically in deleteFile to keep it server‑only
+// CloudinaryProvider is loaded dynamically within deleteFile to keep it server‑only
 
 /**
  * Options accepted by the upload service – folder is optional and an AbortSignal can be provided.
@@ -22,7 +23,9 @@ export async function handleUpload(
   form.append("file", file);
   if (opts?.folder) form.append("folder", opts.folder);
 
-  const response = await fetch("/api/upload", {
+  const base = process.env.NEXT_PUBLIC_BASE_URL?.replace(/\/$/, "");
+  const absoluteUrl = base ? `${base}/api/upload` : `http://localhost:${process.env.PORT || 3000}/api/upload`;
+  const response = await fetch(absoluteUrl, {
     method: "POST",
     body: form,
     signal: opts?.signal,
@@ -58,7 +61,7 @@ export async function replaceFile(
 /** Delete a stored asset by its publicId via the server route. */
 export async function deleteFile(publicId: string): Promise<void> {
   // Load provider only on the server
-  // CloudinaryProvider loaded dynamically in deleteFile);
+  const { CloudinaryProvider } = await import("./cloudinaryProvider");
   const provider = new CloudinaryProvider();
   try {
     await provider.delete(publicId);
