@@ -24,41 +24,41 @@ const prisma = new PrismaClient({ adapter });
 
 const PERMISSION_DEFINITIONS = [
   // Users
-  { key: "users.read", description: "View users" },
-  { key: "users.create", description: "Create users" },
-  { key: "users.update", description: "Update users" },
-  { key: "users.delete", description: "Delete users" },
-  { key: "users.manage_roles", description: "Assign roles to users" },
+  { key: "users.read", description: "Melihat daftar pengguna" },
+  { key: "users.create", description: "Menambah/mendaftarkan pengguna baru" },
+  { key: "users.update", description: "Mengubah informasi profil & status pengguna" },
+  { key: "users.delete", description: "Menghapus akun pengguna dari sistem" },
+  { key: "users.manage_roles", description: "Mengatur dan menetapkan peran (Role) pengguna" },
   // Programs
-  { key: "programs.read", description: "View programs" },
-  { key: "programs.create", description: "Create programs" },
-  { key: "programs.update", description: "Update programs" },
-  { key: "programs.delete", description: "Delete programs" },
-  { key: "programs.publish", description: "Publish programs" },
+  { key: "programs.read", description: "Melihat daftar program bantuan/kampanye" },
+  { key: "programs.create", description: "Membuat program bantuan/kampanye baru" },
+  { key: "programs.update", description: "Mengubah detail informasi program bantuan" },
+  { key: "programs.delete", description: "Menghapus program bantuan dari sistem" },
+  { key: "programs.publish", description: "Mempublikasikan program agar bisa menerima donasi" },
   // Donations
-  { key: "donations.read", description: "View donations" },
-  { key: "donations.create", description: "Create donations" },
-  { key: "donations.update", description: "Update donations" },
+  { key: "donations.read", description: "Melihat riwayat transaksi donasi masuk" },
+  { key: "donations.create", description: "Mencatat transaksi donasi secara manual" },
+  { key: "donations.update", description: "Mengubah status atau informasi donasi" },
   // Payments
-  { key: "payments.read", description: "View payments" },
-  { key: "payments.manage", description: "Manage payments" },
+  { key: "payments.read", description: "Melihat riwayat transaksi pembayaran" },
+  { key: "payments.manage", description: "Mengelola dan verifikasi status pembayaran donasi" },
   // Distributions
-  { key: "distributions.read", description: "View distributions" },
-  { key: "distributions.manage", description: "Manage distributions" },
-  { key: "distributions.upload", description: "Upload distribution docs" },
+  { key: "distributions.read", description: "Melihat riwayat penyaluran dana zakat/bantuan" },
+  { key: "distributions.manage", description: "Mengelola dan menyetujui pengajuan penyaluran dana" },
+  { key: "distributions.upload", description: "Mengunggah dokumentasi/bukti penyaluran dana" },
   // Audit
-  { key: "audit.read", description: "View audit logs" },
+  { key: "audit.read", description: "Melihat catatan aktivitas/log audit sistem" },
   // Reports
-  { key: "reports.read", description: "View reports" },
-  { key: "reports.financial", description: "View financial reports" },
+  { key: "reports.read", description: "Melihat laporan statistik umum kinerja platform" },
+  { key: "reports.financial", description: "Melihat laporan keuangan dan kas lembaga" },
   // RBAC
-  { key: "roles.read", description: "View roles" },
-  { key: "roles.manage", description: "Manage roles" },
-  { key: "permissions.manage", description: "Manage permissions" },
+  { key: "roles.read", description: "Melihat daftar tingkat peran (Role)" },
+  { key: "roles.manage", description: "Mengatur hak akses dan matriks izin peran (RBAC)" },
+  { key: "permissions.manage", description: "Mengelola daftar definisi hak akses sistem" },
   // Settings
-  { key: "settings.manage", description: "Manage system settings" },
+  { key: "settings.manage", description: "Mengubah pengaturan dan konfigurasi sistem" },
   // LAZ Management
-  { key: "laz.manage", description: "Manage LAZ tenants" },
+  { key: "laz.manage", description: "Mengelola pendaftaran lembaga amil zakat (LAZ)" },
 ];
 
 // ─── Role ↔ Permission matrix (from docs/user-roles-rbac.md) ─────────────────

@@ -89,9 +89,13 @@ export function RoleMatrix({ roles, permissions, initialActiveMappings }: RoleMa
       header: "Izin Akses",
       width: "350px",
       cell: (row) => (
-        <div className="py-1">
-          <div className="font-semibold text-primary text-sm">{row.description || row.key}</div>
-          <div className="text-xs text-secondary font-mono mt-0.5">{row.key}</div>
+        <div className="py-1 flex flex-col gap-1">
+          <div className="font-semibold text-primary text-sm leading-snug">{row.description || row.key}</div>
+          <div>
+            <code className="inline-block text-[10px] px-1.5 py-0.5 rounded bg-surface-soft border border-border/50 text-secondary font-mono leading-none">
+              {row.key}
+            </code>
+          </div>
         </div>
       ),
     },
@@ -207,9 +211,13 @@ export function RoleMatrix({ roles, permissions, initialActiveMappings }: RoleMa
                         className="h-5 w-5 mt-0.5 rounded border border-secondary/40 accent-brand-primary cursor-pointer transition flex-shrink-0"
                         aria-label={`Berikan izin ${perm.key} untuk role ${selectedRoleName}`}
                       />
-                      <div className="flex-1 min-w-0">
-                        <div className="text-sm font-semibold text-primary leading-tight">{perm.description || perm.key}</div>
-                        <div className="text-xs text-secondary font-mono mt-1">{perm.key}</div>
+                      <div className="flex-1 min-w-0 flex flex-col gap-1">
+                        <div className="text-sm font-semibold text-primary leading-snug">{perm.description || perm.key}</div>
+                        <div>
+                          <code className="inline-block text-[10px] px-1.5 py-0.5 rounded bg-surface-soft border border-border/50 text-secondary font-mono leading-none">
+                            {perm.key}
+                          </code>
+                        </div>
                       </div>
                     </label>
                   );

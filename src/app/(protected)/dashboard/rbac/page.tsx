@@ -9,6 +9,8 @@ export const metadata = {
   title: "RBAC Management",
 };
 
+export const dynamic = "force-dynamic";
+
 export default async function RBACPage() {
   const session = await auth();
 
