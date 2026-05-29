@@ -8,6 +8,7 @@ import { Button, PageHeader, TableSkeleton } from "@/components/ui";
 import { logger } from "@/lib/logger";
 import { Suspense } from "react";
 import { DataTableToolbar, DataTableToolbarSkeleton } from "@/components/ui/data-table";
+import { UserLazFilter } from "@/features/users/components/UserLazFilter";
 
 export const metadata = {
   title: "User Management",
@@ -32,9 +33,13 @@ export default async function UsersPage({
   const page = typeof resolvedSearchParams.page === "string" ? parseInt(resolvedSearchParams.page) : 1;
   const limit = typeof resolvedSearchParams.limit === "string" ? parseInt(resolvedSearchParams.limit) : 10;
   const search = typeof resolvedSearchParams.search === "string" ? resolvedSearchParams.search : undefined;
+  const lazId = typeof resolvedSearchParams.lazId === "string" ? resolvedSearchParams.lazId : undefined;
 
   const canCreate = session.user.permissions.includes(PERMISSIONS.USERS_CREATE);
   const isSuperAdmin = session.user.roleName === "SUPER_ADMIN";
+
+  // Fetch all LAZs if Super Admin to display the filter selector
+  const lazs = isSuperAdmin ? await usersService.getAllLazs() : [];
 
   return (
     <div className="space-y-6">
@@ -50,12 +55,16 @@ export default async function UsersPage({
         }
       />
 
-      <Suspense fallback={<DataTableToolbarSkeleton />}>
-        <DataTableToolbar searchValue={search} searchPlaceholder="Cari nama atau email..." />
+      <Suspense fallback={<DataTableToolbarSkeleton showFilter={isSuperAdmin} />}>
+        <DataTableToolbar
+          searchValue={search}
+          searchPlaceholder="Cari nama atau email..."
+          filterSlot={isSuperAdmin ? <UserLazFilter lazs={lazs} /> : undefined}
+        />
       </Suspense>
 
       <Suspense
-        key={`${search}-${page}-${limit}`}
+        key={`${search}-${page}-${limit}-${lazId || ""}`}
         fallback={
           <TableSkeleton
             headers={
@@ -76,6 +85,7 @@ export default async function UsersPage({
           page={page}
           limit={limit}
           search={search}
+          lazId={lazId}
           isSuperAdmin={isSuperAdmin}
           currentUserId={session.user.id}
           adminLazId={session.user.lazId}
@@ -89,6 +99,7 @@ async function UserTableSection({
   page,
   limit,
   search,
+  lazId,
   isSuperAdmin,
   currentUserId,
   adminLazId,
@@ -96,11 +107,12 @@ async function UserTableSection({
   page: number;
   limit: number;
   search?: string;
+  lazId?: string;
   isSuperAdmin: boolean;
   currentUserId: string;
   adminLazId?: string;
 }) {
-  const queryLazId = isSuperAdmin ? undefined : adminLazId;
+  const queryLazId = isSuperAdmin ? lazId : adminLazId;
 
   const [{ items: users, metadata }, roles] = await Promise.all([
     usersService.getUsers(page, limit, search, queryLazId),
