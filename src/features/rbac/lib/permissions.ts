@@ -27,6 +27,7 @@ export function hasPermission(
   permission: PermissionKey,
 ): boolean {
   if (!context) return false;
+  if (context.roleName === "SUPER_ADMIN") return true;
   return context.permissions.includes(permission);
 }
 
@@ -38,6 +39,7 @@ export function hasAllPermissions(
   permissions: PermissionKey[],
 ): boolean {
   if (!context) return false;
+  if (context.roleName === "SUPER_ADMIN") return true;
   return permissions.every((p) => context.permissions.includes(p));
 }
 
@@ -49,5 +51,6 @@ export function hasAnyPermission(
   permissions: PermissionKey[],
 ): boolean {
   if (!context) return false;
+  if (context.roleName === "SUPER_ADMIN") return true;
   return permissions.some((p) => context.permissions.includes(p));
 }

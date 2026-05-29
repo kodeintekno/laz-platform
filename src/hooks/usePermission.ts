@@ -25,6 +25,7 @@ export function usePermission() {
 
   const context: PermissionContext = {
     permissions: session?.user?.permissions ?? [],
+    roleName: session?.user?.roleName,
   };
 
   return {

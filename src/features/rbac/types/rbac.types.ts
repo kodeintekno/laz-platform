@@ -47,4 +47,5 @@ export interface RBACSessionUser {
  */
 export interface PermissionContext {
   permissions: PermissionKey[];
+  roleName?: RoleName;
 }

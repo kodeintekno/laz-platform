@@ -20,7 +20,12 @@ export function RoleMatrix({ roles, permissions, initialActiveMappings }: RoleMa
   const [activeMappings, setActiveMappings] = useState<Set<string>>(initialActiveMappings);
   const [savingRoleId, setSavingRoleId] = useState<string | null>(null);
 
-  const [selectedRoleId, setSelectedRoleId] = useState<string>(roles[0]?.id || "");
+  // Filter out SUPER_ADMIN from editable roles
+  const editableRoles = useMemo(() => {
+    return roles.filter((role) => role.name !== "SUPER_ADMIN");
+  }, [roles]);
+
+  const [selectedRoleId, setSelectedRoleId] = useState<string>(editableRoles[0]?.id || "");
 
   // Group permissions by moduleName (extracted from key like "users.read" -> "users")
   const groupedPermissions = useMemo(() => {
@@ -90,7 +95,7 @@ export function RoleMatrix({ roles, permissions, initialActiveMappings }: RoleMa
         </div>
       ),
     },
-    ...roles.map((role) => ({
+    ...editableRoles.map((role) => ({
       header: (
         <div className="flex flex-col items-center gap-2 py-2">
           <span className="text-xs font-bold text-primary uppercase tracking-wider">{role.name}</span>
@@ -125,7 +130,7 @@ export function RoleMatrix({ roles, permissions, initialActiveMappings }: RoleMa
         );
       },
     })),
-  ], [roles, activeMappings, isPending, savingRoleId, saveRole, togglePermission]);
+  ], [editableRoles, activeMappings, isPending, savingRoleId, saveRole, togglePermission]);
 
   const getModuleLabel = (name: string) => {
     const labels: Record<string, string> = {
@@ -139,7 +144,7 @@ export function RoleMatrix({ roles, permissions, initialActiveMappings }: RoleMa
     return labels[name.toLowerCase()] || name.toUpperCase();
   };
 
-  const selectedRoleName = roles.find((r) => r.id === selectedRoleId)?.name || "";
+  const selectedRoleName = editableRoles.find((r) => r.id === selectedRoleId)?.name || "";
 
   return (
     <div className="w-full space-y-6">
@@ -157,7 +162,7 @@ export function RoleMatrix({ roles, permissions, initialActiveMappings }: RoleMa
       <div className="lg:hidden space-y-6 w-full">
         {/* Role Horizontal Tab Scroll */}
         <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-none -mx-4 px-4 sm:-mx-6 sm:px-6">
-          {roles.map((role) => {
+          {editableRoles.map((role) => {
             const isActive = selectedRoleId === role.id;
             return (
               <button
