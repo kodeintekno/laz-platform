@@ -96,4 +96,24 @@ export const authService = {
       newData: { email: newUser.email, role: "DONATUR" },
     });
   },
-};
+  async getUserById(id: string) {
+    const user = await userRepository.findById(id);
+    if (!user) {
+      return null;
+    }
+    const permissions =
+      user.role?.rolePermissions.map((rp) => rp.permission.key as PermissionKey) ?? [];
+    return {
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      roleId: user.roleId ?? undefined,
+      roleName: (user.role?.name as RBACSessionUser["roleName"]) ?? undefined,
+      permissions,
+      lazId: user.lazId,
+      avatarUrl: (user as any).avatarUrl,
+      avatarPublicId: (user as any).avatarPublicId,
+    };
+  },
+
+}

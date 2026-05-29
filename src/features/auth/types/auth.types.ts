@@ -15,21 +15,25 @@ import type { DefaultSession } from "next-auth";
  * type-safe throughout the entire application.
  */
 declare module "next-auth" {
-  interface Session {
-    user: {
-      id: string;
+    interface Session {
+      user: {
+        id: string;
+        roleName?: RoleName;
+        roleId?: string;
+        permissions: PermissionKey[];
+        lazId?: string;
+        avatarUrl?: string;
+        avatarPublicId?: string;
+      } & DefaultSession["user"];
+    }
+
+    interface JWT {
+      id?: string;
       roleName?: RoleName;
       roleId?: string;
-      permissions: PermissionKey[];
+      permissions?: PermissionKey[];
       lazId?: string;
-    } & DefaultSession["user"];
-  }
-
-  interface JWT {
-    id?: string;
-    roleName?: RoleName;
-    roleId?: string;
-    permissions?: PermissionKey[];
-    lazId?: string;
-  }
+      avatarUrl?: string;
+      avatarPublicId?: string;
+    }
 }

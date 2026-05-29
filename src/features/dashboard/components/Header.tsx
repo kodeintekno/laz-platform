@@ -11,6 +11,7 @@ interface HeaderProps {
     name?: string | null;
     email?: string | null;
     image?: string | null;
+    avatarUrl?: string | null;
     roleName?: string;
   };
 }
@@ -59,7 +60,7 @@ export function Header({ user }: HeaderProps) {
       {/* Right: Actions */}
       <div className="flex items-center gap-4">
         {/* Notification Icon */}
-        <button 
+        <button
           className="p-1.5 rounded-full text-muted hover:bg-surface-muted hover:text-primary transition-all cursor-pointer"
           aria-label="Notification bell"
         >
@@ -74,9 +75,9 @@ export function Header({ user }: HeaderProps) {
             aria-expanded={isDropdownOpen}
             aria-haspopup="true"
           >
-            {user?.image ? (
+            {user?.avatarUrl ? (
               <img
-                src={user.image}
+                src={user.avatarUrl}
                 alt={user.name || "User Avatar"}
                 className="w-8 h-8 rounded-full object-cover ring-2 ring-surface-soft"
               />

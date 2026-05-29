@@ -41,6 +41,18 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         token.roleName = rbacUser.roleName;
         token.permissions = rbacUser.permissions;
         token.lazId = rbacUser.lazId;
+        token.avatarUrl = rbacUser.avatarUrl;
+        token.avatarPublicId = rbacUser.avatarPublicId;
+      } else if (token.id) {
+        // Fetch latest avatar info for existing token
+        try {
+          const { authService } = await import("@/features/auth/services/auth.service");
+          const userFromDb = await authService.getUserById(token.id as string);
+          token.avatarUrl = userFromDb?.avatarUrl;
+          token.avatarPublicId = userFromDb?.avatarPublicId;
+        } catch (e) {
+          // ignore errors
+        }
       }
       return token;
     },
@@ -51,6 +63,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         session.user.roleName = token.roleName as RBACSessionUser["roleName"] | undefined;
         session.user.permissions = (token.permissions as PermissionKey[]) ?? [];
         session.user.lazId = token.lazId as string | undefined;
+        session.user.avatarUrl = token.avatarUrl as string | undefined;
+        session.user.avatarPublicId = token.avatarPublicId as string | undefined;
       }
       return session;
     },
