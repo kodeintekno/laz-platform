@@ -8,11 +8,11 @@ import { createLazAction } from "../actions/laz.actions";
 import { type Laz } from "@prisma/client";
 import { FormWrapper, FormField, Button, Card, CardContent, CardFooter } from "@/components/ui";
 import { FileUpload } from "@/components/ui/FileUpload";
+import { toast } from "@/stores/toast.store";
 
 export function LazForm({ initialData, action }: { initialData?: Laz; action?: (prevState: any, formData: FormData) => Promise<any> }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
-  const [error, setError] = useState<string | null>(null);
   // Local state for logo upload
   const [uploadedLogoUrl, setUploadedLogoUrl] = useState<string>('');
   const [uploadedLogoPublicId, setUploadedLogoPublicId] = useState<string>('');
@@ -20,7 +20,6 @@ export function LazForm({ initialData, action }: { initialData?: Laz; action?: (
   const uploadAbortRef = useRef<AbortController | null>(null);
 
   const onSubmit = (data: LazInput, _form: any) => {
-    setError(null);
     startTransition(async () => {
       const formData = new FormData();
       // Prefer uploaded logo URL if available
@@ -41,8 +40,9 @@ export function LazForm({ initialData, action }: { initialData?: Laz; action?: (
       }
 
       if (result?.error) {
-        setError(result.error);
+        toast.error(result.error);
       } else if (result?.success) {
+        toast.success(initialData ? "Data LAZ berhasil diperbarui!" : "LAZ baru berhasil didaftarkan!");
         router.push("/dashboard/laz");
         router.refresh();
       }
@@ -72,7 +72,6 @@ export function LazForm({ initialData, action }: { initialData?: Laz; action?: (
           logoPublicId: "",
           status: "ACTIVE",
         }}
-        error={error}
       >
         <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full">
           <FormField
@@ -105,7 +104,6 @@ export function LazForm({ initialData, action }: { initialData?: Laz; action?: (
             onUpload={(payload: { url: string; publicId: string }) => {
               setUploadedLogoUrl(payload.url);
               setUploadedLogoPublicId(payload.publicId);
-              setError(null);
             }}
             onRemove={() => {
               setUploadedLogoUrl("");

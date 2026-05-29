@@ -6,6 +6,7 @@ import { createUserSchema, updateUserSchema, type CreateUserInput, type UpdateUs
 import { createUserAction } from "../actions/users.actions";
 import { type User } from "@prisma/client";
 import { FormWrapper, FormField, Button, Card, CardContent, CardFooter } from "@/components/ui";
+import { toast } from "@/stores/toast.store";
 
 interface UserFormProps {
   initialData?: User;
@@ -26,12 +27,10 @@ export function UserForm({
 }: UserFormProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
-  const [error, setError] = useState<string | null>(null);
 
   const isSelf = initialData?.id === currentUserId;
 
   const onSubmit = (data: any, _form: any) => {
-    setError(null);
     startTransition(async () => {
       const formData = new FormData();
       
@@ -49,8 +48,9 @@ export function UserForm({
       }
 
       if (result?.error) {
-        setError(result.error);
+        toast.error(result.error);
       } else if (result?.success) {
+        toast.success(initialData ? "Data pengguna berhasil diperbarui!" : "Pengguna baru berhasil ditambahkan!");
         router.push("/dashboard/users");
         router.refresh();
       }
@@ -105,7 +105,6 @@ export function UserForm({
                 confirmPassword: "",
               }
         }
-        error={error}
       >
         <CardContent className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full">
