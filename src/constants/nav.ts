@@ -12,7 +12,7 @@ export interface NavItem {
   label: string;
   href: string;
   icon: string; // Lucide icon name — resolved in Sidebar component
-  permission: PermissionKey;
+  permission?: PermissionKey;
   children?: NavItem[];
 }
 
@@ -82,6 +82,5 @@ export const NAV_ITEMS: NavItem[] = [
     label: "Settings",
     href: "/dashboard/settings",
     icon: "Settings",
-    permission: PERMISSIONS.SETTINGS_MANAGE,
   },
 ];

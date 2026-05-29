@@ -60,7 +60,7 @@ export function Sidebar() {
   const userInitial = session?.user?.name ? session.user.name.charAt(0).toUpperCase() : "?";
 
   // Filter nav items the current user has permission to see
-  const visibleItems = NAV_ITEMS; // temporarily show all items for debugging
+  const visibleItems = NAV_ITEMS.filter((item) => !item.permission || can(item.permission));
 
   useEffect(() => {
     logger.info(
