@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { auditService } from "@/features/audit/services/audit.service";
 import { AuditTable } from "@/features/audit/components/AuditTable";
 import { PageHeader, TableSkeleton } from "@/components/ui";
+import { DateRangeFilter } from "@/components/ui/DateRangeFilter";
 import { Suspense } from "react";
 
 export const metadata = {
@@ -32,21 +33,8 @@ export default async function AuditPage({
       <PageHeader
         title="Audit Logs"
         description="Riwayat log audit aktivitas mutasi admin dan pengelolaan sistem secara realtime."
+        action={<DateRangeFilter startDate={startDate} endDate={endDate} search={search} page={page} />}
       />
-
-      <form method="get" className="flex space-x-2 items-end mb-4">
-        <div>
-          <label className="block text-sm font-medium text-gray-700">Start Date</label>
-          <input type="date" name="startDate" defaultValue={startDate} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm" />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700">End Date</label>
-          <input type="date" name="endDate" defaultValue={endDate} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm" />
-        </div>
-        <input type="hidden" name="search" value={search ?? ''} />
-        <input type="hidden" name="page" value={page.toString()} />
-        <button type="submit" className="px-4 py-2 bg-brand-primary text-white rounded-md hover:bg-brand-primary/80">Filter</button>
-      </form>
 
       <Suspense
         key={`${search}-${page}-${startDate}-${endDate}`}

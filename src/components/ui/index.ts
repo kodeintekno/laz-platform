@@ -23,6 +23,7 @@ export { DataTable } from "./data-table/data-table";
 export { ActionDropdown } from "./ActionDropdown";
 export { PageHeader } from "./PageHeader";
 export { TableSkeleton } from "./TableSkeleton";
+export { DateRangeFilter } from "./DateRangeFilter";
 export * from "./form";
 
 
