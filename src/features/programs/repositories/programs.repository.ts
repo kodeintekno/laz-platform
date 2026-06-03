@@ -83,6 +83,11 @@ export const programsRepository = {
           where: { status: "COMPLETED" },
           orderBy: { createdAt: "desc" },
         },
+        _count: {
+          select: {
+            donations: { where: { status: "PAID" } },
+          },
+        },
       },
     });
   },

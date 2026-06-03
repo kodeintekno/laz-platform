@@ -103,7 +103,7 @@ export default async function ProgramDetailPage({ params }: { params: Promise<{ 
             <div className="grid grid-cols-2 gap-4 mb-8">
               <div className="bg-surface-muted p-4 rounded-2xl border border-border/40 text-center">
                 <p className="text-sm text-secondary mb-1">Donatur</p>
-                <p className="text-xl font-bold text-primary">{program.donations.length}</p>
+                <p className="text-xl font-bold text-primary">{program._count.donations}</p>
               </div>
               <div className="bg-surface-muted p-4 rounded-2xl border border-border/40 text-center">
                 <p className="text-sm text-secondary mb-1">Sisa Waktu</p>
