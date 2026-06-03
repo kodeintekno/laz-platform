@@ -4,7 +4,9 @@ export const analyticsRepository = {
   /**
    * Get high-level KPI aggregations for the dashboard.
    */
-  async getDashboardMetrics() {
+  async getDashboardMetrics(lazId?: string) {
+    const whereLaz = lazId ? { lazId } : {};
+
     const [
       totalDonationsPaid,
       totalDistributionsCompleted,
@@ -12,18 +14,18 @@ export const analyticsRepository = {
       totalUsersCount,
     ] = await Promise.all([
       prisma.donation.aggregate({
-        where: { status: "PAID" },
+        where: { status: "PAID", ...whereLaz },
         _sum: { amount: true },
       }),
       prisma.distribution.aggregate({
-        where: { status: "COMPLETED" },
+        where: { status: "COMPLETED", ...whereLaz },
         _sum: { amount: true },
       }),
       prisma.program.count({
-        where: { status: "PUBLISHED" },
+        where: { status: "PUBLISHED", ...whereLaz },
       }),
       prisma.user.count({
-        where: { status: "ACTIVE" },
+        where: { status: "ACTIVE", ...whereLaz },
       }),
     ]);
 
@@ -38,9 +40,9 @@ export const analyticsRepository = {
   /**
    * Get the 5 most recent PAID donations.
    */
-  async getRecentDonations() {
+  async getRecentDonations(lazId?: string) {
     return prisma.donation.findMany({
-      where: { status: "PAID" },
+      where: { status: "PAID", ...(lazId ? { lazId } : {}) },
       orderBy: { updatedAt: "desc" },
       take: 5,
       include: {
@@ -53,9 +55,9 @@ export const analyticsRepository = {
   /**
    * Get the 5 most recent COMPLETED distributions.
    */
-  async getRecentDistributions() {
+  async getRecentDistributions(lazId?: string) {
     return prisma.distribution.findMany({
-      where: { status: "COMPLETED" },
+      where: { status: "COMPLETED", ...(lazId ? { lazId } : {}) },
       orderBy: { updatedAt: "desc" },
       take: 5,
       include: {

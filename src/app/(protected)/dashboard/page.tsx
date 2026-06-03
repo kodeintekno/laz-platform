@@ -10,7 +10,11 @@ export const metadata = {
 
 export default async function DashboardHomePage() {
   const session = await auth();
-  const { metrics, recentDonations, recentDistributions } = await analyticsService.getDashboardOverview();
+  
+  // Super Admin sees global data (no lazId filter). Other roles see only their LAZ data.
+  const lazIdToQuery = session?.user?.roleName === "SUPER_ADMIN" ? undefined : session?.user?.lazId;
+  
+  const { metrics, recentDonations, recentDistributions } = await analyticsService.getDashboardOverview(lazIdToQuery);
 
   const formatRupiah = (amount: number) => {
     return new Intl.NumberFormat("id-ID", {

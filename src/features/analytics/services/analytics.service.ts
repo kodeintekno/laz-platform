@@ -1,11 +1,11 @@
 import { analyticsRepository } from "../repositories/analytics.repository";
 
 export const analyticsService = {
-  async getDashboardOverview() {
+  async getDashboardOverview(lazId?: string) {
     const [metrics, recentDonations, recentDistributions] = await Promise.all([
-      analyticsRepository.getDashboardMetrics(),
-      analyticsRepository.getRecentDonations(),
-      analyticsRepository.getRecentDistributions(),
+      analyticsRepository.getDashboardMetrics(lazId),
+      analyticsRepository.getRecentDonations(lazId),
+      analyticsRepository.getRecentDistributions(lazId),
     ]);
 
     return {
