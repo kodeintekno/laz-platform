@@ -16,7 +16,18 @@ type DistributionWithRelations = Prisma.DistributionGetPayload<{
   };
 }>;
 
-export function DistributionTable({ distributions }: { distributions: DistributionWithRelations[] }) {
+export function DistributionTable({ 
+  distributions, 
+  pagination 
+}: { 
+  distributions: DistributionWithRelations[],
+  pagination?: {
+    currentPage: number;
+    totalPages: number;
+    totalCount: number;
+    pageSize: number;
+  }
+}) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
 
@@ -166,6 +177,7 @@ export function DistributionTable({ distributions }: { distributions: Distributi
       <DataTable
         columns={columns}
         data={distributions}
+        pagination={pagination}
         emptyTitle="Tidak ada data penyaluran ditemukan"
         emptyDescription="Daftar pengajuan penyaluran dana kosong."
       />

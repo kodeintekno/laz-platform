@@ -26,43 +26,45 @@ export default async function AuditPage({
 
   const resolvedSearchParams = await searchParams;
   const page = typeof resolvedSearchParams.page === "string" ? parseInt(resolvedSearchParams.page) : 1;
+  const limit = typeof resolvedSearchParams.limit === "string" ? parseInt(resolvedSearchParams.limit) : 10;
   const search = typeof resolvedSearchParams.search === "string" ? resolvedSearchParams.search : undefined;
   const startDate = typeof resolvedSearchParams.startDate === "string" ? resolvedSearchParams.startDate : undefined;
   const endDate = typeof resolvedSearchParams.endDate === "string" ? resolvedSearchParams.endDate : undefined;
 
   return (
     <div className="space-y-6">
-      <PageHeader
-        title="Audit Logs"
-        description="Riwayat log audit aktivitas mutasi admin dan pengelolaan sistem secara realtime."
-      />
-
-      <Suspense fallback={<div className="h-10 w-full animate-pulse bg-surface-muted rounded-xl" />}>
-        <DataTableToolbar
-          searchValue={search}
-          searchPlaceholder="Cari operator, entitas, atau aktivitas..."
-          filterSlot={<DateRangeFilter startDate={startDate} endDate={endDate} search={search} page={page} />}
+      <div>
+        <PageHeader
+          title="Audit Logs"
+          description="Pantau seluruh aktivitas penting dan krusial yang terjadi di dalam sistem platform."
         />
-      </Suspense>
+        <div className="mt-4">
+          <DataTableToolbar
+            searchValue={search}
+            searchPlaceholder="Cari operator, aktivitas, atau entitas..."
+            filterSlot={<DateRangeFilter startDate={startDate} endDate={endDate} search={search} page={page} />}
+          />
+        </div>
+      </div>
 
       <Suspense
-        key={`${search}-${page}-${startDate}-${endDate}`}
+        key={`${search}-${page}-${limit}-${startDate}-${endDate}`}
         fallback={
           <TableSkeleton
             headers={["Waktu", "Operator", "Aktivitas", "Entitas / ID", "Perubahan Data", "Klien Info"]}
-            rowCount={10}
+            rowCount={limit}
             columnTypes={["text", "avatar", "text", "text", "text", "text"]}
           />
         }
       >
-        <AuditTableSection page={page} search={search} lazId={session.user.lazId} startDate={startDate} endDate={endDate} />
+        <AuditTableSection page={page} limit={limit} search={search} lazId={session.user.lazId} startDate={startDate} endDate={endDate} />
       </Suspense>
     </div>
   );
 }
 
-async function AuditTableSection({ page, search, lazId, startDate, endDate }: { page: number; search?: string; lazId?: string; startDate?: string; endDate?: string; }) {
-  const { items: logs, metadata: paginatedMetadata } = await auditService.getLogs(page, 10, search, lazId, startDate, endDate);
+async function AuditTableSection({ page, limit, search, lazId, startDate, endDate }: { page: number; limit: number; search?: string; lazId?: string; startDate?: string; endDate?: string; }) {
+  const { items: logs, metadata: paginatedMetadata } = await auditService.getLogs(page, limit, search, lazId, startDate, endDate);
 
   return (
     <AuditTable 
@@ -71,10 +73,8 @@ async function AuditTableSection({ page, search, lazId, startDate, endDate }: { 
         currentPage: page,
         totalPages: paginatedMetadata.totalPages,
         totalCount: paginatedMetadata.total,
-        pageSize: 10,
+        pageSize: limit,
       }}
     />
   );
 }
-
-

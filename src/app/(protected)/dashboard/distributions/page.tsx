@@ -5,6 +5,9 @@ import { DistributionTable } from "@/features/distributions/components/Distribut
 import { redirect } from "next/navigation";
 import { PageHeader, TableSkeleton } from "@/components/ui";
 import { Suspense } from "react";
+import { lazService } from "@/features/laz/services/laz.service";
+import { UserLazFilter } from "@/features/users/components/UserLazFilter";
+import { DataTableToolbar } from "@/components/ui/data-table";
 
 export const metadata = {
   title: "Penyaluran Dana",
@@ -23,7 +26,19 @@ export default async function DistributionsPage({
 
   const resolvedSearchParams = await searchParams;
   const page = typeof resolvedSearchParams.page === "string" ? parseInt(resolvedSearchParams.page) : 1;
+  const limit = typeof resolvedSearchParams.limit === "string" ? parseInt(resolvedSearchParams.limit) : 10;
   const search = typeof resolvedSearchParams.search === "string" ? resolvedSearchParams.search : undefined;
+
+  const isSuperAdmin = session.user.roleName === "SUPER_ADMIN";
+  const filterLazId = isSuperAdmin
+    ? (typeof resolvedSearchParams.lazId === "string" ? resolvedSearchParams.lazId : undefined)
+    : session.user.lazId;
+
+  let allLazs: { id: string; name: string }[] = [];
+  if (isSuperAdmin) {
+    const { items } = await lazService.getLazs(1, 100);
+    allLazs = items;
+  }
 
   return (
     <div className="space-y-6">
@@ -32,38 +47,43 @@ export default async function DistributionsPage({
         description="Daftar pengajuan penyaluran dana dari berbagai program kampanye."
       />
 
+      <Suspense fallback={<div className="h-10 w-full animate-pulse bg-surface-muted rounded-xl" />}>
+        <DataTableToolbar
+          searchValue={search}
+          searchPlaceholder="Cari rincian penyaluran atau nama program..."
+          filterSlot={isSuperAdmin && allLazs.length > 0 ? <UserLazFilter lazs={allLazs} /> : undefined}
+        />
+      </Suspense>
+
       <Suspense
-        key={`${search}-${page}`}
+        key={`${search}-${page}-${limit}-${filterLazId}`}
         fallback={
           <TableSkeleton
             headers={["Program", "Rincian Penyaluran", "Nominal", "Pemohon", "Status", "Aksi"]}
-            rowCount={10}
+            rowCount={limit}
             columnTypes={["text", "text", "text", "text", "text", "action"]}
           />
         }
       >
-        <DistributionsTableSection page={page} search={search} />
+        <DistributionsTableSection page={page} limit={limit} search={search} lazId={filterLazId} />
       </Suspense>
     </div>
   );
 }
 
-async function DistributionsTableSection({ page, search }: { page: number; search?: string }) {
-  const { items: distributions, metadata } = await distributionsService.getDashboardDistributions(page, 10, search);
+async function DistributionsTableSection({ page, limit, search, lazId }: { page: number; limit: number; search?: string; lazId?: string }) {
+  const { items: distributions, metadata } = await distributionsService.getDashboardDistributions(page, limit, search, lazId);
 
   return (
-    <>
-      <DistributionTable distributions={distributions} />
-
-      {/* Pagination Controls */}
-      {metadata.totalPages > 1 && (
-        <div className="flex items-center justify-between border-t border-border bg-surface px-4 py-3 sm:px-6 mt-4 rounded-xl shadow-sm">
-          <p className="text-sm text-secondary">
-            Halaman <span className="font-medium">{page}</span> dari <span className="font-medium">{metadata.totalPages}</span>
-          </p>
-        </div>
-      )}
-    </>
+    <DistributionTable 
+      distributions={distributions} 
+      pagination={{
+        currentPage: page,
+        totalPages: metadata.totalPages,
+        totalCount: metadata.total,
+        pageSize: limit,
+      }}
+    />
   );
 }
 

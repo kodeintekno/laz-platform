@@ -67,10 +67,13 @@ export const paymentsRepository = {
   /**
    * Find paged and searchable payments.
    */
-  async findManyPaged(page: number = 1, limit: number = 10, search?: string) {
+  async findManyPaged(page: number = 1, limit: number = 10, search?: string, lazId?: string) {
     const skip = (page - 1) * limit;
 
     const where: any = {};
+    if (lazId) {
+      where.lazId = lazId;
+    }
     if (search) {
       const isStatusEnum = [
         "PENDING", "SUCCESS", "FAILED", "CANCELLED", "EXPIRED"

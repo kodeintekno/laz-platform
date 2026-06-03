@@ -6,17 +6,19 @@ export const distributionsRepository = {
   /**
    * List all distributions (admin/dashboard).
    */
-  async findMany(page = 1, limit = 10, search?: string) {
+  async findMany(page = 1, limit = 10, search?: string, lazId?: string) {
     const skip = (page - 1) * limit;
 
-    const where: Prisma.DistributionWhereInput = search
-      ? {
-          OR: [
-            { title: { contains: search, mode: "insensitive" } },
-            { program: { title: { contains: search, mode: "insensitive" } } },
-          ],
-        }
-      : {};
+    const where: Prisma.DistributionWhereInput = {};
+    if (lazId) {
+      where.lazId = lazId;
+    }
+    if (search) {
+      where.OR = [
+        { title: { contains: search, mode: "insensitive" } },
+        { program: { title: { contains: search, mode: "insensitive" } } },
+      ];
+    }
 
     const [items, total] = await Promise.all([
       prisma.distribution.findMany({

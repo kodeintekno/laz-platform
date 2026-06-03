@@ -8,7 +8,7 @@ export const paymentsService = {
   /**
    * Fetch paginated and searchable payments list.
    */
-  async getPayments(page: number = 1, limit: number = 10, search?: string) {
-    return paymentsRepository.findManyPaged(page, limit, search);
+  async getPayments(page: number = 1, limit: number = 10, search?: string, lazId?: string) {
+    return paymentsRepository.findManyPaged(page, limit, search, lazId);
   },
 };

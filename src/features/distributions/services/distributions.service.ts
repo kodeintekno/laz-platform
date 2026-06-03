@@ -4,8 +4,8 @@ import { auditService } from "@/features/audit/services/audit.service";
 import { AuditAction } from "@/features/audit/types/audit.types";
 
 export const distributionsService = {
-  async getDashboardDistributions(page: number, limit: number, search?: string) {
-    return distributionsRepository.findMany(page, limit, search);
+  async getDashboardDistributions(page: number, limit: number, search?: string, lazId?: string) {
+    return distributionsRepository.findMany(page, limit, search, lazId);
   },
 
   async getPublicDistributions(programSlug: string) {

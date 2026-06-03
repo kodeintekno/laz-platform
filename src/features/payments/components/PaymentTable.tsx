@@ -115,9 +115,6 @@ export function PaymentTable({ payments, search, pagination }: PaymentTableProps
     <DataTable
       columns={columns}
       data={payments}
-      searchValue={search || ""}
-      onSearchChange={() => {}}
-      searchPlaceholder="Cari invoice, program, atau donatur..."
       pagination={pagination}
       emptyTitle="Tidak ada transaksi pembayaran"
       emptyDescription="Daftar pembayaran kosong atau tidak ada catatan yang sesuai dengan pencarian Anda."
