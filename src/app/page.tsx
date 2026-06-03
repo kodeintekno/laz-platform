@@ -70,8 +70,10 @@ export default async function Home() {
                   targetAmount: program.targetAmount.toNumber(),
                   currentAmount: program.currentAmount.toNumber(),
                   endDate: program.endDate,
+                  laz: program.laz,
                 }}
                 now={now}
+                isPriority={true}
               />
             ))}
           </div>

@@ -52,6 +52,11 @@ export const programsRepository = {
     return prisma.program.findMany({
       where: { status: "PUBLISHED" },
       orderBy: { createdAt: "desc" },
+      include: {
+        laz: {
+          select: { name: true, logoUrl: true },
+        },
+      },
     });
   },
 
@@ -62,6 +67,9 @@ export const programsRepository = {
     return prisma.program.findFirst({
       where: { slug },
       include: {
+        laz: {
+          select: { name: true, logoUrl: true },
+        },
         createdBy: { select: { name: true, avatarUrl: true } },
         donations: {
           where: { status: "PAID" },

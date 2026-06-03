@@ -64,6 +64,7 @@ export default async function PublicProgramsPage() {
                 targetAmount: Number(program.targetAmount),
                 currentAmount: Number(program.currentAmount),
                 endDate: program.endDate,
+                laz: program.laz,
               }}
               now={now}
             />

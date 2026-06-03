@@ -65,6 +65,27 @@ export default async function ProgramDetailPage({ params }: { params: Promise<{ 
 
           {/* Donation Box Section */}
           <div className="lg:w-5/12 p-6 lg:p-8 flex flex-col">
+            {program.laz && (
+              <div className="flex items-center gap-3 mb-5 p-3.5 bg-surface-muted rounded-xl border border-border/50 shadow-sm">
+                {program.laz.logoUrl ? (
+                  <Image src={program.laz.logoUrl} alt={program.laz.name} width={36} height={36} className="rounded-full object-cover shadow-sm" />
+                ) : (
+                  <div className="w-9 h-9 rounded-full bg-surface shadow-sm text-primary flex items-center justify-center text-sm font-bold border border-border/50">
+                    {program.laz.name.charAt(0)}
+                  </div>
+                )}
+                <div className="flex flex-col">
+                  <span className="text-xs text-secondary font-medium mb-0.5">Penggalang Dana</span>
+                  <span className="text-sm font-bold text-primary flex items-center gap-1">
+                    {program.laz.name}
+                    <svg className="w-4 h-4 text-brand-primary" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                    </svg>
+                  </span>
+                </div>
+              </div>
+            )}
+            
             <h1 className="text-2xl font-bold text-primary mb-6 leading-tight">
               {program.title}
             </h1>
