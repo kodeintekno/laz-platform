@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import type { Prisma } from "@prisma/client";
 import { generateMockWebhookPayloadAction } from "@/features/donations/actions/donations.actions";
-import { Button, Badge } from "@/components/ui";
+import { Button, Badge, ActionDropdown } from "@/components/ui";
 import { DataTable, type ColumnDef } from "@/components/ui/data-table";
 import { toast } from "@/stores/toast.store";
 import { useRouter } from "next/navigation";
@@ -16,7 +16,18 @@ type DonationWithRelations = Prisma.DonationGetPayload<{
   };
 }>;
 
-export function DonationTable({ donations }: { donations: DonationWithRelations[] }) {
+export function DonationTable({ 
+  donations,
+  pagination 
+}: { 
+  donations: DonationWithRelations[];
+  pagination?: {
+    currentPage: number;
+    totalPages: number;
+    totalCount: number;
+    pageSize: number;
+  };
+}) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [simulatingId, setSimulatingId] = useState<string | null>(null);
@@ -80,9 +91,9 @@ export function DonationTable({ donations }: { donations: DonationWithRelations[
       cell: (donation) => (
         <div>
           <div className="font-semibold text-primary">
-            {donation.isAnonymous ? "Hamba Allah" : donation.user?.name || "Hamba Allah"}
-            {donation.isAnonymous && donation.user && (
-              <span className="ml-2 text-xs text-muted font-normal">(Asli: {donation.user.name})</span>
+            {donation.isAnonymous ? "Hamba Allah" : donation.user?.name || donation.donorName || "Hamba Allah"}
+            {donation.isAnonymous && (donation.user?.name || donation.donorName) && (
+              <span className="ml-2 text-xs text-muted font-normal">(Asli: {donation.user?.name || donation.donorName})</span>
             )}
           </div>
           {donation.user?.email && <div className="text-secondary text-xs mt-0.5">{donation.user.email}</div>}
@@ -133,18 +144,26 @@ export function DonationTable({ donations }: { donations: DonationWithRelations[
     {
       header: "Aksi",
       align: "right",
-      cell: (donation) =>
-        donation.status === "PENDING" ? (
-          <Button
-            onClick={() => simulateWebhook(donation.id)}
-            disabled={isPending}
-            isLoading={simulatingId === donation.id}
-            size="sm"
-            intent="outline"
-          >
-            Simulate Webhook
-          </Button>
-        ) : null,
+      cell: (donation) => (
+        <ActionDropdown
+          actions={[
+            {
+              label: "Edit",
+              href: `/dashboard/donations/${donation.id}/edit`,
+              intent: "info",
+            },
+            ...(donation.status === "PENDING"
+              ? [
+                  {
+                    label: "Simulate Webhook",
+                    onClick: () => simulateWebhook(donation.id),
+                    intent: "warning" as const,
+                  },
+                ]
+              : []),
+          ]}
+        />
+      ),
     },
   ];
 
@@ -152,6 +171,7 @@ export function DonationTable({ donations }: { donations: DonationWithRelations[
     <DataTable
       columns={columns}
       data={donations}
+      pagination={pagination}
       emptyTitle="Tidak ada data donasi ditemukan"
       emptyDescription="Belum ada transaksi donasi yang tercatat di platform."
     />

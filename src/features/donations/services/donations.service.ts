@@ -4,8 +4,8 @@ import { auditService } from "@/features/audit/services/audit.service";
 import { AuditAction } from "@/features/audit/types/audit.types";
 
 export const donationsService = {
-  async getDashboardDonations(page: number, limit: number, search?: string) {
-    return donationsRepository.findMany(page, limit, search);
+  async getDashboardDonations(page: number, limit: number, search?: string, lazId?: string) {
+    return donationsRepository.findMany(page, limit, search, lazId);
   },
 
   async createDonation(data: DonationInput, userId?: string) {
@@ -16,6 +16,38 @@ export const donationsService = {
       userId,
       programId: data.programId,
       paymentMethod: data.paymentMethod,
+    });
+
+    return result;
+  },
+
+  async getDonationById(id: string) {
+    return donationsRepository.getDonationById(id);
+  },
+
+  async createAdminDonation(data: import("../validations/donations.schema").AdminDonationInput, adminUserId: string) {
+    const result = await donationsRepository.createAdminDonation(data);
+
+    await auditService.log({
+      userId: adminUserId,
+      action: AuditAction.CREATE,
+      entity: "Donation",
+      entityId: result.id,
+      newData: result,
+    });
+
+    return result;
+  },
+
+  async updateAdminDonation(id: string, data: import("../validations/donations.schema").AdminDonationInput, adminUserId: string) {
+    const result = await donationsRepository.updateAdminDonation(id, data);
+
+    await auditService.log({
+      userId: adminUserId,
+      action: AuditAction.UPDATE,
+      entity: "Donation",
+      entityId: id,
+      newData: result,
     });
 
     return result;

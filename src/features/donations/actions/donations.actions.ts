@@ -3,9 +3,55 @@
 import { auth } from "@/lib/auth";
 import { donationsService } from "@/features/donations/services/donations.service";
 import { donationsRepository } from "@/features/donations/repositories/donations.repository";
-import { donationSchema } from "@/features/donations/validations/donations.schema";
+import { donationSchema, adminDonationSchema } from "@/features/donations/validations/donations.schema";
 import { revalidatePath } from "next/cache";
 import { PERMISSIONS } from "@/constants/permissions";
+
+export async function createAdminDonationAction(formData: FormData) {
+  try {
+    const session = await auth();
+    if (!session?.user?.permissions.includes(PERMISSIONS.DONATIONS_CREATE)) {
+      return { error: "Akses ditolak" };
+    }
+
+    const rawData = Object.fromEntries(formData.entries());
+    const parsed = adminDonationSchema.safeParse(rawData);
+
+    if (!parsed.success) {
+      return { error: "Data tidak valid", details: parsed.error.flatten() };
+    }
+
+    const donation = await donationsService.createAdminDonation(parsed.data, session.user.id);
+    
+    revalidatePath("/dashboard/donations");
+    return { success: true, donationId: donation.id };
+  } catch (error: any) {
+    return { error: error.message || "Terjadi kesalahan sistem" };
+  }
+}
+
+export async function updateAdminDonationAction(id: string, formData: FormData) {
+  try {
+    const session = await auth();
+    if (!session?.user?.permissions.includes(PERMISSIONS.DONATIONS_UPDATE)) {
+      return { error: "Akses ditolak" };
+    }
+
+    const rawData = Object.fromEntries(formData.entries());
+    const parsed = adminDonationSchema.safeParse(rawData);
+
+    if (!parsed.success) {
+      return { error: "Data tidak valid", details: parsed.error.flatten() };
+    }
+
+    await donationsService.updateAdminDonation(id, parsed.data, session.user.id);
+    
+    revalidatePath("/dashboard/donations");
+    return { success: true };
+  } catch (error: any) {
+    return { error: error.message || "Terjadi kesalahan sistem" };
+  }
+}
 
 export async function createDonationAction(formData: FormData) {
   try {
