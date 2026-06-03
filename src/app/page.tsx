@@ -2,6 +2,7 @@ import { programsService } from "@/features/programs/services/programs.service";
 import Link from "next/link";
 import Image from "next/image";
 import HeroSection from "@/components/ui/HeroSection";
+import { ProgramCard } from "@/components/ui";
 
 export const metadata = {
   title: {
@@ -55,72 +56,24 @@ export default async function Home() {
               Pilih program kebaikan yang ingin Anda bantu hari ini.
             </p>
           </div>
-          {/* Sample Program Cards */}
           <div className="grid grid-cols-1 gap-y-10 gap-x-6 sm:grid-cols-2 lg:grid-cols-3 xl:gap-x-8">
-            {/* Program 1: Food Aid */}
-            <div className="group relative bg-surface rounded-2xl shadow-soft hover:border-success transition overflow-hidden flex flex-col border border-border/40">
-              <div className="aspect-[16/9] w-full overflow-hidden bg-surface-soft relative">
-                <Image
-                  src="/images/programs/food_aid.png"
-                  alt="Bantuan Makanan"
-                  fill
-                  sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                  className="object-cover group-hover:scale-105 transition-transform duration-500"
-                />
-              </div>
-              <div className="p-6 flex-1 flex flex-col">
-                <h3 className="text-xl font-bold text-primary line-clamp-2 mb-3 group-hover:text-success transition-colors">
-                  Bantuan Makanan
-                </h3>
-                <p className="text-sm text-secondary line-clamp-2 mb-6">
-                  Penyediaan paket sembako untuk keluarga yang membutuhkan di daerah rawan pangan.
-                </p>
-                <div className="mt-auto pt-4 border-t border-border/40">
-                  <div className="flex justify-between items-end mb-2">
-                    <p className="text-sm font-bold text-primary">Rp 500.000.000</p>
-                    <p className="text-xs font-medium text-secondary">75%</p>
-                  </div>
-                  <div className="w-full bg-surface-soft rounded-full h-2 mb-2">
-                    <div className="bg-success h-2 rounded-full" style={{ width: `75%` }} />
-                  </div>
-                  <div className="mt-3 text-right">
-                    <p className="text-xs text-secondary font-medium">30 Hari Tersisa</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-            {/* Program 2: Education */}
-            <div className="group relative bg-surface rounded-2xl shadow-soft hover:border-success transition overflow-hidden flex flex-col border border-border/40">
-              <div className="aspect-[16/9] w-full overflow-hidden bg-surface-soft relative">
-                <Image
-                  src="/images/programs/education.png"
-                  alt="Pendidikan Anak"
-                  fill
-                  sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                  className="object-cover group-hover:scale-105 transition-transform duration-500"
-                />
-              </div>
-              <div className="p-6 flex-1 flex flex-col">
-                <h3 className="text-xl font-bold text-primary line-clamp-2 mb-3 group-hover:text-success transition-colors">
-                  Pendidikan Anak
-                </h3>
-                <p className="text-sm text-secondary line-clamp-2 mb-6">
-                  Mendukung pendidikan formal dan non‑formal untuk anak‑anak kurang mampu.
-                </p>
-                <div className="mt-auto pt-4 border-t border-border/40">
-                  <div className="flex justify-between items-end mb-2">
-                    <p className="text-sm font-bold text-primary">Rp 300.000.000</p>
-                    <p className="text-xs font-medium text-secondary">40%</p>
-                  </div>
-                  <div className="w-full bg-surface-soft rounded-full h-2 mb-2">
-                    <div className="bg-success h-2 rounded-full" style={{ width: `40%` }} />
-                  </div>
-                  <div className="mt-3 text-right">
-                    <p className="text-xs text-secondary font-medium">60 Hari Tersisa</p>
-                  </div>
-                </div>
-              </div>
-            </div>
+            {featuredPrograms.map((program) => (
+              <ProgramCard
+                key={program.id}
+                program={{
+                  id: program.id,
+                  slug: program.slug,
+                  title: program.title,
+                  description: program.description,
+                  imageUrl: program.imageUrl,
+                  category: program.category,
+                  targetAmount: program.targetAmount.toNumber(),
+                  currentAmount: program.currentAmount.toNumber(),
+                  endDate: program.endDate,
+                }}
+                now={now}
+              />
+            ))}
           </div>
           <div className="mt-16 text-center">
             <Link

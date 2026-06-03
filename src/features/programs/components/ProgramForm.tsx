@@ -95,6 +95,8 @@ export function ProgramForm({
           category: initialData.category as any,
           status: initialData.status as any,
           image: initialData.imageUrl ?? "",
+          startDate: initialData.startDate ? new Date(initialData.startDate).toISOString().split('T')[0] : "",
+          endDate: initialData.endDate ? new Date(initialData.endDate).toISOString().split('T')[0] : "",
         } : {
           title: "",
           description: "",
@@ -102,6 +104,8 @@ export function ProgramForm({
           category: "INFAK",
           status: "DRAFT",
           image: "",
+          startDate: "",
+          endDate: "",
         }}
         error={error}
       >
@@ -137,6 +141,24 @@ export function ProgramForm({
               label="Status Publikasi"
               type="select"
               options={statusOptions}
+              disabled={isPending}
+            />
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <FormField
+              name="startDate"
+              label="Tanggal Mulai (Opsional)"
+              type="input"
+              inputType="date"
+              disabled={isPending}
+            />
+
+            <FormField
+              name="endDate"
+              label="Tanggal Berakhir (Opsional)"
+              type="input"
+              inputType="date"
               disabled={isPending}
             />
           </div>
