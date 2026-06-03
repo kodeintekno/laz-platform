@@ -241,7 +241,7 @@ export const donationsRepository = {
           status: data.status,
           // If program changed, we need to update lazId to match new program
           ...(isProgramChanged ? {
-            laz: { connect: { id: (await tx.program.findUniqueOrThrow({ where: { id: data.programId } })).lazId } }
+            lazId: (await tx.program.findUniqueOrThrow({ where: { id: data.programId } })).lazId
           } : {})
         },
       });
