@@ -85,7 +85,8 @@ export function AdminDonationForm({
             <FormField
               name="amount"
               label="Nominal Donasi (Rp)"
-              type="number"
+              type="input"
+              inputType="number"
               disabled={isPending}
             />
 
@@ -100,7 +101,8 @@ export function AdminDonationForm({
             <FormField
               name="donorName"
               label="Nama Donatur Offline (Jika tanpa akun)"
-              type="text"
+              type="input"
+              inputType="text"
               placeholder="Contoh: Budi Santoso"
               disabled={isPending}
             />

@@ -7,6 +7,7 @@ import { Button, Badge, ActionDropdown } from "@/components/ui";
 import { DataTable, type ColumnDef } from "@/components/ui/data-table";
 import { toast } from "@/stores/toast.store";
 import { useRouter } from "next/navigation";
+import { Pencil, RefreshCw } from "lucide-react";
 
 type DonationWithRelations = Prisma.DonationGetPayload<{
   include: {
@@ -146,16 +147,18 @@ export function DonationTable({
       align: "right",
       cell: (donation) => (
         <ActionDropdown
-          actions={[
+          items={[
             {
               label: "Edit",
-              href: `/dashboard/donations/${donation.id}/edit`,
+              icon: Pencil,
+              onClick: () => router.push(`/dashboard/donations/${donation.id}/edit`),
               intent: "info",
             },
             ...(donation.status === "PENDING"
               ? [
                   {
                     label: "Simulate Webhook",
+                    icon: RefreshCw,
                     onClick: () => simulateWebhook(donation.id),
                     intent: "warning" as const,
                   },

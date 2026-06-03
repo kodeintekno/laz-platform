@@ -80,11 +80,20 @@ export default async function DonationsPage({
 }
 
 async function DonationsTableSection({ page, limit, search, lazId }: { page: number; limit: number; search?: string; lazId?: string }) {
-  const { items: donations, metadata } = await donationsService.getDashboardDonations(page, limit, search, lazId);
+  const { items: rawDonations, metadata } = await donationsService.getDashboardDonations(page, limit, search, lazId);
+
+  const donations = rawDonations.map(d => ({
+    ...d,
+    amount: Number(d.amount),
+    payment: d.payment ? {
+      ...d.payment,
+      amount: Number(d.payment.amount)
+    } : null
+  }));
 
   return (
     <DonationTable 
-      donations={donations} 
+      donations={donations as any} 
       pagination={{
         currentPage: page,
         totalPages: metadata.totalPages,
