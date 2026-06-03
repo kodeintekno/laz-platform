@@ -5,17 +5,21 @@ export const programsRepository = {
   /**
    * Fetch all programs for the admin dashboard (paginated).
    */
-  async findMany(page = 1, limit = 10, search?: string) {
+  async findMany(page = 1, limit = 10, search?: string, lazId?: string) {
     const skip = (page - 1) * limit;
 
-    const where: Prisma.ProgramWhereInput = search
-      ? {
-          OR: [
-            { title: { contains: search, mode: "insensitive" } },
-            { description: { contains: search, mode: "insensitive" } },
-          ],
-        }
-      : {};
+    const where: Prisma.ProgramWhereInput = {};
+    
+    if (search) {
+      where.OR = [
+        { title: { contains: search, mode: "insensitive" } },
+        { description: { contains: search, mode: "insensitive" } },
+      ];
+    }
+    
+    if (lazId) {
+      where.lazId = lazId;
+    }
 
     const [items, total] = await Promise.all([
       prisma.program.findMany({
@@ -89,6 +93,15 @@ export const programsRepository = {
     return prisma.program.update({
       where: { id },
       data,
+    });
+  },
+
+  /**
+   * Delete a program.
+   */
+  async delete(id: string) {
+    return prisma.program.delete({
+      where: { id },
     });
   },
 };

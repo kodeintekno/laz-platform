@@ -73,23 +73,34 @@ export function LazForm({ initialData, action }: { initialData?: Laz; action?: (
           status: "ACTIVE",
         }}
       >
-        <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full">
-          <FormField
-            name="name"
-            label="Nama Lembaga Amil Zakat (LAZ)"
-            type="input"
-            placeholder="Contoh: LAZ Peduli Ummat"
-            disabled={isPending}
-            description="Nama lengkap lembaga zakat yang akan didaftarkan."
-          />
+        <CardContent className="space-y-6 w-full">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <FormField
+              name="name"
+              label="Nama Lembaga Amil Zakat (LAZ)"
+              type="input"
+              placeholder="Contoh: LAZ Peduli Ummat"
+              disabled={isPending}
+              description="Nama lengkap lembaga zakat yang akan didaftarkan."
+            />
+
+            <FormField
+              name="slug"
+              label="Slug Domain / Routing"
+              type="input"
+              placeholder="contoh-laz-peduli"
+              disabled={isPending}
+              description="Slug unik digunakan untuk rute URL publik (hanya huruf kecil, angka, dan tanda hubung)."
+            />
+          </div>
 
           <FormField
-            name="slug"
-            label="Slug Domain / Routing"
-            type="input"
-            placeholder="contoh-laz-peduli"
+            name="status"
+            label="Status Awal"
+            type="select"
+            options={STATUS_OPTIONS}
             disabled={isPending}
-            description="Slug unik digunakan untuk rute URL publik (hanya huruf kecil, angka, dan tanda hubung)."
+            description="Menentukan apakah tenant LAZ ini langsung aktif dan dapat diakses."
           />
 
           <FileUpload
@@ -109,15 +120,6 @@ export function LazForm({ initialData, action }: { initialData?: Laz; action?: (
               setUploadedLogoUrl("");
               setUploadedLogoPublicId("");
             }}
-          />
-
-          <FormField
-            name="status"
-            label="Status Awal"
-            type="select"
-            options={STATUS_OPTIONS}
-            disabled={isPending}
-            description="Menentukan apakah tenant LAZ ini langsung aktif dan dapat diakses."
           />
         </CardContent>
 

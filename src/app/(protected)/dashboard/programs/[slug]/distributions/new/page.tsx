@@ -29,15 +29,12 @@ export default async function NewDistributionPage({ params }: { params: Promise<
   const availableBalance = Number(program.currentAmount) - Number(program.distributedAmount);
 
   return (
-    <div className="space-y-6 max-w-3xl">
+    <div className="space-y-6 w-full">
       <BreadcrumbOverride 
         path={`/dashboard/programs/${program.slug}`} 
         label={program.title} 
       />
       <div className="flex items-center gap-4">
-        <Link href="/dashboard/programs" className="p-2 text-muted hover:text-primary bg-surface rounded-full shadow-sm ring-1 ring-border flex-shrink-0">
-          <ArrowLeft className="w-5 h-5" />
-        </Link>
         <div className="flex-1">
           <PageHeader
             title="Ajukan Penyaluran Dana"

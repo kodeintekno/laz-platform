@@ -8,7 +8,7 @@ export interface ActionDropdownItem {
   label: string;
   icon: React.ComponentType<{ className?: string }>;
   onClick: () => void | Promise<void>;
-  intent?: "info" | "destructive" | "default";
+  intent?: "info" | "destructive" | "default" | "success" | "warning";
 }
 
 interface ActionDropdownProps {
@@ -30,12 +30,16 @@ export function ActionDropdown({ items, align = "right" }: ActionDropdownProps) 
     setIsOpen(!isOpen);
   };
 
-  const getIntentStyles = (intent?: "info" | "destructive" | "default") => {
+  const getIntentStyles = (intent?: "info" | "destructive" | "default" | "success" | "warning") => {
     switch (intent) {
       case "info":
         return "text-info-token hover:bg-surface-muted";
       case "destructive":
         return "text-destructive hover:bg-surface-muted";
+      case "success":
+        return "text-success-token hover:bg-surface-muted";
+      case "warning":
+        return "text-warning-token hover:bg-surface-muted";
       default:
         return "text-secondary hover:text-primary hover:bg-surface-muted";
     }

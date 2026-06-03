@@ -6,6 +6,9 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { Button, Pagination, PageHeader, TableSkeleton } from "@/components/ui";
 import { Suspense } from "react";
+import { lazService } from "@/features/laz/services/laz.service";
+import { UserLazFilter } from "@/features/users/components/UserLazFilter";
+import { DataTableToolbar, DataTableToolbarSkeleton } from "@/components/ui/data-table";
 
 export const metadata = {
   title: "Program Management",
@@ -27,6 +30,19 @@ export default async function ProgramsPage({
   const search = typeof resolvedSearchParams.search === "string" ? resolvedSearchParams.search : undefined;
 
   const canCreate = session.user.permissions.includes(PERMISSIONS.PROGRAMS_CREATE);
+  const isSuperAdmin = session.user.roleName === "SUPER_ADMIN";
+  
+  // If not super admin, strictly enforce lazId to their own lazId
+  // If super admin, allow them to filter by lazId from query params
+  const filterLazId = isSuperAdmin
+    ? (typeof resolvedSearchParams.lazId === "string" ? resolvedSearchParams.lazId : undefined)
+    : session.user.lazId;
+
+  let allLazs: { id: string; name: string }[] = [];
+  if (isSuperAdmin) {
+    const { items } = await lazService.getLazs(1, 100);
+    allLazs = items;
+  }
 
   return (
     <div className="space-y-6">
@@ -42,8 +58,16 @@ export default async function ProgramsPage({
         }
       />
 
+      <Suspense fallback={<DataTableToolbarSkeleton showFilter={isSuperAdmin} />}>
+        <DataTableToolbar
+          searchValue={search}
+          searchPlaceholder="Cari judul atau deskripsi..."
+          filterSlot={isSuperAdmin && allLazs.length > 0 ? <UserLazFilter lazs={allLazs} /> : undefined}
+        />
+      </Suspense>
+
       <Suspense
-        key={`${search}-${page}`}
+        key={`${search}-${page}-${filterLazId}`}
         fallback={
           <TableSkeleton
             headers={["Judul Program", "Kategori", "Terkumpul", "Status", "Aksi"]}
@@ -52,29 +76,32 @@ export default async function ProgramsPage({
           />
         }
       >
-        <ProgramsTableSection page={page} search={search} />
+        <ProgramsTableSection page={page} search={search} lazId={filterLazId} />
       </Suspense>
     </div>
   );
 }
 
-async function ProgramsTableSection({ page, search }: { page: number; search?: string }) {
-  const { items: programs, metadata } = await programsService.getDashboardPrograms(page, 10, search);
+async function ProgramsTableSection({ page, search, lazId }: { page: number; search?: string; lazId?: string }) {
+  const { items: programs, metadata } = await programsService.getDashboardPrograms(page, 10, search, lazId);
+
+  const serializedPrograms = programs.map((p) => ({
+    ...p,
+    targetAmount: p.targetAmount.toNumber(),
+    currentAmount: p.currentAmount.toNumber(),
+    distributedAmount: p.distributedAmount.toNumber(),
+  }));
 
   return (
-    <>
-      <ProgramTable programs={programs} />
-
-      {/* Pagination Controls */}
-      {metadata.totalPages > 1 && (
-        <Pagination
-          currentPage={page}
-          totalPages={metadata.totalPages}
-          totalCount={metadata.total}
-          pageSize={10}
-        />
-      )}
-    </>
+    <ProgramTable 
+      programs={serializedPrograms} 
+      pagination={{
+        currentPage: page,
+        totalPages: metadata.totalPages,
+        totalCount: metadata.total,
+        pageSize: 10,
+      }}
+    />
   );
 }
 

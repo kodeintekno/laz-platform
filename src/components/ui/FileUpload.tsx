@@ -2,10 +2,11 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { X } from "lucide-react";
+import { X, UploadCloud } from "lucide-react";
 import { FormLabel } from "./form/form-label";
 import { LoadingSpinner } from "./LoadingSpinner";
 import { logger } from "@/lib/logger";
+import { toast } from "@/stores/toast.store";
 
 interface FileUploadProps {
   name: string;
@@ -65,7 +66,10 @@ export const FileUpload: React.FC<FileUploadProps> = ({
     const file = e.target.files?.[0];
     if (!file) return;
     if (file.size > 2 * 1024 * 1024) {
+      toast.error("Gagal mengunggah: File terlalu besar. Maksimum 2 MB.");
       logger.error("File terlalu besar. Maksimum 2 MB.");
+      // Reset the file input so it can trigger again
+      e.target.value = "";
       return;
     }
     // abort any previous upload
@@ -110,6 +114,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({
         logger.info("FileUpload handleChange: Upload dibatalkan");
       } else {
         logger.error({ err }, "FileUpload handleChange error");
+        toast.error("Gagal mengunggah file. Pastikan format valid dan koneksi stabil.");
       }
     } finally {
       setUploading(false);
@@ -146,15 +151,22 @@ export const FileUpload: React.FC<FileUploadProps> = ({
       <FormLabel htmlFor={name}>
         {label}
       </FormLabel>
-      <input
-        id={name}
-        name={name}
-        type="file"
-        accept={accept}
-        disabled={disabled || uploading || deleting}
-        onChange={handleChange}
-        className="block w-full rounded-xl border border-border/40 shadow-sm py-2.5 px-4 text-primary bg-surface placeholder:text-muted-foreground focus:outline-none focus:border-primary focus:ring-primary/30 focus:ring-2 focus:ring-offset-0 disabled:opacity-50 disabled:pointer-events-none transition duration-150 sm:text-sm sm:leading-6"
-      />
+      <div className="relative flex flex-col items-center justify-center w-full min-h-[140px] border-2 border-dashed border-border/60 rounded-xl bg-surface/50 hover:bg-surface-muted transition-colors focus-within:ring-2 focus-within:ring-brand-primary/30 focus-within:border-brand-primary group">
+        <input
+          id={name}
+          name={name}
+          type="file"
+          accept={accept}
+          disabled={disabled || uploading || deleting}
+          onChange={handleChange}
+          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-not-allowed z-10"
+        />
+        <div className="flex flex-col items-center justify-center p-6 text-center text-muted group-hover:text-primary transition-colors pointer-events-none">
+          <UploadCloud className="w-8 h-8 mb-3 opacity-70 group-hover:opacity-100 group-hover:scale-110 transition-all duration-200" strokeWidth={1.5} />
+          <p className="text-sm font-semibold mb-1">Pilih atau seret file ke sini</p>
+          <p className="text-[11px] opacity-70">Maksimal 2 MB ({accept.replace(/image\//g, '').toUpperCase().replace(/,/g, ', ')})</p>
+        </div>
+      </div>
 
       {uploading && (
         <div className="mt-3">

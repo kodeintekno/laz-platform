@@ -1,29 +1,49 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { programSchema, type ProgramInput } from "@/features/programs/validations/programs.schema";
 import { createProgramAction } from "@/features/programs/actions/programs.actions";
-// Removed Prisma enum import – using static values for client component
-import Link from "next/link";
 import { FormWrapper, FormField, Button, Card, CardContent, CardFooter } from "@/components/ui";
+import { FileUpload } from "@/components/ui/FileUpload";
+import { logger } from "@/lib/logger";
+import { type Program } from "@prisma/client";
 
-export function ProgramForm() {
+export function ProgramForm({
+  initialData,
+  action,
+}: {
+  initialData?: Program;
+  action?: (prevState: any, formData: FormData) => Promise<any>;
+}) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
+
+  const [uploadedImageUrl, setUploadedImageUrl] = useState<string>('');
+  const [uploadedImagePublicId, setUploadedImagePublicId] = useState<string>('');
+  const uploadAbortRef = useRef<AbortController | null>(null);
 
   const onSubmit = (data: ProgramInput) => {
     setError(null);
     startTransition(async () => {
       const formData = new FormData();
-      Object.entries(data).forEach(([key, value]) => {
+      
+      const image = uploadedImageUrl || data.image?.trim();
+      const finalData = { ...data, image };
+      
+      Object.entries(finalData).forEach(([key, value]) => {
         if (value !== undefined && value !== null) {
           formData.append(key, value.toString());
         }
       });
 
-      const result = await createProgramAction(formData);
+      let result;
+      if (action) {
+        result = await action(null, formData);
+      } else {
+        result = await createProgramAction(formData);
+      }
 
       if (result?.error) {
         setError(result.error);
@@ -32,6 +52,22 @@ export function ProgramForm() {
         router.refresh();
       }
     });
+  };
+
+  const handleCancel = async () => {
+    uploadAbortRef.current?.abort();
+    // Only delete the newly uploaded file, not the existing one if we're editing
+    if (uploadedImagePublicId) {
+      try {
+        const { deleteFile } = await import("@/lib/upload/uploadService");
+        await deleteFile(uploadedImagePublicId);
+      } catch (e) {
+        logger.error({ err: e }, "Failed to delete uploaded program image");
+      }
+      setUploadedImageUrl('');
+      setUploadedImagePublicId('');
+    }
+    router.back();
   };
 
   const PROGRAM_CATEGORIES = ["ZAKAT", "INFAK", "SEDEKAH", "WAKAF"] as const;
@@ -52,7 +88,14 @@ export function ProgramForm() {
       <FormWrapper
         schema={programSchema}
         onSubmit={onSubmit}
-        defaultValues={{
+        defaultValues={initialData ? {
+          title: initialData.title,
+          description: initialData.description,
+          targetAmount: Number(initialData.targetAmount),
+          category: initialData.category as any,
+          status: initialData.status as any,
+          image: initialData.imageUrl ?? "",
+        } : {
           title: "",
           description: "",
           targetAmount: 0,
@@ -71,16 +114,15 @@ export function ProgramForm() {
             disabled={isPending}
           />
 
-          <FormField
-            name="description"
-            label="Deskripsi Lengkap"
-            type="textarea"
-            rows={5}
-            placeholder="Tulis deskripsi program lengkap di sini..."
-            disabled={isPending}
-          />
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <FormField
+              name="category"
+              label="Kategori"
+              type="select"
+              options={categoryOptions}
+              disabled={isPending}
+            />
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <FormField
               name="targetAmount"
               label="Target Dana (Rp)"
@@ -91,43 +133,58 @@ export function ProgramForm() {
             />
 
             <FormField
-              name="category"
-              label="Kategori"
-              type="select"
-              options={categoryOptions}
-              disabled={isPending}
-            />
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <FormField
               name="status"
               label="Status Publikasi"
               type="select"
               options={statusOptions}
               disabled={isPending}
             />
-
-            <FormField
-              name="image"
-              label="URL Gambar Header"
-              type="input"
-              placeholder="https://example.com/image.jpg"
-              disabled={isPending}
-            />
           </div>
+
+          <FormField
+            name="description"
+            label="Deskripsi Lengkap"
+            type="textarea"
+            rows={5}
+            placeholder="Tulis deskripsi program lengkap di sini..."
+            disabled={isPending}
+          />
+
+          <FileUpload
+            description="Upload gambar header (Opsional, PNG/JPEG, max 2 MB)"
+            name="image"
+            label="Gambar Header"
+            disabled={isPending}
+            abortRef={uploadAbortRef}
+            initialUrl={initialData?.imageUrl ?? ""}
+            initialPublicId={""} // Assuming no publicId on Program table currently
+            folder="program-headers"
+            onUpload={(payload: { url: string; publicId: string }) => {
+              setUploadedImageUrl(payload.url);
+              setUploadedImagePublicId(payload.publicId);
+            }}
+            onRemove={() => {
+              setUploadedImageUrl("");
+              setUploadedImagePublicId("");
+            }}
+          />
         </CardContent>
 
         <CardFooter className="flex items-center justify-end gap-x-4 border-t border-border pt-4">
-          <Link href="/dashboard/programs" className="text-sm font-semibold leading-6 text-secondary hover:text-brand-primary transition">
+          <Button
+            type="button"
+            intent="secondary"
+            onClick={handleCancel}
+            disabled={isPending}
+          >
             Batal
-          </Link>
+          </Button>
           <Button
             type="submit"
             disabled={isPending}
             isLoading={isPending}
           >
-            Simpan Program
+            {initialData ? "Simpan Perubahan" : "Simpan Program"}
           </Button>
         </CardFooter>
       </FormWrapper>
