@@ -201,62 +201,154 @@ async function main() {
   // ─── Dummy Programs ─────────────────────────────────────────────────────────
   console.log("\n📦 Seeding dummy programs...");
 
-  const adminUser = await prisma.user.findUnique({ where: { email: adminEmail } });
+  if (process.env.NODE_ENV === "production") {
+    console.log(" ℹ️ Skipping dummy programs in production environment.");
+  } else {
+    const adminUser = await prisma.user.findUnique({ where: { email: adminEmail } });
+    if (!adminUser) throw new Error("Admin user not found. Cannot seed dummy programs.");
 
-  if (adminUser) {
+    const dummyDonatur = await prisma.user.upsert({
+      where: { email: "donatur@laz.id" },
+      update: {},
+      create: {
+        email: "donatur@laz.id",
+        name: "Budi Donatur",
+        password: hashedPassword,
+        status: "ACTIVE",
+        roleId: roleMap["DONATUR"],
+        lazId: defaultLaz.id,
+      }
+    });
+
     const dummyPrograms = [
       {
         title: "Bantu Pembangunan Masjid Pelosok",
         slug: "bantu-pembangunan-masjid-pelosok",
         description: "Masjid di desa terpencil ini butuh bantuan renovasi agar jamaah bisa beribadah dengan aman.",
         targetAmount: 50000000,
-        currentAmount: 12500000,
         category: "INFAK" as const,
         status: "PUBLISHED" as const,
         imageUrl: "https://images.unsplash.com/photo-1594957422315-77a829e0ebef?q=80&w=800&auto=format&fit=crop",
         startDate: new Date(),
-        endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days
+        endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
         createdById: adminUser.id,
+        donations: [
+          { amount: 5000000, status: "PAID", method: "BCA_VA", user: dummyDonatur, anon: false, msg: "Bismillah untuk masjid" },
+          { amount: 2500000, status: "PAID", method: "GOPAY", user: null, anon: true, msg: "Semoga cepat selesai pembangunannya" },
+          { amount: 5000000, status: "PAID", method: "MANUAL", user: null, anon: true, msg: "Titip infak via kantor LAZ" },
+          { amount: 1000000, status: "PENDING", method: "MANDIRI_VA", user: dummyDonatur, anon: false, msg: "" },
+        ]
       },
       {
         title: "Zakat Fitrah & Maal 1447 H",
         slug: "zakat-fitrah-maal",
         description: "Tunaikan kewajiban zakat Anda untuk membersihkan harta dan menyucikan jiwa.",
         targetAmount: 100000000,
-        currentAmount: 45000000,
         category: "ZAKAT" as const,
         status: "PUBLISHED" as const,
         imageUrl: "https://images.unsplash.com/photo-1628185521855-3ebffc634dd3?q=80&w=800&auto=format&fit=crop",
         startDate: new Date(),
         endDate: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000),
         createdById: adminUser.id,
+        donations: [
+          { amount: 25000000, status: "PAID", method: "BNI_VA", user: null, anon: true, msg: "Zakat Maal keluarga hamba Allah" },
+          { amount: 20000000, status: "PAID", method: "MANUAL", user: null, anon: false, msg: "Pembayaran zakat tunai di posko" },
+        ]
       },
       {
         title: "Sedekah Air Bersih untuk Kekeringan",
         slug: "sedekah-air-bersih",
         description: "Bantu alirkan air bersih untuk desa-desa yang mengalami kekeringan ekstrem musim ini.",
         targetAmount: 25000000,
-        currentAmount: 25000000,
         category: "SEDEKAH" as const,
         status: "COMPLETED" as const,
         imageUrl: "https://images.unsplash.com/photo-1541252260730-0412e8e2108e?q=80&w=800&auto=format&fit=crop",
         startDate: new Date(Date.now() - 60 * 24 * 60 * 60 * 1000),
         endDate: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000),
         createdById: adminUser.id,
+        donations: [
+          { amount: 15000000, status: "PAID", method: "QRIS", user: dummyDonatur, anon: false, msg: "Semoga airnya mengalir deras" },
+          { amount: 10000000, status: "PAID", method: "BCA_VA", user: null, anon: true, msg: "Amin" },
+        ],
+        distributions: [
+          { title: "Penyaluran Tangki Air Tahap 1", amount: 10000000, desc: "Penyaluran 5 truk tangki air bersih ke Desa Sukamaju." },
+          { title: "Penyaluran Tangki Air Tahap 2", amount: 15000000, desc: "Penyaluran 8 truk tangki air ke Desa Karanganyar. Program selesai." },
+        ]
       }
     ];
 
     for (const prog of dummyPrograms) {
-      await prisma.program.upsert({
+      // 1. Calculate realistic currentAmount from PAID dummy donations
+      const calculatedCurrentAmount = prog.donations
+        .filter((d) => d.status === "PAID")
+        .reduce((sum, d) => sum + d.amount, 0);
+
+      // 2. Upsert Program
+      const createdProgram = await prisma.program.upsert({
         where: { lazId_slug: { lazId: defaultLaz.id, slug: prog.slug } },
-        update: {},
+        update: { currentAmount: calculatedCurrentAmount },
         create: {
-          ...prog,
+          title: prog.title,
+          slug: prog.slug,
+          description: prog.description,
+          targetAmount: prog.targetAmount,
+          currentAmount: calculatedCurrentAmount,
+          category: prog.category,
+          status: prog.status,
+          imageUrl: prog.imageUrl,
+          startDate: prog.startDate,
+          endDate: prog.endDate,
+          createdById: prog.createdById,
           lazId: defaultLaz.id,
         },
       });
+
+      // 3. Purge existing dummy relations to avoid duplicates on re-seed
+      await prisma.donation.deleteMany({ where: { programId: createdProgram.id } });
+      await prisma.distribution.deleteMany({ where: { programId: createdProgram.id } });
+
+      // 4. Seed precise Donations and linked Payments
+      for (const d of prog.donations) {
+        await prisma.donation.create({
+          data: {
+            lazId: defaultLaz.id,
+            programId: createdProgram.id,
+            userId: d.user ? d.user.id : null,
+            amount: d.amount,
+            status: d.status as any,
+            isAnonymous: d.anon,
+            donorName: d.user ? d.user.name : (d.anon ? "Hamba Allah" : "Donatur Tunai"),
+            message: d.msg,
+            payment: {
+              create: {
+                lazId: defaultLaz.id,
+                amount: d.amount,
+                paymentMethod: d.method,
+                status: d.status === "PAID" ? "SUCCESS" : "PENDING",
+              }
+            }
+          },
+        });
+      }
+
+      // 5. Seed Distributions if they exist
+      if (prog.distributions) {
+        for (const dist of prog.distributions) {
+          await prisma.distribution.create({
+            data: {
+              lazId: defaultLaz.id,
+              programId: createdProgram.id,
+              title: dist.title,
+              description: dist.desc,
+              amount: dist.amount,
+              status: "COMPLETED",
+              createdById: adminUser.id,
+            },
+          });
+        }
+      }
     }
-    console.log(" ✓ Dummy programs seeded");
+    console.log(" ✓ Dummy users, programs, precise donations, and distributions seeded");
   }
 
   console.log("\n✅ Seeding complete!\n");
