@@ -51,16 +51,20 @@ const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
  * Sidebar collapse state is from Zustand UIStore.
  * Visible nav items are filtered by usePermission.
  */
-export function Sidebar({ initialItems }: { initialItems?: NavItem[] } = {}) {
+export function Sidebar({ initialItems, user }: { initialItems?: NavItem[], user?: any } = {}) {
   const pathname = usePathname();
   const { isSidebarOpen, toggleSidebar, isSidebarCollapsed, toggleSidebarCollapsed } = useUIStore();
   const { can, isLoading, permissions, roleName } = usePermission();
   // When initialItems are provided (from server), skip permission checks
   const visibleItems = initialItems ?? NAV_ITEMS.filter((item) => !item.permission || can(item.permission));
   const { data: session } = useSession();
+  const activeUser = user || session?.user;
   const [isLogoutConfirmOpen, setIsLogoutConfirmOpen] = useState(false);
 
-  const userInitial = session?.user?.name ? session.user.name.charAt(0).toUpperCase() : "?";
+  // Initialize collapse state only on desktop
+  const [mounted, setMounted] = useState(false);
+
+  const userInitial = (activeUser?.name || session?.user?.name || "?").charAt(0).toUpperCase();
 
   // Filter nav items the current user has permission to see
   // removed original visibleItems calculation – now handled above
@@ -182,10 +186,10 @@ export function Sidebar({ initialItems }: { initialItems?: NavItem[] } = {}) {
         <div className="p-4 mt-auto flex flex-col gap-4 bg-surface/80 backdrop-blur-sm overflow-hidden flex-shrink-0">
           <div className="flex items-center w-full justify-between">
             <div className="flex items-center min-w-0 flex-1">
-              {(session?.user as any)?.avatarUrl || session?.user?.image ? (
+              {activeUser?.avatarUrl || activeUser?.image ? (
                 <img
-                  src={(session?.user as any)?.avatarUrl || session?.user?.image}
-                  alt={session?.user?.name || "User Avatar"}
+                  src={activeUser?.avatarUrl || activeUser?.image}
+                  alt={activeUser?.name || "User Avatar"}
                   className="w-8 h-8 rounded-full object-cover shadow-sm flex-shrink-0"
                 />
               ) : (
@@ -194,8 +198,8 @@ export function Sidebar({ initialItems }: { initialItems?: NavItem[] } = {}) {
                 </div>
               )}
               <div className={`min-w-0 flex-1 transition-all duration-300 ease-in-out ${isSidebarCollapsed ? "opacity-0 max-w-0 ml-0 pointer-events-none" : "opacity-100 max-w-[180px] ml-3"}`}>
-                <p className="text-sm font-semibold text-primary truncate">{session?.user?.name || "Admin"}</p>
-                <p className="text-xs text-secondary truncate">{session?.user?.roleName || "Staff"}</p>
+                <p className="text-sm font-semibold text-primary truncate">{activeUser?.name || "Admin"}</p>
+                <p className="text-xs text-secondary truncate">{activeUser?.roleName || "Staff"}</p>
               </div>
             </div>
             <button

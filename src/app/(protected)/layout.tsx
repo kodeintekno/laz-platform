@@ -50,7 +50,7 @@ export default async function ProtectedLayout({
     <BreadcrumbProvider>
       <div className="flex h-screen overflow-hidden bg-surface-muted">
         {/* Sidebar */}
-        <Sidebar initialItems={initialMenu} />
+        <Sidebar initialItems={initialMenu} user={session?.user} />
 
         {/* Main content area */}
         <div className="flex flex-col flex-1 overflow-hidden">
