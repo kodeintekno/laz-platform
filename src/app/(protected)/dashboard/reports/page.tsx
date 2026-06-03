@@ -1,35 +1,77 @@
 import { auth } from "@/lib/auth";
 import { PERMISSIONS } from "@/constants/permissions";
 import { redirect } from "next/navigation";
-import { BarChart3 } from "lucide-react";
 import { PageHeader } from "@/components/ui";
+import { reportsService } from "@/features/reports/services/reports.service";
+import { ReportSummaryCards } from "@/features/reports/components/ReportSummaryCards";
+import { DonationTrendChart } from "@/features/reports/components/DonationTrendChart";
+import { ProgramPerformanceList } from "@/features/reports/components/ProgramPerformanceList";
+import { UserLazFilter } from "@/features/users/components/UserLazFilter";
+import { lazService } from "@/features/laz/services/laz.service";
+import { Suspense } from "react";
 
 export const metadata = {
   title: "Reports",
 };
 
-export default async function ReportsPage() {
+export default async function ReportsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+}) {
   const session = await auth();
 
   if (!session?.user?.permissions.includes(PERMISSIONS.REPORTS_READ)) {
     redirect("/dashboard");
   }
 
+  const resolvedSearchParams = await searchParams;
+  const isSuperAdmin = session.user.roleName === "SUPER_ADMIN";
+  const filterLazId = isSuperAdmin
+    ? (typeof resolvedSearchParams.lazId === "string" ? resolvedSearchParams.lazId : undefined)
+    : session.user.lazId;
+
+  let allLazs: { id: string; name: string }[] = [];
+  if (isSuperAdmin) {
+    const { items } = await lazService.getLazs(1, 100);
+    allLazs = items;
+  }
+
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Laporan Keuangan & Kinerja"
-        description="Lihat dan ekspor laporan pendistribusian zakat, statistik donasi, serta audit kepatuhan syariah."
+        title="Dasbor Analitik & Kinerja"
+        description="Pantau tren donasi, penyaluran dana, dan performa program secara real-time."
+        action={
+          isSuperAdmin && allLazs.length > 0 ? (
+            <div className="w-64">
+              <UserLazFilter lazs={allLazs} />
+            </div>
+          ) : undefined
+        }
       />
 
-      <div className="bg-surface rounded-2xl border border-border p-12 text-center shadow-sm">
-        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-brand-primary/10 mb-4">
-          <BarChart3 className="h-6 w-6 text-brand-primary" />
-        </div>
-        <h3 className="text-sm font-semibold text-primary">Fitur Laporan Analitik</h3>
-        <p className="mt-1 text-sm text-muted max-w-sm mx-auto">
-          Halaman laporan analitik sedang dalam pengembangan. Laporan berkala akan ditampilkan dengan grafik interaktif di sini.
-        </p>
+      <Suspense fallback={<div className="h-32 bg-surface-muted animate-pulse rounded-2xl" />}>
+        <AnalyticsContent lazId={filterLazId} />
+      </Suspense>
+    </div>
+  );
+}
+
+async function AnalyticsContent({ lazId }: { lazId?: string }) {
+  const [stats, trend, topPrograms] = await Promise.all([
+    reportsService.getSummaryStats(lazId),
+    reportsService.getDonationTrend(lazId),
+    reportsService.getTopPrograms(lazId, 5),
+  ]);
+
+  return (
+    <div className="space-y-6">
+      <ReportSummaryCards stats={stats} />
+      
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <DonationTrendChart data={trend} />
+        <ProgramPerformanceList programs={topPrograms} />
       </div>
     </div>
   );
