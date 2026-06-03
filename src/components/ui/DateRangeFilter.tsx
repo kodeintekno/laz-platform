@@ -36,7 +36,7 @@ export function DateRangeFilter({ startDate, endDate, search, page }: DateRangeF
   };
 
   return (
-    <form className="flex space-x-2 items-center">
+    <div className="flex space-x-2 items-center">
       <div>
         <label className="block text-sm font-medium text-gray-700">Start Date</label>
         <Input
@@ -57,6 +57,6 @@ export function DateRangeFilter({ startDate, endDate, search, page }: DateRangeF
           className="w-32"
         />
       </div>
-    </form>
+    </div>
   );
 }

@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { auditService } from "@/features/audit/services/audit.service";
 import { AuditTable } from "@/features/audit/components/AuditTable";
 import { PageHeader, TableSkeleton } from "@/components/ui";
+import { DataTableToolbar } from "@/components/ui/data-table";
 import { DateRangeFilter } from "@/components/ui";
 import { Suspense } from "react";
 import React from "react";
@@ -36,6 +37,14 @@ export default async function AuditPage({
         description="Riwayat log audit aktivitas mutasi admin dan pengelolaan sistem secara realtime."
       />
 
+      <Suspense fallback={<div className="h-10 w-full animate-pulse bg-surface-muted rounded-xl" />}>
+        <DataTableToolbar
+          searchValue={search}
+          searchPlaceholder="Cari operator, entitas, atau aktivitas..."
+          filterSlot={<DateRangeFilter startDate={startDate} endDate={endDate} search={search} page={page} />}
+        />
+      </Suspense>
+
       <Suspense
         key={`${search}-${page}-${startDate}-${endDate}`}
         fallback={
@@ -46,19 +55,18 @@ export default async function AuditPage({
           />
         }
       >
-        <AuditTableSection page={page} search={search} lazId={session.user.lazId} startDate={startDate} endDate={endDate} filterSlot={<DateRangeFilter startDate={startDate} endDate={endDate} search={search} page={page} />} />
+        <AuditTableSection page={page} search={search} lazId={session.user.lazId} startDate={startDate} endDate={endDate} />
       </Suspense>
     </div>
   );
 }
 
-async function AuditTableSection({ page, search, lazId, startDate, endDate, filterSlot }: { page: number; search?: string; lazId?: string; startDate?: string; endDate?: string; filterSlot?: React.ReactNode }) {
+async function AuditTableSection({ page, search, lazId, startDate, endDate }: { page: number; search?: string; lazId?: string; startDate?: string; endDate?: string; }) {
   const { items: logs, metadata: paginatedMetadata } = await auditService.getLogs(page, 10, search, lazId, startDate, endDate);
 
   return (
-    <AuditTable filterSlot={filterSlot}
+    <AuditTable 
       logs={logs}
-      search={search}
       pagination={{
         currentPage: page,
         totalPages: paginatedMetadata.totalPages,

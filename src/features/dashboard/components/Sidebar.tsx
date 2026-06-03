@@ -182,10 +182,10 @@ export function Sidebar({ initialItems }: { initialItems?: NavItem[] } = {}) {
         <div className="p-4 mt-auto flex flex-col gap-4 bg-surface/80 backdrop-blur-sm overflow-hidden flex-shrink-0">
           <div className="flex items-center w-full justify-between">
             <div className="flex items-center min-w-0 flex-1">
-              {session?.user?.image ? (
+              {(session?.user as any)?.avatarUrl || session?.user?.image ? (
                 <img
-                  src={session.user.image}
-                  alt={session.user.name || "User Avatar"}
+                  src={(session?.user as any)?.avatarUrl || session?.user?.image}
+                  alt={session?.user?.name || "User Avatar"}
                   className="w-8 h-8 rounded-full object-cover shadow-sm flex-shrink-0"
                 />
               ) : (
