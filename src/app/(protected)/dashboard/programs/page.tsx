@@ -27,6 +27,7 @@ export default async function ProgramsPage({
 
   const resolvedSearchParams = await searchParams;
   const page = typeof resolvedSearchParams.page === "string" ? parseInt(resolvedSearchParams.page) : 1;
+  const limit = typeof resolvedSearchParams.limit === "string" ? parseInt(resolvedSearchParams.limit) : 10;
   const search = typeof resolvedSearchParams.search === "string" ? resolvedSearchParams.search : undefined;
 
   const canCreate = session.user.permissions.includes(PERMISSIONS.PROGRAMS_CREATE);
@@ -67,23 +68,23 @@ export default async function ProgramsPage({
       </Suspense>
 
       <Suspense
-        key={`${search}-${page}-${filterLazId}`}
+        key={`${search}-${page}-${limit}-${filterLazId}`}
         fallback={
           <TableSkeleton
             headers={["Judul Program", "Kategori", "Terkumpul", "Status", "Aksi"]}
-            rowCount={10}
+            rowCount={limit}
             columnTypes={["text", "text", "text", "text", "action"]}
           />
         }
       >
-        <ProgramsTableSection page={page} search={search} lazId={filterLazId} />
+        <ProgramsTableSection page={page} limit={limit} search={search} lazId={filterLazId} />
       </Suspense>
     </div>
   );
 }
 
-async function ProgramsTableSection({ page, search, lazId }: { page: number; search?: string; lazId?: string }) {
-  const { items: programs, metadata } = await programsService.getDashboardPrograms(page, 10, search, lazId);
+async function ProgramsTableSection({ page, limit, search, lazId }: { page: number; limit: number; search?: string; lazId?: string }) {
+  const { items: programs, metadata } = await programsService.getDashboardPrograms(page, limit, search, lazId);
 
   const serializedPrograms = programs.map((p) => ({
     ...p,
@@ -99,7 +100,7 @@ async function ProgramsTableSection({ page, search, lazId }: { page: number; sea
         currentPage: page,
         totalPages: metadata.totalPages,
         totalCount: metadata.total,
-        pageSize: 10,
+        pageSize: limit,
       }}
     />
   );
