@@ -112,6 +112,9 @@ export function ProgramCard({ program, now = Date.now(), isPriority = false }: P
             <span>{safeProgress}% Tercapai</span>
             <span>Target: {formatRupiah(targetNum)}</span>
           </div>
+          <div className="mt-4 text-center text-xs font-bold text-brand-primary group-hover:text-success transition-colors flex items-center justify-center gap-1">
+            Lihat Detail & Donasi &rarr;
+          </div>
         </div>
       </div>
     </Link>

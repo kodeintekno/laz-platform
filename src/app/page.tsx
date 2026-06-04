@@ -1,8 +1,16 @@
 import { programsService } from "@/features/programs/services/programs.service";
-import Link from "next/link";
-import Image from "next/image";
+import { analyticsRepository } from "@/features/analytics/repositories/analytics.repository";
+import { auth } from "@/lib/auth";
 import HeroSection from "@/components/ui/HeroSection";
-import { ProgramCard } from "@/components/ui";
+import {
+  ProgramCard,
+  PublicHeader,
+  TrustIndicators,
+  HowItWorks,
+  ImpactStats,
+  PublicFooter,
+  EmptyState,
+} from "@/components/ui";
 
 export const metadata = {
   title: {
@@ -12,88 +20,127 @@ export const metadata = {
 };
 
 export default async function Home() {
-  const allPrograms = await programsService.getPublishedPrograms();
+  const [allPrograms, stats, session] = await Promise.all([
+    programsService.getPublishedPrograms(),
+    analyticsRepository.getDashboardMetrics(undefined),
+    auth(),
+  ]);
+
   const featuredPrograms = allPrograms.slice(0, 3);
   const now = Date.now();
 
-  const formatRupiah = (amount: number | string) =>
-    new Intl.NumberFormat("id-ID", {
-      style: "currency",
-      currency: "IDR",
-      minimumFractionDigits: 0,
-    }).format(Number(amount));
-
   return (
-    <div className="bg-surface min-h-screen">
-      {/* Header */}
-      <header className="bg-surface/80 backdrop-blur-md sticky top-0 z-50 shadow-soft shadow-sm border-b border-border/40">
-        <div className="mx-auto max-w-7xl px-4 py-4 sm:px-6 lg:px-8 flex justify-between items-center">
-          <Link href="/" className="flex items-center gap-2">
-            <Image src="/icon.png" alt="LAZ Platform Logo" width={28} height={28} className="w-7 h-7 object-contain" />
-            <span className="text-xl font-bold text-primary">LAZ Platform</span>
-          </Link>
-          <div className="flex gap-6 items-center">
-            <Link href="/programs" className="text-sm text-secondary hover:text-primary font-semibold transition">
-              Semua Program
-            </Link>
-            <Link href="/login" className="inline-block bg-success hover:bg-success/90 text-white font-medium py-3 px-8 rounded-xl transition">
-              Login
-            </Link>
-          </div>
-        </div>
-      </header>
+    <div className="bg-surface min-h-screen flex flex-col justify-between">
+      <div>
+        {/* Session-aware Public Header */}
+        <PublicHeader user={session?.user} />
 
-      <HeroSection />
+        {/* Hero Section */}
+        <HeroSection />
 
-      {/* Featured Programs Section */}
-      <section id="featured" className="bg-surface-muted py-24 sm:py-32">
-        <div className="mx-auto max-w-7xl px-6 lg:px-8">
-          <div className="mx-auto max-w-2xl text-center mb-16">
-            <h2 className="text-3xl font-bold tracking-tight text-brand-primary sm:text-4xl">
-              Program Mendesak
-            </h2>
-            <p className="mt-4 text-lg text-secondary">
-              Pilih program kebaikan yang ingin Anda bantu hari ini.
-            </p>
-          </div>
-          <div className="grid grid-cols-1 gap-y-10 gap-x-6 sm:grid-cols-2 lg:grid-cols-3 xl:gap-x-8">
-            {featuredPrograms.map((program) => (
-              <ProgramCard
-                key={program.id}
-                program={{
-                  id: program.id,
-                  slug: program.slug,
-                  title: program.title,
-                  description: program.description,
-                  imageUrl: program.imageUrl,
-                  category: program.category,
-                  targetAmount: program.targetAmount.toNumber(),
-                  currentAmount: program.currentAmount.toNumber(),
-                  endDate: program.endDate,
-                  laz: program.laz,
-                }}
-                now={now}
-                isPriority={true}
-              />
-            ))}
-          </div>
-          <div className="mt-16 text-center">
-            <Link
-              href="/programs"
-              className="text-sm font-bold text-brand-primary hover:text-success bg-surface-soft px-6 py-3 rounded-xl transition border border-border/40"
-            >
-              Lihat Semua Program →
-            </Link>
-          </div>
-        </div>
-      </section>
+        {/* Trust Indicators */}
+        <TrustIndicators />
 
-      {/* Footer */}
-      <footer className="bg-surface shadow-sm py-12 border-t border-border/40">
-        <div className="mx-auto max-w-7xl px-6 lg:px-8 text-center">
-          <p className="text-sm text-secondary">&copy; {new Date().getFullYear()} LAZ Platform. All rights reserved.</p>
-        </div>
-      </footer>
+        {/* Featured Programs Section */}
+        <section id="featured" className="bg-surface-muted py-20 px-4 sm:px-6 lg:px-8">
+          <div className="mx-auto max-w-7xl">
+            <div className="mx-auto max-w-2xl text-center mb-16">
+              <h2 className="text-3xl font-bold tracking-tight text-brand-primary sm:text-4xl">
+                Program Mendesak
+              </h2>
+              <p className="mt-4 text-lg text-secondary">
+                Pilih program kebaikan yang ingin Anda bantu hari ini.
+              </p>
+            </div>
+
+            {/* Programs list empty state check */}
+            {featuredPrograms.length > 0 ? (
+              <div className="grid grid-cols-1 gap-y-10 gap-x-6 sm:grid-cols-2 lg:grid-cols-3 xl:gap-x-8">
+                {featuredPrograms.map((program) => (
+                  <ProgramCard
+                    key={program.id}
+                    program={{
+                      id: program.id,
+                      slug: program.slug,
+                      title: program.title,
+                      description: program.description,
+                      imageUrl: program.imageUrl,
+                      category: program.category,
+                      targetAmount: program.targetAmount.toNumber(),
+                      currentAmount: program.currentAmount.toNumber(),
+                      endDate: program.endDate,
+                      laz: program.laz,
+                    }}
+                    now={now}
+                    isPriority={true}
+                  />
+                ))}
+              </div>
+            ) : (
+              <div className="max-w-md mx-auto py-8">
+                <EmptyState
+                  title="Belum Ada Program Aktif"
+                  description="Saat ini belum ada program penggalangan dana yang aktif. Silakan kembali beberapa saat lagi."
+                />
+              </div>
+            )}
+
+            {featuredPrograms.length > 0 && (
+              <div className="mt-16 text-center">
+                <a
+                  href="/programs"
+                  className="text-sm font-bold text-brand-primary hover:text-success bg-surface-soft px-6 py-3 rounded-xl transition border border-border/40 cursor-pointer"
+                >
+                  Lihat Semua Program →
+                </a>
+              </div>
+            )}
+          </div>
+        </section>
+
+        {/* How It Works Section */}
+        <HowItWorks />
+
+        {/* Impact Statistics */}
+        <ImpactStats
+          totalDonations={stats.totalDonations}
+          totalDistributed={stats.totalDistributed}
+          activePrograms={stats.activePrograms}
+          totalDonors={stats.activeUsers}
+        />
+
+        {/* About Section */}
+        <section id="about" className="bg-surface py-20 px-4 sm:px-6 lg:px-8 border-t border-border/40">
+          <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center gap-12">
+            <div className="md:w-1/2 space-y-6">
+              <span className="text-xs font-bold uppercase tracking-wider text-brand-primary">Tentang Kami</span>
+              <h2 className="text-3xl font-bold tracking-tight text-primary sm:text-4xl leading-tight">
+                Menjembatani Kebaikan dengan Amanah Terpercaya
+              </h2>
+              <p className="text-sm text-secondary leading-relaxed">
+                LAZ Platform adalah wadah digital inovatif yang dirancang khusus untuk memfasilitasi berbagai Lembaga Amil Zakat (LAZ) resmi di Indonesia dalam menghimpun dan menyalurkan dana zakat, infak, sedekah, dan wakaf (ZISWAF).
+              </p>
+              <p className="text-sm text-secondary leading-relaxed">
+                Misi utama kami adalah menghadirkan transparansi penuh bagi para donatur, memberikan kemudahan akses pelaporan secara berkala, serta mempercepat distribusi bantuan ke berbagai sektor kemanusiaan yang membutuhkan.
+              </p>
+            </div>
+            <div className="md:w-1/2 flex justify-center items-center">
+              <div className="bg-gradient-to-br from-brand-primary/10 to-success/10 p-12 rounded-3xl border border-brand-primary/20 max-w-sm w-full text-center space-y-4">
+                <div className="w-16 h-16 rounded-full bg-brand-primary text-white flex items-center justify-center font-bold text-2xl mx-auto shadow-md">
+                  100%
+                </div>
+                <h4 className="text-lg font-bold text-primary">Amanah & Profesional</h4>
+                <p className="text-xs text-secondary leading-relaxed">
+                  Setiap program yang terdaftar telah melewati proses verifikasi ketat untuk menjamin orisinalitas dan kelayakan penerima manfaat.
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      {/* Public Footer */}
+      <PublicFooter />
     </div>
   );
 }

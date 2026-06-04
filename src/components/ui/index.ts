@@ -29,3 +29,8 @@ export * from "./form";
 
 
 export { ProgramCard } from "./ProgramCard";
+export { PublicHeader } from "./PublicHeader";
+export { TrustIndicators } from "./TrustIndicators";
+export { HowItWorks } from "./HowItWorks";
+export { ImpactStats } from "./ImpactStats";
+export { PublicFooter } from "./PublicFooter";

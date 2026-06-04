@@ -2,6 +2,8 @@ import { programsService } from "@/features/programs/services/programs.service";
 import Link from "next/link";
 import Image from "next/image";
 import { notFound } from "next/navigation";
+import { auth } from "@/lib/auth";
+import { PublicHeader, PublicFooter } from "@/components/ui";
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
   const resolvedParams = await params;
@@ -12,7 +14,10 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 
 export default async function ProgramDetailPage({ params }: { params: Promise<{ slug: string }> }) {
   const resolvedParams = await params;
-  const program = await programsService.getProgramBySlug(resolvedParams.slug);
+  const [program, session] = await Promise.all([
+    programsService.getProgramBySlug(resolvedParams.slug),
+    auth(),
+  ]);
 
   if (!program) {
     notFound();
@@ -33,21 +38,10 @@ export default async function ProgramDetailPage({ params }: { params: Promise<{ 
   const progress = Math.min(100, Math.round((currentAmount / targetAmount) * 100));
 
   return (
-    <div className="bg-surface-muted min-h-screen pb-20">
-      {/* Simple Public Header */}
-      <header className="bg-surface shadow-soft border-b border-border/40">
-        <div className="mx-auto max-w-7xl px-4 py-4 sm:px-6 lg:px-8 flex justify-between items-center">
-          <Link href="/" className="flex items-center gap-2">
-            <Image src="/icon.png" alt="LAZ Platform Logo" width={28} height={28} className="w-7 h-7 object-contain" />
-            <span className="text-xl font-bold text-brand-primary">LAZ Platform</span>
-          </Link>
-          <div className="flex gap-4">
-            <Link href="/programs" className="text-secondary hover:text-brand-primary font-semibold">
-              Donasi
-            </Link>
-          </div>
-        </div>
-      </header>
+    <div className="bg-surface-muted min-h-screen flex flex-col justify-between">
+      <div>
+        {/* Session-aware Public Header */}
+        <PublicHeader user={session?.user} />
 
       <main className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 py-8">
         <div className="bg-surface rounded-2xl shadow-soft border border-border/40 overflow-hidden lg:flex">
@@ -200,6 +194,10 @@ export default async function ProgramDetailPage({ params }: { params: Promise<{ 
           </div>
         </div>
       </main>
+      </div>
+
+      {/* Public Footer */}
+      <PublicFooter />
     </div>
   );
 }

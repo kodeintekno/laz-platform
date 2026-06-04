@@ -16,15 +16,15 @@ export default function HeroSection() {
           <div className="flex flex-col sm:flex-row gap-4 mt-4">
             <Link
               href="/programs"
-              className="inline-block bg-success hover:bg-success-hover text-white font-medium py-3 px-8 rounded-xl transition shadow-md"
+              className="inline-block bg-success hover:bg-success-hover text-white font-medium py-3 px-8 rounded-xl transition shadow-md cursor-pointer"
             >
               Mulai Berzakat Sekarang
             </Link>
             <Link
-              href="/about"
-              className="inline-block bg-white/10 hover:bg-white/20 text-white border border-white/20 font-medium py-3 px-8 rounded-xl transition"
+              href="#how-it-works"
+              className="inline-block bg-white/10 hover:bg-white/20 text-white border border-white/20 font-medium py-3 px-8 rounded-xl transition cursor-pointer"
             >
-              Lihat Program
+              Pelajari Selengkapnya
             </Link>
           </div>
         </div>
