@@ -55,6 +55,9 @@ export const donationsRepository = {
     userId?: string;
     programId: string;
     paymentMethod: string;
+    donorName?: string;
+    donorEmail?: string;
+    donorPhone?: string;
   }) {
     return prisma.$transaction(async (tx) => {
       // 0. Fetch parent program's lazId
@@ -75,6 +78,9 @@ export const donationsRepository = {
           userId: data.userId,
           programId: data.programId,
           lazId: program.lazId,
+          donorName: data.donorName,
+          donorEmail: data.donorEmail,
+          donorPhone: data.donorPhone,
         },
       });
 

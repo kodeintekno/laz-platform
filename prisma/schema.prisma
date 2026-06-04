@@ -138,6 +138,8 @@ model Donation {
   programId   String
   userId      String?
   donorName   String?
+  donorEmail  String?
+  donorPhone  String?
   amount      Decimal        @db.Decimal(12, 2)
   message     String?
   isAnonymous Boolean        @default(false)

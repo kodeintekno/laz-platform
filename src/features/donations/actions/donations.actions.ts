@@ -65,6 +65,30 @@ export async function createDonationAction(formData: FormData) {
       return { error: "Data donasi tidak valid", details: parsed.error.flatten() };
     }
 
+    // Server-side validation for guests
+    if (!session?.user) {
+      if (!parsed.data.donorName || parsed.data.donorName.trim() === "") {
+        return { error: "Nama donatur wajib diisi" };
+      }
+      if (!parsed.data.donorEmail || parsed.data.donorEmail.trim() === "") {
+        return { error: "Email donatur wajib diisi" };
+      }
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(parsed.data.donorEmail)) {
+        return { error: "Format email tidak valid" };
+      }
+    }
+
+    // Auto-populate donor details from session if user is logged in
+    if (session?.user) {
+      if (!parsed.data.donorName && session.user.name) {
+        parsed.data.donorName = session.user.name;
+      }
+      if (!parsed.data.donorEmail && session.user.email) {
+        parsed.data.donorEmail = session.user.email;
+      }
+    }
+
     const { donation } = await donationsService.createDonation(parsed.data, userId);
     
     // In Phase 5, we rely on Webhooks, so we leave it PENDING

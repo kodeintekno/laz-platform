@@ -125,9 +125,10 @@ export default async function Home() {
               </p>
             </div>
             <div className="md:w-1/2 flex justify-center items-center">
-              <div className="bg-gradient-to-br from-brand-primary/10 to-success/10 p-12 rounded-3xl border border-brand-primary/20 max-w-sm w-full text-center space-y-4">
-                <div className="w-16 h-16 rounded-full bg-brand-primary text-white flex items-center justify-center font-bold text-2xl mx-auto shadow-md">
-                  100%
+              <div className="bg-gradient-to-br from-brand-primary/10 to-success/10 p-12 rounded-3xl border border-brand-primary/20 max-w-sm w-full text-center space-y-6">
+                <div className="w-24 h-24 rounded-full bg-gradient-to-br from-brand-primary to-brand-secondary text-white flex flex-col items-center justify-center font-black mx-auto shadow-soft ring-8 ring-brand-primary/10 transition-transform duration-500 hover:scale-105">
+                  <span className="text-3xl tracking-tighter leading-none">100%</span>
+                  <span className="text-[10px] uppercase tracking-widest text-brand-soft mt-1 font-bold">Amanah</span>
                 </div>
                 <h4 className="text-lg font-bold text-primary">Amanah & Profesional</h4>
                 <p className="text-xs text-secondary leading-relaxed">

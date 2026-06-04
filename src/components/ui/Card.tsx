@@ -10,7 +10,7 @@ export function Card({ children, className = "" }: { children: React.ReactNode; 
 
 export function CardHeader({ children, className = "" }: { children: React.ReactNode; className?: string }) {
   return (
-    <div className={`p-6 sm:p-8 ${className}`}>
+    <div className={`p-4 sm:p-6 md:p-8 ${className}`}>
       {children}
     </div>
   );
@@ -26,7 +26,7 @@ export function CardTitle({ children, className = "" }: { children: React.ReactN
 
 export function CardContent({ children, className = "" }: { children: React.ReactNode; className?: string }) {
   return (
-    <div className={`p-6 sm:p-8 flex-1 ${className}`}>
+    <div className={`p-4 sm:p-6 md:p-8 flex-1 ${className}`}>
       {children}
     </div>
   );
@@ -34,7 +34,7 @@ export function CardContent({ children, className = "" }: { children: React.Reac
 
 export function CardFooter({ children, className = "" }: { children: React.ReactNode; className?: string }) {
   return (
-    <div className={`bg-surface-soft p-6 sm:p-8 ${className}`}>
+    <div className={`bg-surface-soft p-4 sm:p-6 md:p-8 ${className}`}>
       {children}
     </div>
   );

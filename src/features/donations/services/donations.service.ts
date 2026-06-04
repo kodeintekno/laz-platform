@@ -16,6 +16,9 @@ export const donationsService = {
       userId,
       programId: data.programId,
       paymentMethod: data.paymentMethod,
+      donorName: data.donorName,
+      donorEmail: data.donorEmail,
+      donorPhone: data.donorPhone,
     });
 
     return result;

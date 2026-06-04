@@ -61,13 +61,13 @@ export function DonationTrendChart({ data }: { data: TrendData[] }) {
               dataKey="displayDate" 
               axisLine={false}
               tickLine={false}
-              tick={{ fontSize: 12, fill: "#64748B" }}
+              tick={{ fontSize: 12, fill: "#4B5563" }}
               dy={10}
             />
             <YAxis 
               axisLine={false}
               tickLine={false}
-              tick={{ fontSize: 12, fill: "#64748B" }}
+              tick={{ fontSize: 12, fill: "#4B5563" }}
               tickFormatter={formatRupiahK}
             />
             <Tooltip 

@@ -6,6 +6,9 @@ export const donationSchema = z.object({
   message: z.string().max(250, "Pesan maksimal 250 karakter").optional(),
   isAnonymous: z.coerce.boolean().default(false),
   paymentMethod: z.string().min(1, "Pilih metode pembayaran"),
+  donorName: z.string().max(100, "Nama maksimal 100 karakter").optional(),
+  donorEmail: z.string().email("Format email tidak valid").or(z.literal("")).optional(),
+  donorPhone: z.string().max(20, "No. Handphone maksimal 20 karakter").optional(),
 });
 
 export type DonationInput = z.infer<typeof donationSchema>;

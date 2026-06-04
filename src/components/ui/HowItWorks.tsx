@@ -14,12 +14,12 @@ export function HowItWorks() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-12 relative">
-          {/* Connector Line (Desktop Only) */}
-          <div className="hidden md:block absolute top-1/4 left-[15%] right-[15%] h-0.5 border-t border-dashed border-border/80 -z-0" />
+          {/* Connector Line (Desktop Only) - Aligned to center of 64px icons (32px / top-8) */}
+          <div className="hidden md:block absolute top-8 left-[16%] right-[16%] h-0.5 border-t border-dashed border-border/80 -z-0" />
 
           {/* Step 1 */}
           <div className="flex flex-col items-center text-center relative z-10">
-            <div className="w-16 h-16 rounded-2xl bg-brand-primary/10 text-brand-primary flex items-center justify-center mb-6 shadow-sm">
+            <div className="w-16 h-16 rounded-2xl bg-surface border-2 border-brand-primary/25 text-brand-primary flex items-center justify-center mb-6 shadow-soft relative z-10">
               <Search className="w-8 h-8" />
             </div>
             <span className="text-xs font-bold uppercase tracking-wider text-brand-primary mb-2">Langkah 1</span>
@@ -31,7 +31,7 @@ export function HowItWorks() {
 
           {/* Step 2 */}
           <div className="flex flex-col items-center text-center relative z-10">
-            <div className="w-16 h-16 rounded-2xl bg-success/10 text-success flex items-center justify-center mb-6 shadow-sm">
+            <div className="w-16 h-16 rounded-2xl bg-surface border-2 border-success/25 text-success flex items-center justify-center mb-6 shadow-soft relative z-10">
               <CreditCard className="w-8 h-8" />
             </div>
             <span className="text-xs font-bold uppercase tracking-wider text-success mb-2">Langkah 2</span>
@@ -43,7 +43,7 @@ export function HowItWorks() {
 
           {/* Step 3 */}
           <div className="flex flex-col items-center text-center relative z-10">
-            <div className="w-16 h-16 rounded-2xl bg-warning/10 text-warning flex items-center justify-center mb-6 shadow-sm">
+            <div className="w-16 h-16 rounded-2xl bg-surface border-2 border-warning/25 text-warning flex items-center justify-center mb-6 shadow-soft relative z-10">
               <ClipboardCheck className="w-8 h-8" />
             </div>
             <span className="text-xs font-bold uppercase tracking-wider text-warning mb-2">Langkah 3</span>

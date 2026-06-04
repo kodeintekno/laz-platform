@@ -14,7 +14,7 @@ export function Breadcrumbs() {
   const isHome = pathname === "/dashboard";
 
   return (
-    <nav aria-label="Breadcrumb" className="flex items-center text-sm py-1.5">
+    <nav aria-label="Breadcrumb" className="flex items-center text-sm py-1.5 overflow-x-auto whitespace-nowrap scrollbar-none">
       <ol className="inline-flex items-center space-x-1 md:space-x-2">
         {/* Root Dashboard Segment */}
         <li className="inline-flex items-center">

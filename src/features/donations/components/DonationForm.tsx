@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { useFormContext } from "react-hook-form";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
+import { useSession } from "next-auth/react";
 
 import { Button, Card, CardContent, CardFooter, FormWrapper, FormField, FormInput } from "@/components/ui";
 import { toast } from "@/stores/toast.store";
@@ -24,9 +25,31 @@ export function DonationForm({ programId, programSlug }: { programId: string; pr
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const { status } = useSession();
 
   const onSubmit = (data: DonationInput) => {
     setError(null);
+
+    // Client-side guest fields validation
+    if (status !== "authenticated") {
+      if (!data.donorName || data.donorName.trim() === "") {
+        setError("Nama donatur wajib diisi");
+        toast.error("Nama donatur wajib diisi");
+        return;
+      }
+      if (!data.donorEmail || data.donorEmail.trim() === "") {
+        setError("Email donatur wajib diisi");
+        toast.error("Email donatur wajib diisi");
+        return;
+      }
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(data.donorEmail)) {
+        setError("Format email tidak valid");
+        toast.error("Format email tidak valid");
+        return;
+      }
+    }
+
     startTransition(async () => {
       const formData = new FormData();
       Object.entries(data).forEach(([key, value]) => {
@@ -85,12 +108,15 @@ export function DonationForm({ programId, programSlug }: { programId: string; pr
           isAnonymous: false,
           message: "",
           paymentMethod: "BCA_VA",
+          donorName: "",
+          donorEmail: "",
+          donorPhone: "",
         }}
         error={error}
       >
         <Card>
           <CardContent className="space-y-8">
-            <DonationFormFields isPending={isPending} />
+            <DonationFormFields status={status} isPending={isPending} />
           </CardContent>
           
           <CardFooter className="flex flex-col">
@@ -113,7 +139,7 @@ export function DonationForm({ programId, programSlug }: { programId: string; pr
   );
 }
 
-function DonationFormFields({ isPending }: { isPending: boolean }) {
+function DonationFormFields({ status, isPending }: { status: string; isPending: boolean }) {
   const { setValue, watch } = useFormContext<DonationInput>();
   const selectedAmount = watch("amount");
 
@@ -181,6 +207,43 @@ function DonationFormFields({ isPending }: { isPending: boolean }) {
           </div>
         )}
       />
+
+      {/* Guest Details Section */}
+      {status !== "authenticated" && (
+        <>
+          <hr className="border-border" />
+          <div>
+            <h3 className="text-lg font-bold text-primary mb-4">Data Diri Donatur</h3>
+            <div className="space-y-4">
+              <FormField
+                name="donorName"
+                label="Nama Lengkap"
+                type="input"
+                placeholder="Masukkan nama lengkap Anda"
+                disabled={isPending}
+              />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <FormField
+                  name="donorEmail"
+                  label="Alamat Email"
+                  type="input"
+                  inputType="email"
+                  placeholder="nama@email.com"
+                  disabled={isPending}
+                />
+                <FormField
+                  name="donorPhone"
+                  label="No. Handphone (Opsional)"
+                  type="input"
+                  inputType="tel"
+                  placeholder="Contoh: 081234567890"
+                  disabled={isPending}
+                />
+              </div>
+            </div>
+          </div>
+        </>
+      )}
 
       <hr className="border-border" />
 

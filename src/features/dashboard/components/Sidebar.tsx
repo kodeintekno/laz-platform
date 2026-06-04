@@ -95,12 +95,11 @@ export function Sidebar({ initialItems, user }: { initialItems?: NavItem[], user
       />
 
       <aside
-        style={{ width: isSidebarCollapsed ? '4rem' : '16rem' }}
         className={`
           flex flex-col h-full text-primary
           bg-surface/95 backdrop-blur-sm rounded-r-2xl shadow-md
           transition-all duration-300 ease-in-out
-          ${isSidebarCollapsed ? "w-16" : "w-64"}
+          w-64 ${isSidebarCollapsed ? "lg:w-16" : "lg:w-64"}
           fixed inset-y-0 left-0 z-40
           ${isSidebarOpen ? "translate-x-0" : "-translate-x-full"}
           lg:relative lg:translate-x-0 lg:static
