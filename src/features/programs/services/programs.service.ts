@@ -70,17 +70,27 @@ export const programsService = {
   async updateProgram(id: string, data: ProgramInput, adminId: string) {
     const admin = await prisma.user.findUnique({
       where: { id: adminId },
-      select: { lazId: true },
+      select: { lazId: true, role: { select: { name: true } }, isPlatformAdmin: true },
     });
 
     if (!admin) {
       throw new Error("Admin tidak ditemukan");
     }
 
+    const isSuperAdmin = admin.role?.name === "SUPER_ADMIN" || admin.isPlatformAdmin;
+
     const oldProgram = await prisma.program.findUnique({
       where: { id },
-      select: { imageUrl: true },
+      select: { imageUrl: true, lazId: true },
     });
+
+    if (!oldProgram) {
+      throw new Error("Program tidak ditemukan");
+    }
+
+    if (!isSuperAdmin && oldProgram.lazId !== admin.lazId) {
+      throw new Error("Akses ditolak: Anda tidak memiliki wewenang untuk mengubah program lembaga lain.");
+    }
 
     const updatedProgram = await programsRepository.update(id, {
       title: data.title,
@@ -120,6 +130,30 @@ export const programsService = {
   },
 
   async deleteProgram(id: string, adminId: string) {
+    const admin = await prisma.user.findUnique({
+      where: { id: adminId },
+      select: { lazId: true, role: { select: { name: true } }, isPlatformAdmin: true },
+    });
+
+    if (!admin) {
+      throw new Error("Admin tidak ditemukan");
+    }
+
+    const isSuperAdmin = admin.role?.name === "SUPER_ADMIN" || admin.isPlatformAdmin;
+
+    const program = await prisma.program.findUnique({
+      where: { id },
+      select: { lazId: true },
+    });
+
+    if (!program) {
+      throw new Error("Program tidak ditemukan");
+    }
+
+    if (!isSuperAdmin && program.lazId !== admin.lazId) {
+      throw new Error("Akses ditolak: Anda tidak memiliki wewenang untuk menghapus program lembaga lain.");
+    }
+
     // Delete the program
     const deletedProgram = await programsRepository.delete(id);
 

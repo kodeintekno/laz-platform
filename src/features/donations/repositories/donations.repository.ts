@@ -104,6 +104,23 @@ export const donationsRepository = {
    */
   async markAsPaid(donationId: string) {
     return prisma.$transaction(async (tx) => {
+      // 0. Fetch existing donation status for idempotency check
+      const existing = await tx.donation.findUnique({
+        where: { id: donationId },
+        select: { status: true, programId: true, amount: true },
+      });
+
+      if (!existing) {
+        throw new Error("Donasi tidak ditemukan");
+      }
+
+      if (existing.status === "PAID") {
+        // Return existing record if already PAID to prevent double-funding
+        return tx.donation.findUniqueOrThrow({
+          where: { id: donationId },
+        });
+      }
+
       // 1. Update Donation & Payment
       const donation = await tx.donation.update({
         where: { id: donationId },

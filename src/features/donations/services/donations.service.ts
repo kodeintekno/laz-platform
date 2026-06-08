@@ -2,6 +2,7 @@ import { donationsRepository } from "@/features/donations/repositories/donations
 import type { DonationInput } from "@/features/donations/validations/donations.schema";
 import { auditService } from "@/features/audit/services/audit.service";
 import { AuditAction } from "@/features/audit/types/audit.types";
+import { prisma } from "@/lib/prisma";
 
 export const donationsService = {
   async getDashboardDonations(page: number, limit: number, search?: string, lazId?: string) {
@@ -29,6 +30,25 @@ export const donationsService = {
   },
 
   async createAdminDonation(data: import("../validations/donations.schema").AdminDonationInput, adminUserId: string) {
+    const admin = await prisma.user.findUnique({
+      where: { id: adminUserId },
+      select: { lazId: true, role: { select: { name: true } }, isPlatformAdmin: true },
+    });
+    if (!admin) throw new Error("Admin tidak ditemukan");
+
+    const isSuperAdmin = admin.role?.name === "SUPER_ADMIN" || admin.isPlatformAdmin;
+
+    // Fetch the target program
+    const program = await prisma.program.findUnique({
+      where: { id: data.programId },
+      select: { lazId: true },
+    });
+    if (!program) throw new Error("Program tidak ditemukan");
+
+    if (!isSuperAdmin && program.lazId !== admin.lazId) {
+      throw new Error("Akses ditolak: Anda tidak memiliki wewenang untuk mencatat donasi pada program lembaga lain.");
+    }
+
     const result = await donationsRepository.createAdminDonation(data);
 
     await auditService.log({
@@ -43,6 +63,36 @@ export const donationsService = {
   },
 
   async updateAdminDonation(id: string, data: import("../validations/donations.schema").AdminDonationInput, adminUserId: string) {
+    const admin = await prisma.user.findUnique({
+      where: { id: adminUserId },
+      select: { lazId: true, role: { select: { name: true } }, isPlatformAdmin: true },
+    });
+    if (!admin) throw new Error("Admin tidak ditemukan");
+
+    const isSuperAdmin = admin.role?.name === "SUPER_ADMIN" || admin.isPlatformAdmin;
+
+    // Fetch target donation to update
+    const donation = await prisma.donation.findUnique({
+      where: { id },
+      select: { lazId: true },
+    });
+    if (!donation) throw new Error("Donasi tidak ditemukan");
+
+    if (!isSuperAdmin && donation.lazId !== admin.lazId) {
+      throw new Error("Akses ditolak: Anda tidak memiliki wewenang untuk mengubah donasi lembaga lain.");
+    }
+
+    // Also fetch target program if changed
+    const program = await prisma.program.findUnique({
+      where: { id: data.programId },
+      select: { lazId: true },
+    });
+    if (!program) throw new Error("Program tidak ditemukan");
+
+    if (!isSuperAdmin && program.lazId !== admin.lazId) {
+      throw new Error("Akses ditolak: Anda tidak memiliki wewenang untuk memindahkan donasi ke program lembaga lain.");
+    }
+
     const result = await donationsRepository.updateAdminDonation(id, data);
 
     await auditService.log({
