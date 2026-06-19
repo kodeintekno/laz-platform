@@ -1,0 +1,36 @@
+{
+  "name": "laz-platform-frontend",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -p tsconfig.json --noEmit && vite build",
+    "preview": "vite preview",
+    "lint": "eslint src"
+  },
+  "dependencies": {
+    "@hookform/resolvers": "^5.4.0",
+    "@tanstack/react-query": "^5.100.11",
+    "@tanstack/react-query-devtools": "^5.100.11",
+    "laz-platform": "file:..",
+    "lucide-react": "^1.16.0",
+    "react": "19.2.4",
+    "react-dom": "19.2.4",
+    "react-hook-form": "^7.76.0",
+    "react-router-dom": "^7.9.0",
+    "recharts": "^3.8.1",
+    "use-debounce": "^10.1.1",
+    "zod": "^4.4.3",
+    "zustand": "^5.0.13"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.1.0",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "@vitejs/plugin-react": "^5.0.0",
+    "tailwindcss": "^4",
+    "typescript": "^5",
+    "vite": "^7.1.0"
+  }
+}

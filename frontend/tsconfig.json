@@ -1,0 +1,31 @@
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "useDefineForClassFields": true,
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": true,
+    "jsx": "react-jsx",
+    "strict": true,
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "baseUrl": ".",
+    "types": ["vite/client"],
+    "paths": {
+      "@/*": ["./src/*"],
+      "@shared/*": ["../shared/*"],
+      "zod": ["./node_modules/zod"],
+      "next/link": ["./src/compat/link.tsx"],
+      "next/image": ["./src/compat/image.tsx"],
+      "next/navigation": ["./src/compat/navigation.ts"],
+      "next-auth/react": ["./src/compat/auth.ts"],
+      "@prisma/client": ["./src/compat/prisma.ts"]
+    }
+  },
+  "include": ["src", "../shared"]
+}

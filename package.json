@@ -3,56 +3,13 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "postinstall": "prisma generate",
-    "dev": "next dev",
-    "build": "prisma generate && next build",
-    "start": "next start",
-    "lint": "eslint",
-    "db:seed": "prisma db seed",
-    "prisma:deploy": "prisma migrate deploy",
-    "prisma:push": "prisma db push"
-  },
-  "dependencies": {
-    "@auth/prisma-adapter": "^2.11.2",
-    "@hookform/resolvers": "^5.4.0",
-    "@prisma/adapter-pg": "^7.8.0",
-    "@prisma/client": "^7.8.0",
-    "@tanstack/react-query": "^5.100.11",
-    "@tanstack/react-query-devtools": "^5.100.11",
-    "@types/pg": "^8.20.0",
-    "bcryptjs": "^3.0.3",
-    "cloudinary": "^2.10.0",
-    "lucide-react": "^1.16.0",
-    "next": "16.2.6",
-    "next-auth": "^5.0.0-beta.31",
-    "next-cloudinary": "^6.17.5",
-    "pg": "^8.21.0",
-    "pino": "^10.3.1",
-    "pino-pretty": "^13.1.3",
-    "react": "19.2.4",
-    "react-dom": "19.2.4",
-    "react-hook-form": "^7.76.0",
-    "recharts": "^3.8.1",
-    "use-debounce": "^10.1.1",
-    "zod": "^4.4.3",
-    "zustand": "^5.0.13"
+    "dev": "concurrently -n be,fe -c bgBlue.bold,bgGreen.bold \"npm --prefix backend run start:dev\" \"npm --prefix frontend run dev\"",
+    "build": "npm --prefix backend run build && npm --prefix frontend run build",
+    "db:seed": "npm --prefix backend run db:seed",
+    "db:migrate": "npm --prefix backend run db:migrate",
+    "db:push": "npm --prefix backend run db:push"
   },
   "devDependencies": {
-    "@tailwindcss/postcss": "^4",
-    "@types/bcryptjs": "^2.4.6",
-    "@types/node": "^20",
-    "@types/pino": "^7.0.4",
-    "@types/react": "^19",
-    "@types/react-dom": "^19",
-    "dotenv": "^17.4.2",
-    "eslint": "^9",
-    "eslint-config-next": "16.2.6",
-    "prisma": "^7.8.0",
-    "tailwindcss": "^4",
-    "tsx": "^4.22.3",
-    "typescript": "^5"
-  },
-  "prisma": {
-    "seed": "tsx prisma/seed.ts"
+    "concurrently": "^9.2.1"
   }
 }
