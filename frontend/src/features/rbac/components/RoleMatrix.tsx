@@ -10,14 +10,14 @@ import type { Role, Permission } from "@prisma/client";
 interface RoleMatrixProps {
   roles: Role[];
   permissions: Permission[];
-  initialActiveMappings: Set<string>;
+  initialActiveMappings: string[];
 }
 
 type PermissionWithModuleName = Permission & { moduleName: string };
 
 export function RoleMatrix({ roles, permissions, initialActiveMappings }: RoleMatrixProps) {
   const [isPending, startTransition] = useTransition();
-  const [activeMappings, setActiveMappings] = useState<Set<string>>(initialActiveMappings);
+  const [activeMappings, setActiveMappings] = useState<Set<string>>(() => new Set(initialActiveMappings));
   const [savingRoleId, setSavingRoleId] = useState<string | null>(null);
 
   // Filter out SUPER_ADMIN from editable roles
