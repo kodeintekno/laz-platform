@@ -19,7 +19,7 @@ export default function Hero({ onAction }: { onAction: () => void }) {
       <div className="absolute bottom-0 left-0 -ml-20 -mb-20 w-[500px] h-[500px] bg-emerald-100/50 rounded-full blur-[100px] opacity-40" />
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full bg-[radial-gradient(#10b981_1px,transparent_1px)] [background-size:40px_40px] [mask-image:radial-gradient(ellipse_50%_50%_at_50%_50%,#000_70%,transparent_100%)] opacity-[0.05]" />
       
-      <div className="relative px-6 pt-4 pb-12 md:px-20 md:pt-8 md:pb-32 grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-24 items-center">
+      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4 pb-12 md:pt-8 md:pb-32 grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-24 items-center">
         <div className="space-y-8 md:space-y-12">
           <motion.div 
             initial={{ opacity: 0, x: -20 }}
@@ -89,7 +89,7 @@ export default function Hero({ onAction }: { onAction: () => void }) {
           </motion.div>
         </div>
 
-        <div className="relative lg:scale-110">
+        <div className="relative lg:scale-100 xl:scale-105">
           <div className="absolute -inset-10 bg-emerald-600/5 rounded-[5rem] rotate-6 blur-3xl" />
           <div className="relative grid grid-cols-2 gap-6">
             <div className="space-y-6 pt-20">

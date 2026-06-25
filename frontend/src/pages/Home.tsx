@@ -74,7 +74,7 @@ export function HomePage() {
         campaignSection?.scrollIntoView({ behavior: 'smooth' });
       }} />
 
-      <div className="-mt-16 relative z-10">
+      <div className="-mt-16 relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <ImpactSummary />
       </div>
 
@@ -92,7 +92,7 @@ export function HomePage() {
         </div>
       </div>
 
-      <div>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <HowItWorks />
       </div>
 
@@ -166,12 +166,12 @@ export function HomePage() {
         )}
       </div>
 
-      <div>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <FeatureGrid />
       </div>
 
       {/* Public Reports / Transparency CTA */}
-      <div className="py-24 bg-emerald-950 rounded-[3rem] md:rounded-[4rem] text-center relative overflow-hidden mx-4 sm:mx-6 lg:mx-8 px-6 md:px-12">
+      <div className="py-24 bg-emerald-950 rounded-[3rem] md:rounded-[4rem] text-center relative overflow-hidden max-w-7xl mx-4 xl:mx-auto px-6 md:px-12">
         <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-emerald-900/20 to-transparent pointer-events-none" />
         <div className="max-w-3xl mx-auto space-y-8 relative z-10">
           <div className="space-y-4">
@@ -206,7 +206,8 @@ export function HomePage() {
       </div>
 
       <div className="pt-24 border-t border-gray-100 bg-gradient-to-b from-transparent to-emerald-50/30 pb-24 px-4 sm:px-6 lg:px-8">
-        <div className="mb-20 text-center space-y-6">
+        <div className="max-w-7xl mx-auto">
+          <div className="mb-20 text-center space-y-6">
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             whileInView={{ opacity: 1, scale: 1 }}
@@ -225,16 +226,19 @@ export function HomePage() {
           </p>
         </div>
         <Transparency />
-        <div className="mt-20">
-          <ImpactGallery />
+          <div className="mt-20">
+            <ImpactGallery />
+          </div>
         </div>
       </div>
 
       <div className="py-24 bg-white/50 px-4 sm:px-6 lg:px-8">
-        <FAQ />
+        <div className="max-w-7xl mx-auto">
+          <FAQ />
+        </div>
       </div>
 
-      <div className="py-24">
+      <div className="py-24 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <Testimonials />
       </div>
 

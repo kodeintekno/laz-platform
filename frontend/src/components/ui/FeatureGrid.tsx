@@ -76,7 +76,7 @@ export default function FeatureGrid() {
             alt="Quality" 
             className="w-full h-full object-cover rounded-[3.5rem] shadow-2xl shadow-emerald-900/10 grayscale-[0.2] hover:grayscale-0 transition-all duration-700"
           />
-          <div className="absolute -bottom-8 -right-8 p-8 bg-emerald-950 rounded-[2.5rem] text-white shadow-2xl hidden lg:block max-w-[280px]">
+          <div className="absolute bottom-4 -right-4 md:right-4 p-8 bg-emerald-950 rounded-[2.5rem] text-white shadow-2xl hidden lg:block max-w-[280px]">
             <p className="text-3xl font-black italic mb-2">99%</p>
             <p className="text-xs font-bold text-emerald-400 uppercase tracking-widest leading-relaxed">Tingkat Kepercayaan Donatur Kami di Seluruh Indonesia</p>
           </div>
