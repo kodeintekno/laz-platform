@@ -1,59 +1,67 @@
-import { Search, CreditCard, ClipboardCheck } from "lucide-react";
+import React from 'react';
+import { motion } from 'motion/react';
+import { MousePointer2, CreditCard, HeartHandshake, CheckCircle2 } from 'lucide-react';
 
-export function HowItWorks() {
+const steps = [
+  {
+    icon: MousePointer2,
+    title: 'Pilih Program',
+    desc: 'Temukan berbagai inisiatif kebaikan yang ingin Anda dukung.',
+    color: 'emerald'
+  },
+  {
+    icon: CreditCard,
+    title: 'Donasi Mudah',
+    desc: 'Lakukan pembayaran melalui berbagai metode yang tersedia.',
+    color: 'blue'
+  },
+  {
+    icon: HeartHandshake,
+    title: 'Dana Disalurkan',
+    desc: 'Kami menyalurkan titipan Anda langsung ke penerima manfaat.',
+    color: 'orange'
+  },
+  {
+    icon: CheckCircle2,
+    title: 'Laporan Real-time',
+    desc: 'Pantau status dan bukti penyaluran secara transparan.',
+    color: 'emerald'
+  }
+];
+
+export default function HowItWorks() {
   return (
-    <section id="how-it-works" className="bg-surface py-20 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-7xl mx-auto">
-        <div className="text-center max-w-2xl mx-auto mb-16">
-          <h2 className="text-3xl font-bold tracking-tight text-brand-primary sm:text-4xl">
-            Cara Mudah Berbagi Kebaikan
-          </h2>
-          <p className="mt-4 text-lg text-secondary">
-            Salurkan donasi Anda hanya dalam beberapa menit dan pantau langsung dampaknya.
-          </p>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-12 relative">
-          {/* Connector Line (Desktop Only) - Aligned to center of 64px icons (32px / top-8) */}
-          <div className="hidden md:block absolute top-8 left-[16%] right-[16%] h-0.5 border-t border-dashed border-border/80 -z-0" />
-
-          {/* Step 1 */}
-          <div className="flex flex-col items-center text-center relative z-10">
-            <div className="w-16 h-16 rounded-2xl bg-surface border-2 border-brand-primary/25 text-brand-primary flex items-center justify-center mb-6 shadow-soft relative z-10">
-              <Search className="w-8 h-8" />
-            </div>
-            <span className="text-xs font-bold uppercase tracking-wider text-brand-primary mb-2">Langkah 1</span>
-            <h3 className="text-lg font-bold text-primary mb-2">Pilih Program</h3>
-            <p className="text-sm text-secondary leading-relaxed max-w-xs">
-              Temukan kampanye kemanusiaan, zakat, atau sedekah yang sesuai dengan niat baik Anda.
-            </p>
-          </div>
-
-          {/* Step 2 */}
-          <div className="flex flex-col items-center text-center relative z-10">
-            <div className="w-16 h-16 rounded-2xl bg-surface border-2 border-success/25 text-success flex items-center justify-center mb-6 shadow-soft relative z-10">
-              <CreditCard className="w-8 h-8" />
-            </div>
-            <span className="text-xs font-bold uppercase tracking-wider text-success mb-2">Langkah 2</span>
-            <h3 className="text-lg font-bold text-primary mb-2">Transfer Donasi</h3>
-            <p className="text-sm text-secondary leading-relaxed max-w-xs">
-              Selesaikan pembayaran donasi dengan cepat menggunakan metode pembayaran Virtual Account atau QRIS.
-            </p>
-          </div>
-
-          {/* Step 3 */}
-          <div className="flex flex-col items-center text-center relative z-10">
-            <div className="w-16 h-16 rounded-2xl bg-surface border-2 border-warning/25 text-warning flex items-center justify-center mb-6 shadow-soft relative z-10">
-              <ClipboardCheck className="w-8 h-8" />
-            </div>
-            <span className="text-xs font-bold uppercase tracking-wider text-warning mb-2">Langkah 3</span>
-            <h3 className="text-lg font-bold text-primary mb-2">Pantau Laporan</h3>
-            <p className="text-sm text-secondary leading-relaxed max-w-xs">
-              Terima perkembangan penyaluran dana langsung secara transparan melalui kabar terbaru program.
-            </p>
-          </div>
-        </div>
+    <div className="py-20 md:py-24">
+      <div className="text-center space-y-4 mb-20 text-balance">
+        <h2 className="text-4xl md:text-5xl font-black text-gray-900 tracking-tighter">
+          Langkah Mudah <span className="text-emerald-600">Berbagi</span>
+        </h2>
+        <p className="text-lg text-gray-500 max-w-xl mx-auto font-medium leading-relaxed">
+          Sistem kami dirancang untuk memastikan setiap langkah kebaikan Anda tercatat dan tersalurkan dengan tepat.
+        </p>
       </div>
-    </section>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+        {steps.map((step, i) => (
+          <motion.div 
+            key={i}
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ delay: i * 0.1 }}
+            className="group relative p-8 bg-white rounded-[2.5rem] border border-gray-100 shadow-sm hover:shadow-xl hover:shadow-emerald-900/5 transition-all hover:-translate-y-1"
+          >
+            <div className="absolute top-6 right-8 text-4xl font-black text-gray-50 opacity-0 group-hover:opacity-100 transition-opacity">
+              0{i + 1}
+            </div>
+            <div className={`w-14 h-14 rounded-2xl bg-${step.color}-50 text-${step.color}-600 flex items-center justify-center mb-6`}>
+              <step.icon className="w-6 h-6" />
+            </div>
+            <h3 className="text-lg font-black text-gray-900 mb-2">{step.title}</h3>
+            <p className="text-sm text-gray-500 leading-relaxed font-medium">{step.desc}</p>
+          </motion.div>
+        ))}
+      </div>
+    </div>
   );
 }

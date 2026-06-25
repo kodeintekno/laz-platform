@@ -6,7 +6,7 @@ import { useAuth } from "@/auth/AuthProvider";
 export function PublicLayout() {
   const { user } = useAuth();
   return (
-    <div className="bg-surface min-h-screen flex flex-col justify-between">
+    <div className="min-h-screen flex flex-col justify-between">
       <div>
         <PublicHeader user={user ?? undefined} />
         <Outlet />

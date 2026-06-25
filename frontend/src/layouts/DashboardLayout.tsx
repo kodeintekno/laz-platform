@@ -9,7 +9,7 @@ export function DashboardLayout() {
 
   return (
     <BreadcrumbProvider>
-      <div className="flex h-screen overflow-hidden bg-surface-muted">
+      <div className="flex h-screen overflow-hidden bg-transparent">
         <Sidebar user={user} />
         <div className="flex flex-col flex-1 overflow-hidden">
           <Header user={user ?? undefined} />

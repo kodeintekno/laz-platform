@@ -21,3 +21,4 @@ export { PERMISSIONS } from "@shared/constants/permissions";
 
 // API envelope
 export type { ApiResponse, ApiSuccess, ApiErrorBody, PaginationMeta } from "@shared/types/api";
+export * from './redesign';

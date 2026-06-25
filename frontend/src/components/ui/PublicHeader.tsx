@@ -1,10 +1,19 @@
-"use client";
-
-import Link from "next/link";
-import Image from "next/image";
-import { signOut } from "next-auth/react";
+import { Link, useLocation } from "react-router-dom";
 import { useState } from "react";
-import { Menu, X, LogOut, LayoutDashboard } from "lucide-react";
+import { 
+  ShieldCheck, 
+  Calculator, 
+  LayoutDashboard, 
+  LogOut, 
+  Menu, 
+  X,
+  User as UserIcon,
+  Smartphone
+} from "lucide-react";
+import Logo from "./Logo";
+import { cn } from "@/lib/utils";
+import { useAuth } from "@/auth/AuthProvider";
+import { AnimatePresence, motion } from "motion/react";
 
 interface PublicHeaderProps {
   user?: {
@@ -16,158 +25,188 @@ interface PublicHeaderProps {
 }
 
 export function PublicHeader({ user }: PublicHeaderProps) {
-  const [isOpen, setIsOpen] = useState(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const location = useLocation();
+  const currentPath = location.pathname;
+  const { logout } = useAuth();
 
   const handleLogout = () => {
-    signOut({ callbackUrl: "/" });
+    logout();
   };
 
   return (
-    <header className="bg-surface/85 backdrop-blur-md sticky top-0 z-50 shadow-soft border-b border-border/40">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="flex h-16 items-center justify-between">
-          {/* Logo */}
-          <Link href="/" className="flex items-center gap-2">
-            <Image src="/icon.png" alt="LAZ Platform Logo" width={28} height={28} className="w-7 h-7 object-contain" />
-            <span className="text-xl font-bold text-primary">LAZ Platform</span>
-          </Link>
-
-          {/* Desktop Nav */}
-          <nav className="hidden md:flex items-center gap-8">
-            <Link href="/programs" className="text-sm font-semibold text-secondary hover:text-primary transition-colors">
-              Semua Program
-            </Link>
-            <Link href="/#how-it-works" className="text-sm font-semibold text-secondary hover:text-primary transition-colors">
-              Cara Donasi
-            </Link>
-            <Link href="/#about" className="text-sm font-semibold text-secondary hover:text-primary transition-colors">
-              Tentang Kami
-            </Link>
-          </nav>
-
-          {/* Desktop Actions */}
-          <div className="hidden md:flex items-center gap-4">
-            {user ? (
-              <div className="flex items-center gap-4">
-                <Link
-                  href="/dashboard"
-                  className="inline-flex items-center gap-1.5 bg-brand-primary text-white text-sm font-bold py-2.5 px-5 rounded-xl hover:bg-brand-secondary transition-all shadow-soft"
-                >
-                  <LayoutDashboard className="w-4 h-4" />
-                  <span>Ke Dashboard</span>
-                </Link>
-                <button
-                  onClick={handleLogout}
-                  className="inline-flex items-center gap-1.5 border border-border text-secondary hover:text-error-token hover:border-error-token/35 text-sm font-semibold py-2.5 px-4 rounded-xl transition-all cursor-pointer"
-                >
-                  <LogOut className="w-4 h-4" />
-                  <span>Keluar</span>
-                </button>
-              </div>
-            ) : (
-              <div className="flex items-center gap-3">
-                <Link
-                  href="/login"
-                  className="text-sm font-bold text-secondary hover:text-primary transition-colors px-4 py-2"
-                >
-                  Masuk
-                </Link>
-                <Link
-                  href="/register"
-                  className="bg-success hover:bg-success-hover text-white text-sm font-bold py-2.5 px-6 rounded-xl transition-all shadow-soft"
-                >
-                  Daftar
-                </Link>
-              </div>
-            )}
-          </div>
-
-          {/* Mobile Menu Button */}
-          <div className="flex md:hidden">
-            <button
-              onClick={() => setIsOpen(!isOpen)}
-              className="p-2 rounded-xl text-secondary hover:bg-surface-muted transition-colors cursor-pointer"
-              aria-label="Toggle menu"
-            >
-              {isOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-            </button>
-          </div>
-        </div>
+    <>
+      <div className="bg-emerald-900 text-emerald-100 py-2 px-4 text-center text-xs font-bold tracking-widest uppercase flex items-center justify-center gap-2">
+        <Smartphone className="w-4 h-4" />
+        Download Aplikasi Ruang Berbagi
       </div>
-
-      {/* Mobile Nav Menu */}
-      {isOpen && (
-        <div className="md:hidden border-t border-border/40 bg-surface px-4 py-4 space-y-4 shadow-lg animate-in fade-in slide-in-from-top-2 duration-200">
-          <nav className="flex flex-col gap-4">
-            <Link
-              href="/programs"
-              onClick={() => setIsOpen(false)}
-              className="text-sm font-semibold text-secondary hover:text-primary transition-colors py-1.5"
-            >
-              Semua Program
+      
+      <nav className="sticky top-0 z-50 bg-white/80 backdrop-blur-xl border-b border-gray-100 shadow-sm shadow-gray-200/20">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-16 md:h-20">
+            <Link to="/" className="flex items-center gap-3 cursor-pointer">
+              <Logo size="sm" />
             </Link>
-            <Link
-              href="/#how-it-works"
-              onClick={() => setIsOpen(false)}
-              className="text-sm font-semibold text-secondary hover:text-primary transition-colors py-1.5"
-            >
-              Cara Donasi
-            </Link>
-            <Link
-              href="/#about"
-              onClick={() => setIsOpen(false)}
-              className="text-sm font-semibold text-secondary hover:text-primary transition-colors py-1.5"
-            >
-              Tentang Kami
-            </Link>
-          </nav>
 
-          <hr className="border-border/40" />
-
-          {/* Mobile Actions */}
-          <div className="flex flex-col gap-3">
-            {user ? (
-              <>
-                <Link
-                  href="/dashboard"
-                  onClick={() => setIsOpen(false)}
-                  className="flex items-center justify-center gap-1.5 bg-brand-primary text-white text-sm font-bold py-3 px-5 rounded-xl hover:bg-brand-secondary transition-all"
+            {/* Desktop Navigation */}
+            <div className="hidden md:flex items-center gap-6">
+              <Link 
+                to="/"
+                className={cn(
+                  "text-sm font-medium transition-colors hover:text-emerald-600",
+                  currentPath === '/' ? "text-emerald-600" : "text-gray-500"
+                )}
+              >
+                Beranda
+              </Link>
+              <Link 
+                to="/#about"
+                className={cn(
+                  "text-sm font-medium transition-colors hover:text-emerald-600",
+                  currentPath === '/about' ? "text-emerald-600" : "text-gray-500"
+                )}
+              >
+                Tentang
+              </Link>
+              
+              <div className="h-6 border-l border-gray-200 mx-1" />
+              
+              <Link 
+                to="/reports"
+                className={cn(
+                  "text-sm font-medium transition-colors hover:text-emerald-600 flex items-center gap-2",
+                  currentPath === '/reports' ? "text-emerald-600" : "text-gray-500"
+                )}
+              >
+                <ShieldCheck className="w-4 h-4" />
+                Transparansi
+              </Link>
+              <Link 
+                to="/calculator"
+                className={cn(
+                  "text-sm font-medium transition-colors hover:text-emerald-600 flex items-center gap-2",
+                  currentPath === '/calculator' ? "text-emerald-600" : "text-gray-500"
+                )}
+              >
+                <Calculator className="w-4 h-4" />
+                Kalkulator
+              </Link>
+              {user && (
+                <Link 
+                  to="/dashboard"
+                  className={cn(
+                    "text-sm font-medium transition-colors hover:text-emerald-600 flex items-center gap-2",
+                    currentPath.startsWith('/dashboard') ? "text-emerald-600" : "text-gray-500"
+                  )}
                 >
                   <LayoutDashboard className="w-4 h-4" />
-                  <span>Ke Dashboard</span>
+                  Dashboard
                 </Link>
-                <button
-                  onClick={() => {
-                    setIsOpen(false);
-                    handleLogout();
-                  }}
-                  className="flex items-center justify-center gap-1.5 border border-border text-secondary hover:text-error-token hover:border-error-token/35 text-sm font-semibold py-3 px-4 rounded-xl transition-all cursor-pointer"
+              )}
+              
+              {user ? (
+                <div className="flex items-center gap-4 pl-4 border-l border-gray-200">
+                  <div className="flex flex-col items-end">
+                    <span className="text-xs font-bold text-gray-900">{user.name || 'Hamba Allah'}</span>
+                    <span className="text-[10px] text-gray-500 uppercase tracking-tighter">{user.roleName || 'User'}</span>
+                  </div>
+                  <Link to="/settings" className="relative group">
+                    {user.avatarUrl ? (
+                      <img 
+                        src={user.avatarUrl} 
+                        alt={user.name || 'User'} 
+                        className="w-10 h-10 rounded-full border-2 border-emerald-100 group-hover:border-emerald-600 transition-all object-cover" 
+                        referrerPolicy="no-referrer"
+                      />
+                    ) : (
+                      <div className="w-10 h-10 rounded-full border-2 border-emerald-100 bg-emerald-50 flex items-center justify-center text-emerald-600 group-hover:border-emerald-600 transition-all">
+                        <UserIcon className="w-5 h-5" />
+                      </div>
+                    )}
+                    <div className="absolute inset-0 rounded-full bg-black/10 opacity-0 group-hover:opacity-100 transition-opacity" />
+                  </Link>
+                  <button onClick={handleLogout} className="p-2 text-gray-400 hover:text-red-500 transition-colors">
+                    <LogOut className="w-5 h-5" />
+                  </button>
+                </div>
+              ) : (
+                <Link 
+                  to="/login"
+                  className="bg-emerald-600 text-white px-6 py-2.5 rounded-full text-sm font-semibold hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-200 hover:-translate-y-0.5 hover:shadow-emerald-300 duration-200"
                 >
-                  <LogOut className="w-4 h-4" />
-                  <span>Keluar</span>
-                </button>
-              </>
-            ) : (
-              <>
-                <Link
-                  href="/login"
-                  onClick={() => setIsOpen(false)}
-                  className="flex justify-center text-sm font-bold text-secondary hover:text-primary py-3 border border-border rounded-xl transition"
-                >
-                  Masuk
+                  Mulai Berbagi
                 </Link>
-                <Link
-                  href="/register"
-                  onClick={() => setIsOpen(false)}
-                  className="flex justify-center bg-success hover:bg-success-hover text-white text-sm font-bold py-3 rounded-xl transition shadow-soft"
+              )}
+            </div>
+
+            {/* Mobile Menu Button */}
+            <div className="md:hidden flex items-center gap-4">
+              {!user && (
+                <Link 
+                  to="/login"
+                  className="bg-emerald-600 text-white px-4 py-2 rounded-xl text-xs font-bold hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-200"
                 >
-                  Daftar
+                  Mulai
                 </Link>
-              </>
-            )}
+              )}
+              {user && (
+                <Link to="/settings" className="w-8 h-8 rounded-full border border-emerald-100 overflow-hidden">
+                  {user.avatarUrl ? (
+                    <img src={user.avatarUrl} alt={user.name || 'User'} className="w-full h-full object-cover" />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center bg-emerald-50 text-emerald-600">
+                      <UserIcon className="w-4 h-4" />
+                    </div>
+                  )}
+                </Link>
+              )}
+              <button 
+                onClick={() => setIsMenuOpen(!isMenuOpen)} 
+                className="p-2 text-gray-500 bg-gray-50 rounded-xl border border-gray-100"
+              >
+                {isMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+              </button>
+            </div>
           </div>
         </div>
-      )}
-    </header>
+
+        {/* Mobile Navigation */}
+        <AnimatePresence>
+          {isMenuOpen && (
+            <motion.div 
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              className="md:hidden bg-white/95 backdrop-blur-xl border-b border-gray-100 overflow-hidden shadow-2xl absolute w-full left-0"
+            >
+              <div className="px-5 pt-4 pb-10 space-y-2">
+                <Link to="/" onClick={() => setIsMenuOpen(false)} className="flex items-center gap-4 w-full text-left px-4 py-4 text-sm font-bold text-gray-700 hover:bg-emerald-50 rounded-2xl transition-colors">
+                  Beranda
+                </Link>
+                <Link to="/#about" onClick={() => setIsMenuOpen(false)} className="flex items-center gap-4 w-full text-left px-4 py-4 text-sm font-bold text-gray-700 hover:bg-emerald-50 rounded-2xl transition-colors">
+                  Tentang Kami
+                </Link>
+                <Link to="/reports" onClick={() => setIsMenuOpen(false)} className="flex items-center gap-4 w-full text-left px-4 py-4 text-sm font-bold text-gray-700 hover:bg-emerald-50 rounded-2xl transition-colors">
+                  Transparansi
+                </Link>
+                <Link to="/calculator" onClick={() => setIsMenuOpen(false)} className="flex items-center gap-4 w-full text-left px-4 py-4 text-sm font-bold text-gray-700 hover:bg-emerald-50 rounded-2xl transition-colors">
+                  Kalkulator Zakat
+                </Link>
+                {user && (
+                  <Link to="/dashboard" onClick={() => setIsMenuOpen(false)} className="flex items-center gap-4 w-full text-left px-4 py-4 text-sm font-bold text-gray-700 hover:bg-emerald-50 rounded-2xl transition-colors">
+                    Dashboard
+                  </Link>
+                )}
+                {user && (
+                  <button onClick={() => { setIsMenuOpen(false); handleLogout(); }} className="flex items-center gap-4 w-full text-left px-4 py-4 text-sm font-bold text-red-600 hover:bg-red-50 rounded-2xl transition-colors mt-4">
+                    Keluar
+                  </button>
+                )}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </nav>
+    </>
   );
 }

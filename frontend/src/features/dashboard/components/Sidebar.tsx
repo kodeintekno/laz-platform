@@ -109,10 +109,14 @@ export function Sidebar({ initialItems, user }: { initialItems?: NavItem[], user
         {/* Header with mobile hamburger */}
         <div className="flex items-center px-5 h-16 bg-surface/80 backdrop-blur-sm overflow-hidden flex-shrink-0">
           <div className="flex items-center w-full justify-start">
-            <img src="/icon.png" alt="LAZ Platform Logo" className="w-6 h-6 object-contain flex-shrink-0" />
-            <span className={`text-lg font-bold tracking-tight text-primary transition-all duration-300 ease-in-out truncate ${isSidebarCollapsed ? "opacity-0 max-w-0 ml-0 pointer-events-none" : "opacity-100 max-w-[180px] ml-3"}`}>
-              LAZ Platform
-            </span>
+            <Link href="/" className="flex items-center gap-2">
+              <div className="w-8 h-8 bg-emerald-600 rounded-xl flex items-center justify-center text-white shadow-lg flex-shrink-0">
+                <Heart className="w-4 h-4" />
+              </div>
+              <span className={`text-lg font-black tracking-tight text-emerald-950 transition-all duration-300 ease-in-out truncate ${isSidebarCollapsed ? "opacity-0 max-w-0 ml-0 pointer-events-none" : "opacity-100 max-w-[180px] ml-2"}`}>
+                Ruang<span className="text-emerald-500">Berbagi</span>
+              </span>
+            </Link>
           </div>
         </div>
 

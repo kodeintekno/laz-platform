@@ -32,6 +32,6 @@ export { ProgramCard } from "./ProgramCard";
 export { PublicHeader } from "./PublicHeader";
 export { default as HeroSection } from "./HeroSection";
 export { TrustIndicators } from "./TrustIndicators";
-export { HowItWorks } from "./HowItWorks";
+export { default as HowItWorks } from "./HowItWorks";
 export { ImpactStats } from "./ImpactStats";
 export { PublicFooter } from "./PublicFooter";
