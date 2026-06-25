@@ -60,7 +60,7 @@ export function PublicHeader({ user }: PublicHeaderProps) {
                 Beranda
               </Link>
               <Link 
-                to="/#about"
+                to="/about"
                 className={cn(
                   "text-sm font-medium transition-colors hover:text-emerald-600",
                   currentPath === '/about' ? "text-emerald-600" : "text-gray-500"
@@ -183,7 +183,7 @@ export function PublicHeader({ user }: PublicHeaderProps) {
                 <Link to="/" onClick={() => setIsMenuOpen(false)} className="flex items-center gap-4 w-full text-left px-4 py-4 text-sm font-bold text-gray-700 hover:bg-emerald-50 rounded-2xl transition-colors">
                   Beranda
                 </Link>
-                <Link to="/#about" onClick={() => setIsMenuOpen(false)} className="flex items-center gap-4 w-full text-left px-4 py-4 text-sm font-bold text-gray-700 hover:bg-emerald-50 rounded-2xl transition-colors">
+                <Link to="/about" onClick={() => setIsMenuOpen(false)} className="flex items-center gap-4 w-full text-left px-4 py-4 text-sm font-bold text-gray-700 hover:bg-emerald-50 rounded-2xl transition-colors">
                   Tentang Kami
                 </Link>
                 <Link to="/reports" onClick={() => setIsMenuOpen(false)} className="flex items-center gap-4 w-full text-left px-4 py-4 text-sm font-bold text-gray-700 hover:bg-emerald-50 rounded-2xl transition-colors">

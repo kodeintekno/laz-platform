@@ -11,6 +11,9 @@ import { HomePage } from "@/pages/Home";
 import { ProgramsPage } from "@/pages/Programs";
 import { ProgramDetailPage } from "@/pages/ProgramDetail";
 import { DonatePage } from "@/pages/Donate";
+import { CalculatorPage } from "@/pages/CalculatorPage";
+import { PublicReportsPage } from "@/pages/PublicReportsPage";
+import { AboutPage } from "@/pages/AboutPage";
 
 // Auth pages
 import { LoginPage } from "@/pages/auth/Login";
@@ -47,6 +50,9 @@ export const router = createBrowserRouter([
       { path: "/programs", element: <ProgramsPage /> },
       { path: "/programs/:slug", element: <ProgramDetailPage /> },
       { path: "/donate/:slug", element: <DonatePage /> },
+      { path: "/calculator", element: <CalculatorPage /> },
+      { path: "/reports", element: <PublicReportsPage /> },
+      { path: "/about", element: <AboutPage /> },
     ],
   },
   // Auth routes
