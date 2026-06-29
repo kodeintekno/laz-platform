@@ -72,7 +72,7 @@ export default function FeatureGrid() {
         <div className="relative aspect-square md:aspect-auto md:h-[600px]">
           <div className="absolute inset-0 bg-emerald-600 rounded-[3rem] -rotate-3 blur-3xl opacity-5" />
           <img 
-            src="https://images.unsplash.com/photo-1593113598332-901416e788ee?auto=format&fit=crop&q=80&w=1200" 
+            src="https://images.unsplash.com/photo-1532629345422-7515f3d16bb6?auto=format&fit=crop&q=80&w=1200" 
             alt="Quality" 
             className="w-full h-full object-cover rounded-[3.5rem] shadow-2xl shadow-emerald-900/10 grayscale-[0.2] hover:grayscale-0 transition-all duration-700"
           />

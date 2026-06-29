@@ -7,7 +7,7 @@ export default function Hero({ onAction }: { onAction: () => void }) {
       {/* Background Documentation Image */}
       <div className="absolute inset-0 z-0">
         <img 
-          src="https://images.unsplash.com/photo-1593113598332-901416e788ee?auto=format&fit=crop&q=80&w=2000" 
+          src="https://images.unsplash.com/photo-1509099836639-18ba1795216d?auto=format&fit=crop&q=80&w=2000" 
           className="w-full h-full object-cover opacity-[0.03] grayscale brightness-50"
           alt="Documentation Background"
         />
@@ -137,7 +137,7 @@ export default function Hero({ onAction }: { onAction: () => void }) {
                 transition={{ delay: 0.7 }}
                 className="aspect-[4/5] bg-gray-100 rounded-[3rem] overflow-hidden border-8 border-white shadow-2xl shadow-emerald-900/10"
               >
-                <img src="https://images.unsplash.com/photo-1532629345422-7515f3d16bb8?auto=format&fit=crop&q=80&w=800" className="w-full h-full object-cover" alt="Community" />
+                <img src="https://images.unsplash.com/photo-1532629345422-7515f3d16bb6?auto=format&fit=crop&q=80&w=800" className="w-full h-full object-cover" alt="Community" />
               </motion.div>
             </div>
           </div>

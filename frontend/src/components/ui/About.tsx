@@ -42,7 +42,7 @@ export default function About() {
         </div>
         <div className="relative aspect-square bg-emerald-100 md:rounded-[4rem] rounded-[2.5rem] overflow-hidden">
           <img 
-            src="https://images.unsplash.com/photo-1593113598332-901416e788ee?auto=format&fit=crop&q=80&w=1200" 
+            src="https://images.unsplash.com/photo-1532629345422-7515f3d16bb6?auto=format&fit=crop&q=80&w=1200" 
             alt="Humanity" 
             className="w-full h-full object-cover mix-blend-multiply opacity-80"
           />
@@ -134,7 +134,7 @@ export default function About() {
           <div className="grid grid-cols-3 gap-6 pt-4">
             {[
               { name: 'Dr. Ahmad Fauzi', pos: 'Dewan Syariah', img: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&q=80&w=300' },
-              { name: 'Siti Aminah', pos: 'Operasional', img: 'https://images.unsplash.com/photo-1598550874175-4d0fe4a2c90b?auto=format&fit=crop&q=80&w=300' },
+              { name: 'Siti Aminah', pos: 'Operasional', img: 'https://images.unsplash.com/photo-1589156229687-496a31ad1d1f?auto=format&fit=crop&q=80&w=300' },
               { name: 'Budi Santoso', pos: 'Teknologi', img: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=300' }
             ].map((member, i) => (
               <div key={i} className="space-y-3 text-center group">
