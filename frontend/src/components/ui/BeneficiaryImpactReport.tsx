@@ -70,7 +70,7 @@ const stories: ImpactStory[] = [
     beneficiaryName: 'Pak Joko',
     beneficiaryRole: 'Pedagang Bakso Keliling',
     story: 'Gerobak lama saya sudah rapuh dan modal habis untuk kebutuhan sehari-hari. Berkat bantuan ini, gerobak saya sekarang kokoh, bersih, dan dagangan semakin ramai berkah pinjaman modal tanpa bunga ini.',
-    img: 'https://images.unsplash.com/photo-1583258292688-d0213df4a3a8?auto=format&fit=crop&q=80&w=300',
+    img: 'https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?auto=format&fit=crop&q=80&w=300',
     distributedAmount: 52500000,
     date: 'Maret 2026'
   },
@@ -84,7 +84,7 @@ const stories: ImpactStory[] = [
     beneficiaryName: 'Ibu Aminah',
     beneficiaryRole: 'Ibu Rumah Tangga & Buruh Cuci',
     story: 'Klinik apung ini datang memberi resep obat, asupan vitamin tambahan untuk anak kami, dan dokter memeriksa tekanan darah saya secara ramah tanpa memungut biaya sepeser pun. Sangat menolong rakyat kecil.',
-    img: 'https://images.unsplash.com/photo-1579684389782-64d84b5e901a?auto=format&fit=crop&q=80&w=300',
+    img: 'https://images.unsplash.com/photo-1509099836639-18ba1795216d?auto=format&fit=crop&q=80&w=300',
     distributedAmount: 64000000,
     date: 'Mei 2026'
   }

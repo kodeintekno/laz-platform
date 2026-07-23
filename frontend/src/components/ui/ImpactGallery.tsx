@@ -9,7 +9,7 @@ export default function ImpactGallery() {
       category: "KEMANUSIAAN"
     },
     {
-      url: "https://images.unsplash.com/photo-1542601906990-b4d3fb773b09?auto=format&fit=crop&q=80&w=800",
+      url: "https://images.unsplash.com/photo-1541976844346-f18aeac57b06?auto=format&fit=crop&q=80&w=800",
       caption: "Pembangunan Sumur Wakaf",
       category: "WAKAF"
     },
@@ -19,7 +19,7 @@ export default function ImpactGallery() {
       category: "PENDIDIKAN"
     },
     {
-      url: "https://images.unsplash.com/photo-1593113598332-901416e788ee?auto=format&fit=crop&q=80&w=800",
+      url: "https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?auto=format&fit=crop&q=80&w=800",
       caption: "Layanan Kesehatan Keliling",
       category: "KESEHATAN"
     }
