@@ -10,16 +10,16 @@ export class DonationsRepository {
   /**
    * Fetch all donations for the admin dashboard.
    */
-  async findMany(page = 1, limit = 10, search?: string, lazId?: string) {
+  async findMany(page = 1, limit = 10, search?: string, lembagaId?: string) {
     const skip = (page - 1) * limit;
 
     const where: Prisma.DonationWhereInput = {
-      ...(lazId && { lazId }),
+      ...(lembagaId && { lembagaId }),
       ...(search && {
         OR: [
           { id: { contains: search, mode: "insensitive" } },
-          { user: { name: { contains: search, mode: "insensitive" } } },
-          { user: { email: { contains: search, mode: "insensitive" } } },
+          { donorName: { contains: search, mode: "insensitive" } },
+          { donorPhone: { contains: search, mode: "insensitive" } },
         ],
       }),
     };
@@ -31,7 +31,6 @@ export class DonationsRepository {
         take: limit,
         orderBy: { createdAt: "desc" },
         include: {
-          user: { select: { name: true, email: true } },
           program: { select: { title: true } },
           payment: true,
         },
@@ -51,13 +50,45 @@ export class DonationsRepository {
   }
 
   /**
+   * Riwayat donasi berdasarkan nomor telepon — lintas-lembaga (donor-facing,
+   * bukan admin-facing, sehingga TIDAK melalui resolveLembagaScope).
+   */
+  async findByPhone(donorPhone: string, page = 1, limit = 10) {
+    const skip = (page - 1) * limit;
+    const where: Prisma.DonationWhereInput = { donorPhone };
+
+    const [items, total] = await Promise.all([
+      this.prisma.donation.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: { createdAt: "desc" },
+        include: {
+          program: { select: { title: true, slug: true } },
+          lembaga: { select: { name: true, slug: true } },
+        },
+      }),
+      this.prisma.donation.count({ where }),
+    ]);
+
+    return {
+      items,
+      metadata: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit) || 1,
+      },
+    };
+  }
+
+  /**
    * Create a donation and payment record in a transaction.
    */
   async createWithPayment(data: {
     amount: number;
     message?: string;
     isAnonymous: boolean;
-    userId?: string;
     programId: string;
     paymentMethod: string;
     donorName?: string;
@@ -65,10 +96,10 @@ export class DonationsRepository {
     donorPhone?: string;
   }) {
     return this.prisma.$transaction(async (tx) => {
-      // 0. Fetch parent program's lazId
+      // 0. Fetch parent program's lembagaId
       const program = await tx.program.findUnique({
         where: { id: data.programId },
-        select: { lazId: true },
+        select: { lembagaId: true },
       });
       if (!program) {
         throw new AppError("PROGRAM_NOT_FOUND", "Program tidak ditemukan", 404);
@@ -80,9 +111,8 @@ export class DonationsRepository {
           amount: data.amount,
           message: data.message,
           isAnonymous: data.isAnonymous,
-          userId: data.userId,
           programId: data.programId,
-          lazId: program.lazId,
+          lembagaId: program.lembagaId,
           donorName: data.donorName,
           donorEmail: data.donorEmail,
           donorPhone: data.donorPhone,
@@ -96,7 +126,7 @@ export class DonationsRepository {
           amount: data.amount,
           paymentMethod: data.paymentMethod,
           gatewayRef: `MOCK-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
-          lazId: program.lazId,
+          lembagaId: program.lembagaId,
         },
       });
 
@@ -130,7 +160,6 @@ export class DonationsRepository {
     amount: number;
     message?: string;
     isAnonymous: boolean;
-    userId?: string;
     donorName?: string;
     programId: string;
     status: DonationStatus;
@@ -138,7 +167,7 @@ export class DonationsRepository {
     return this.prisma.$transaction(async (tx) => {
       const program = await tx.program.findUnique({
         where: { id: data.programId },
-        select: { lazId: true },
+        select: { lembagaId: true },
       });
       if (!program) throw new AppError("PROGRAM_NOT_FOUND", "Program tidak ditemukan", 404);
 
@@ -147,10 +176,9 @@ export class DonationsRepository {
           amount: data.amount,
           message: data.message,
           isAnonymous: data.isAnonymous,
-          userId: data.userId,
           donorName: data.donorName,
           programId: data.programId,
-          lazId: program.lazId,
+          lembagaId: program.lembagaId,
           status: data.status,
         },
       });
@@ -163,7 +191,7 @@ export class DonationsRepository {
           paymentMethod: "OFFLINE",
           status: data.status === "PAID" ? "SUCCESS" : "PENDING",
           gatewayRef: `MANUAL-${Date.now()}`,
-          lazId: program.lazId,
+          lembagaId: program.lembagaId,
         },
       });
 
@@ -188,7 +216,6 @@ export class DonationsRepository {
       amount: number;
       message?: string;
       isAnonymous: boolean;
-      userId?: string;
       donorName?: string;
       programId: string;
       status: DonationStatus;
@@ -215,16 +242,15 @@ export class DonationsRepository {
           amount: data.amount,
           message: data.message,
           isAnonymous: data.isAnonymous,
-          userId: data.userId,
           donorName: data.donorName,
           programId: data.programId,
           status: data.status,
-          // If program changed, we need to update lazId to match new program
+          // If program changed, we need to update lembagaId to match new program
           ...(isProgramChanged
             ? {
-                lazId: (
+                lembagaId: (
                   await tx.program.findUniqueOrThrow({ where: { id: data.programId } })
-                ).lazId,
+                ).lembagaId,
               }
             : {}),
         },

@@ -9,7 +9,7 @@ export class ProgramsRepository {
   /**
    * Fetch all programs for the admin dashboard (paginated).
    */
-  async findMany(page = 1, limit = 10, search?: string, lazId?: string) {
+  async findMany(page = 1, limit = 10, search?: string, lembagaId?: string) {
     const skip = (page - 1) * limit;
 
     const where: Prisma.ProgramWhereInput = {};
@@ -21,8 +21,8 @@ export class ProgramsRepository {
       ];
     }
 
-    if (lazId) {
-      where.lazId = lazId;
+    if (lembagaId) {
+      where.lembagaId = lembagaId;
     }
 
     const [items, total] = await Promise.all([
@@ -50,18 +50,65 @@ export class ProgramsRepository {
   }
 
   /**
-   * Fetch published programs for the public feed.
+   * Fetch published programs for the public marketplace feed — search,
+   * filter by category/lembaga, sort, and paginate.
    */
-  async findPublished() {
-    return this.prisma.program.findMany({
-      where: { status: "PUBLISHED" },
-      orderBy: { createdAt: "desc" },
-      include: {
-        laz: {
-          select: { name: true, logoUrl: true },
+  async findPublished(options?: {
+    page?: number;
+    limit?: number;
+    search?: string;
+    category?: string;
+    lembagaId?: string;
+    lembagaSlug?: string;
+    sort?: "newest" | "most-funded" | "ending-soon";
+  }) {
+    const page = options?.page ?? 1;
+    const limit = options?.limit ?? 12;
+    const skip = (page - 1) * limit;
+
+    const where: Prisma.ProgramWhereInput = { status: "PUBLISHED" };
+    if (options?.search) {
+      where.OR = [
+        { title: { contains: options.search, mode: "insensitive" } },
+        { description: { contains: options.search, mode: "insensitive" } },
+      ];
+    }
+    if (options?.category) {
+      where.category = options.category as any;
+    }
+    if (options?.lembagaId) {
+      where.lembagaId = options.lembagaId;
+    }
+    if (options?.lembagaSlug) {
+      where.lembaga = { slug: options.lembagaSlug };
+    }
+
+    const orderBy: Prisma.ProgramOrderByWithRelationInput =
+      options?.sort === "most-funded"
+        ? { currentAmount: "desc" }
+        : options?.sort === "ending-soon"
+          ? { endDate: "asc" }
+          : { createdAt: "desc" };
+
+    const [items, total] = await Promise.all([
+      this.prisma.program.findMany({
+        where,
+        orderBy,
+        skip,
+        take: limit,
+        include: {
+          lembaga: {
+            select: { name: true, slug: true, logoUrl: true },
+          },
         },
-      },
-    });
+      }),
+      this.prisma.program.count({ where }),
+    ]);
+
+    return {
+      items,
+      metadata: { total, page, limit, totalPages: Math.ceil(total / limit) || 1 },
+    };
   }
 
   /**
@@ -71,17 +118,14 @@ export class ProgramsRepository {
     return this.prisma.program.findFirst({
       where: { slug },
       include: {
-        laz: {
-          select: { name: true, logoUrl: true },
+        lembaga: {
+          select: { name: true, slug: true, logoUrl: true },
         },
         createdBy: { select: { name: true, avatarUrl: true } },
         donations: {
           where: { status: "PAID" },
           orderBy: { createdAt: "desc" },
           take: 20,
-          include: {
-            user: { select: { name: true, avatarUrl: true } },
-          },
         },
         distributions: {
           where: { status: "COMPLETED" },

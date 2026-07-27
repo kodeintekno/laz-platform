@@ -12,6 +12,9 @@ export interface Campaign {
   status: 'active' | 'closed';
   thumbnail: string;
   slug?: string;
+  lembagaName?: string;
+  lembagaSlug?: string;
+  daysRemainingText?: string;
   createdAt: any;
 }
 

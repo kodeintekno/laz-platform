@@ -12,7 +12,7 @@ interface TopProgram {
   distributedAmount: number;
   status: string;
   progressPercentage: number;
-  laz: { name: string };
+  lembaga: { name: string };
 }
 
 const formatRupiah = (amount: number) => {
@@ -54,7 +54,7 @@ export function ProgramPerformanceList({ programs }: { programs: TopProgram[] })
                       {program.title}
                     </h4>
                   </div>
-                  <p className="text-xs text-secondary ml-7">{program.laz.name}</p>
+                  <p className="text-xs text-secondary ml-7">{program.lembaga.name}</p>
                 </div>
                 <Badge intent={program.status === "COMPLETED" ? "success" : "info"} className="shrink-0">
                   {program.progressPercentage}%

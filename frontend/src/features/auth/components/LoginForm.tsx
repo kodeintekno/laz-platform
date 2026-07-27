@@ -3,12 +3,14 @@ import { useNavigate } from "react-router-dom";
 import { loginSchema, type LoginInput } from "@/features/auth/validations/auth.schema";
 import { FormWrapper, FormField, Button } from "@/components/ui";
 import { Link } from "react-router-dom";
-import { api } from "@/lib/api-client";
+import { api, ApiError } from "@/lib/api-client";
 import { useAuth } from "@/auth/AuthProvider";
+import { useVolunteerAuth } from "@/auth/VolunteerAuthProvider";
 
 export function LoginForm() {
   const navigate = useNavigate();
   const { refresh } = useAuth();
+  const { refresh: refreshVolunteer } = useVolunteerAuth();
   const [isPending, setIsPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -20,6 +22,20 @@ export function LoginForm() {
       await refresh();
       navigate("/dashboard");
     } catch (err: any) {
+      // Relawan adalah principal terpisah (bukan baris User) — kredensial
+      // salah di sisi staff (401) dicoba ulang sebagai akun relawan sebelum
+      // menampilkan error, supaya satu form /login melayani ketiganya
+      // (Super Admin, Admin Lembaga, Relawan).
+      if (err instanceof ApiError && err.status === 401) {
+        try {
+          await api.post("/volunteers/login", data);
+          await refreshVolunteer();
+          navigate("/volunteer/dashboard");
+          return;
+        } catch {
+          // bukan akun relawan juga — lanjut tampilkan error staff di bawah
+        }
+      }
       setError(err?.message ?? "Login gagal");
     } finally {
       setIsPending(false);

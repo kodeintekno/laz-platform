@@ -1,10 +1,7 @@
-"use client";
-
 import { useState, useTransition } from "react";
 import { useFormContext } from "react-hook-form";
 import { ArrowLeft } from "lucide-react";
-import Link from "next/link";
-import { useSession } from "next-auth/react";
+import { Link } from "react-router-dom";
 
 import { Button, Card, CardContent, CardFooter, FormWrapper, FormField, FormInput } from "@/components/ui";
 import { toast } from "@/stores/toast.store";
@@ -21,34 +18,17 @@ const formatRupiah = (amount: number) => {
   }).format(amount);
 };
 
+/**
+ * Donasi selalu tanpa akun — donatur tidak memiliki login. Identitas
+ * donatur (nama + telepon wajib, email opsional) selalu diminta di form.
+ */
 export function DonationForm({ programId, programSlug }: { programId: string; programSlug: string }) {
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
-  const { status } = useSession();
 
   const onSubmit = (data: DonationInput) => {
     setError(null);
-
-    // Client-side guest fields validation
-    if (status !== "authenticated") {
-      if (!data.donorName || data.donorName.trim() === "") {
-        setError("Nama donatur wajib diisi");
-        toast.error("Nama donatur wajib diisi");
-        return;
-      }
-      if (!data.donorEmail || data.donorEmail.trim() === "") {
-        setError("Email donatur wajib diisi");
-        toast.error("Email donatur wajib diisi");
-        return;
-      }
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(data.donorEmail)) {
-        setError("Format email tidak valid");
-        toast.error("Format email tidak valid");
-        return;
-      }
-    }
 
     startTransition(async () => {
       const formData = new FormData();
@@ -83,10 +63,16 @@ export function DonationForm({ programId, programSlug }: { programId: string; pr
             <h2 className="text-2xl font-bold text-primary mb-2">Alhamdulillah!</h2>
             <p className="text-secondary mb-8">
               Donasi Anda telah berhasil dicatat. Semoga menjadi amal jariyah yang pahalanya mengalir tiada henti.
+              Simpan nomor telepon Anda untuk melihat riwayat donasi kapan saja.
             </p>
-            <Link href={`/programs/${programSlug}`} className="w-full">
-              <Button className="w-full">Kembali ke Halaman Program</Button>
-            </Link>
+            <div className="w-full space-y-3">
+              <Link to="/riwayat-donasi" className="w-full block">
+                <Button intent="secondary" className="w-full">Lihat Riwayat Donasi</Button>
+              </Link>
+              <Link to={`/programs/${programSlug}`} className="w-full block">
+                <Button className="w-full">Kembali ke Halaman Program</Button>
+              </Link>
+            </div>
           </CardContent>
         </Card>
       </div>
@@ -95,7 +81,7 @@ export function DonationForm({ programId, programSlug }: { programId: string; pr
 
   return (
     <div className="max-w-lg mx-auto mt-8">
-      <Link href={`/programs/${programSlug}`} className="inline-flex items-center gap-2 text-sm text-secondary hover:text-brand-primary mb-6 font-semibold transition">
+      <Link to={`/programs/${programSlug}`} className="inline-flex items-center gap-2 text-sm text-secondary hover:text-brand-primary mb-6 font-semibold transition">
         <ArrowLeft className="w-4 h-4" /> Kembali
       </Link>
 
@@ -116,9 +102,9 @@ export function DonationForm({ programId, programSlug }: { programId: string; pr
       >
         <Card>
           <CardContent className="space-y-8">
-            <DonationFormFields status={status} isPending={isPending} />
+            <DonationFormFields isPending={isPending} />
           </CardContent>
-          
+
           <CardFooter className="flex flex-col">
             <Button
               type="submit"
@@ -139,7 +125,7 @@ export function DonationForm({ programId, programSlug }: { programId: string; pr
   );
 }
 
-function DonationFormFields({ status, isPending }: { status: string; isPending: boolean }) {
+function DonationFormFields({ isPending }: { isPending: boolean }) {
   const { setValue, watch } = useFormContext<DonationInput>();
   const selectedAmount = watch("amount");
 
@@ -155,8 +141,8 @@ function DonationFormFields({ status, isPending }: { status: string; isPending: 
               type="button"
               onClick={() => setValue("amount", amt, { shouldValidate: true })}
               className={`py-3 px-2 text-sm font-semibold rounded-xl border transition cursor-pointer ${
-                Number(selectedAmount) === amt 
-                  ? "bg-primary/5 border-primary text-primary ring-1 ring-primary" 
+                Number(selectedAmount) === amt
+                  ? "bg-primary/5 border-primary text-primary ring-1 ring-primary"
                   : "bg-surface border-border/40 text-primary hover:border-primary/40"
               }`}
             >
@@ -164,7 +150,7 @@ function DonationFormFields({ status, isPending }: { status: string; isPending: 
             </button>
           ))}
         </div>
-        
+
         <div className="relative mt-4">
           <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4 z-10">
             <span className="text-secondary font-medium sm:text-sm">Rp</span>
@@ -208,49 +194,47 @@ function DonationFormFields({ status, isPending }: { status: string; isPending: 
         )}
       />
 
-      {/* Guest Details Section */}
-      {status !== "authenticated" && (
-        <>
-          <hr className="border-border" />
-          <div>
-            <h3 className="text-lg font-bold text-primary mb-4">Data Diri Donatur</h3>
-            <div className="space-y-4">
-              <FormField
-                name="donorName"
-                label="Nama Lengkap"
-                type="input"
-                placeholder="Masukkan nama lengkap Anda"
-                disabled={isPending}
-              />
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <FormField
-                  name="donorEmail"
-                  label="Alamat Email"
-                  type="input"
-                  inputType="email"
-                  placeholder="nama@email.com"
-                  disabled={isPending}
-                />
-                <FormField
-                  name="donorPhone"
-                  label="No. Handphone (Opsional)"
-                  type="input"
-                  inputType="tel"
-                  placeholder="Contoh: 081234567890"
-                  disabled={isPending}
-                />
-              </div>
-            </div>
+      <hr className="border-border" />
+
+      {/* Guest Details Section — selalu tampil, donatur tidak punya akun */}
+      <div>
+        <h3 className="text-lg font-bold text-primary mb-4">Data Diri Donatur</h3>
+        <div className="space-y-4">
+          <FormField
+            name="donorName"
+            label="Nama Lengkap"
+            type="input"
+            placeholder="Masukkan nama lengkap Anda"
+            disabled={isPending}
+          />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <FormField
+              name="donorPhone"
+              label="No. Handphone"
+              type="input"
+              inputType="tel"
+              placeholder="Contoh: 081234567890"
+              disabled={isPending}
+              description="Digunakan sebagai identitas untuk melihat riwayat donasi Anda."
+            />
+            <FormField
+              name="donorEmail"
+              label="Alamat Email (Opsional)"
+              type="input"
+              inputType="email"
+              placeholder="nama@email.com"
+              disabled={isPending}
+            />
           </div>
-        </>
-      )}
+        </div>
+      </div>
 
       <hr className="border-border" />
 
       {/* Profile Section */}
       <div>
         <h3 className="text-lg font-bold text-primary mb-4">Dukungan Anda</h3>
-        
+
         <FormField
           name="isAnonymous"
           type="checkbox"

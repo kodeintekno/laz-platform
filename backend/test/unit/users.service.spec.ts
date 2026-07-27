@@ -37,8 +37,8 @@ const REGULAR_USER = {
   password: "hash",
   status: "ACTIVE",
   roleId: "role-user",
-  lazId: "laz-1",
-  role: { name: "ADMIN" },
+  lembagaId: "lembaga-1",
+  role: { name: "LEMBAGA_ADMIN" },
 };
 
 const SUPER_ADMIN_USER = {
@@ -48,7 +48,7 @@ const SUPER_ADMIN_USER = {
   password: "hash",
   status: "ACTIVE",
   roleId: "role-super",
-  lazId: "laz-1",
+  lembagaId: "lembaga-1",
   role: { name: "SUPER_ADMIN" },
 };
 
@@ -74,25 +74,25 @@ describe("UsersService", () => {
       email: "new@example.com",
       password: "pass123",
       roleId: "role-1",
-      lazId: "laz-1",
+      lembagaId: "lembaga-1",
       status: "ACTIVE" as const,
     };
 
     it("throws EMAIL_TAKEN when email already exists", async () => {
       usersRepository.findByEmail.mockResolvedValue(REGULAR_USER);
 
-      await expect(service.createUser(input, "admin-1", "laz-1")).rejects.toMatchObject({
+      await expect(service.createUser(input, "admin-1", "lembaga-1")).rejects.toMatchObject({
         code: "EMAIL_TAKEN",
       });
     });
 
-    it("throws LAZ_REQUIRED when no LAZ can be determined", async () => {
+    it("throws LEMBAGA_REQUIRED when no lembaga can be determined", async () => {
       usersRepository.findByEmail.mockResolvedValue(null);
-      const inputNoLaz = { ...input, lazId: undefined };
+      const inputNoLembaga = { ...input, lembagaId: undefined };
 
       await expect(
-        service.createUser(inputNoLaz as any, "admin-1", undefined, false),
-      ).rejects.toMatchObject({ code: "LAZ_REQUIRED" });
+        service.createUser(inputNoLembaga as any, "admin-1", undefined, false),
+      ).rejects.toMatchObject({ code: "LEMBAGA_REQUIRED" });
     });
 
     it("creates user with hashed password and emits audit log", async () => {
@@ -101,7 +101,7 @@ describe("UsersService", () => {
       const created = { ...REGULAR_USER, id: "new-user" };
       usersRepository.create.mockResolvedValue(created);
 
-      const result = await service.createUser(input, "admin-1", "laz-1");
+      const result = await service.createUser(input, "admin-1", "lembaga-1");
 
       expect(result).toEqual(created);
       expect(usersRepository.create).toHaveBeenCalledWith(
@@ -110,15 +110,15 @@ describe("UsersService", () => {
       expect(auditService.log).toHaveBeenCalledOnce();
     });
 
-    it("super admin can assign arbitrary lazId from input", async () => {
+    it("super admin can assign arbitrary lembagaId from input", async () => {
       usersRepository.findByEmail.mockResolvedValue(null);
       vi.mocked(bcrypt.hash).mockResolvedValue("hashed" as never);
-      usersRepository.create.mockResolvedValue({ ...REGULAR_USER, lazId: "laz-other" });
+      usersRepository.create.mockResolvedValue({ ...REGULAR_USER, lembagaId: "lembaga-other" });
 
-      await service.createUser({ ...input, lazId: "laz-other" }, "admin-1", undefined, true);
+      await service.createUser({ ...input, lembagaId: "lembaga-other" }, "admin-1", undefined, true);
 
       expect(usersRepository.create).toHaveBeenCalledWith(
-        expect.objectContaining({ lazId: "laz-other" }),
+        expect.objectContaining({ lembagaId: "lembaga-other" }),
       );
     });
   });
@@ -133,7 +133,7 @@ describe("UsersService", () => {
       email: "regular@example.com",
       roleId: "role-user",
       status: "ACTIVE" as const,
-      lazId: "laz-1",
+      lembagaId: "lembaga-1",
     };
 
     it("throws NotFoundException when user does not exist", async () => {
@@ -145,10 +145,10 @@ describe("UsersService", () => {
     });
 
     it("throws ForbiddenException when non-super-admin edits cross-tenant user", async () => {
-      usersRepository.findById.mockResolvedValue({ ...REGULAR_USER, lazId: "laz-other" });
+      usersRepository.findById.mockResolvedValue({ ...REGULAR_USER, lembagaId: "lembaga-other" });
 
       await expect(
-        service.updateUser("user-2", updateInput, "admin-1", "laz-1", false),
+        service.updateUser("user-2", updateInput, "admin-1", "lembaga-1", false),
       ).rejects.toBeInstanceOf(ForbiddenException);
     });
 
@@ -158,7 +158,7 @@ describe("UsersService", () => {
       usersRepository.findByEmail.mockResolvedValue({ id: "other-user" });
 
       await expect(
-        service.updateUser("user-2", inputWithNewEmail, "admin-1", "laz-1", false),
+        service.updateUser("user-2", inputWithNewEmail, "admin-1", "lembaga-1", false),
       ).rejects.toMatchObject({ code: "EMAIL_TAKEN" });
     });
 
@@ -168,7 +168,7 @@ describe("UsersService", () => {
       const demoInput = { ...updateInput, roleId: "role-user" }; // changing role
 
       await expect(
-        service.updateUser("super-1", demoInput, "admin-1", "laz-1", true),
+        service.updateUser("super-1", demoInput, "admin-1", "lembaga-1", true),
       ).rejects.toMatchObject({ code: "LAST_SUPER_ADMIN" });
     });
 
@@ -178,7 +178,7 @@ describe("UsersService", () => {
       const newRoleInput = { ...updateInput, roleId: "role-new" };
       usersRepository.update.mockResolvedValue({ ...REGULAR_USER, roleId: "role-new" });
 
-      await service.updateUser("user-2", newRoleInput, "admin-1", "laz-1", false);
+      await service.updateUser("user-2", newRoleInput, "admin-1", "lembaga-1", false);
 
       expect(revokeUserSessions).toHaveBeenCalledWith("user-2");
       expect(auditService.log).toHaveBeenCalledOnce();
@@ -189,7 +189,7 @@ describe("UsersService", () => {
       usersRepository.findById.mockResolvedValue(REGULAR_USER);
       usersRepository.update.mockResolvedValue({ ...REGULAR_USER, name: "Updated" });
 
-      await service.updateUser("user-2", updateInput, "admin-1", "laz-1", false);
+      await service.updateUser("user-2", updateInput, "admin-1", "lembaga-1", false);
 
       expect(revokeUserSessions).not.toHaveBeenCalled();
     });
@@ -212,15 +212,15 @@ describe("UsersService", () => {
       usersRepository.findById.mockResolvedValue(REGULAR_USER);
 
       await expect(
-        service.deleteUser("user-2", "user-2", "laz-1"),
+        service.deleteUser("user-2", "user-2", "lembaga-1"),
       ).rejects.toBeInstanceOf(ForbiddenException);
     });
 
     it("throws ForbiddenException when non-super-admin deletes cross-tenant user", async () => {
-      usersRepository.findById.mockResolvedValue({ ...REGULAR_USER, lazId: "laz-other" });
+      usersRepository.findById.mockResolvedValue({ ...REGULAR_USER, lembagaId: "lembaga-other" });
 
       await expect(
-        service.deleteUser("user-2", "admin-1", "laz-1", false),
+        service.deleteUser("user-2", "admin-1", "lembaga-1", false),
       ).rejects.toBeInstanceOf(ForbiddenException);
     });
 
@@ -229,7 +229,7 @@ describe("UsersService", () => {
       usersRepository.countSuperAdmins.mockResolvedValue(1);
 
       await expect(
-        service.deleteUser("super-1", "admin-1", "laz-1", true),
+        service.deleteUser("super-1", "admin-1", "lembaga-1", true),
       ).rejects.toMatchObject({ code: "LAST_SUPER_ADMIN" });
     });
 
@@ -238,7 +238,7 @@ describe("UsersService", () => {
       usersRepository.findById.mockResolvedValue(REGULAR_USER);
       usersRepository.delete.mockResolvedValue(REGULAR_USER);
 
-      const result = await service.deleteUser("user-2", "admin-1", "laz-1", false);
+      const result = await service.deleteUser("user-2", "admin-1", "lembaga-1", false);
 
       expect(result).toEqual(REGULAR_USER);
       expect(revokeUserSessions).toHaveBeenCalledWith("user-2");

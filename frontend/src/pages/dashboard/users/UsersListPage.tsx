@@ -7,7 +7,7 @@ import { PERMISSIONS } from "@shared/constants/permissions";
 import { UserTable } from "@/features/users/components/UserTable";
 import { PageHeader, Button, TableSkeleton } from "@/components/ui";
 import { DataTableToolbar } from "@/components/ui/data-table";
-import { UserLazFilter } from "@/features/users/components/UserLazFilter";
+import { UserLembagaFilter } from "@/features/users/components/UserLembagaFilter";
 import { Link } from "react-router-dom";
 
 export function UsersListPage() {
@@ -19,11 +19,11 @@ export function UsersListPage() {
   const page = Number(searchParams.get("page") ?? 1);
   const limit = Number(searchParams.get("limit") ?? 10);
   const search = searchParams.get("search") ?? undefined;
-  const lazId = searchParams.get("lazId") ?? undefined;
+  const lembagaId = searchParams.get("lembagaId") ?? undefined;
 
   const { data: result, isLoading } = useQuery({
-    queryKey: ["users", { page, limit, search, lazId }],
-    queryFn: () => api.get<any[]>("/users", { page, limit, search, lazId }),
+    queryKey: ["users", { page, limit, search, lembagaId }],
+    queryFn: () => api.get<any[]>("/users", { page, limit, search, lembagaId }),
   });
 
   const { data: rolesResult } = useQuery({
@@ -31,9 +31,9 @@ export function UsersListPage() {
     queryFn: () => api.get<any[]>("/roles"),
   });
 
-  const { data: lazsResult } = useQuery({
-    queryKey: ["laz", "options"],
-    queryFn: () => api.get<any>("/laz/options"),
+  const { data: lembagasResult } = useQuery({
+    queryKey: ["lembaga", "options"],
+    queryFn: () => api.get<any>("/lembaga/options"),
     enabled: isSuperAdmin,
   });
 
@@ -44,8 +44,8 @@ export function UsersListPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="User Management"
-        description="Daftar semua pengguna terdaftar, termasuk donatur, admin, dan relawan."
+        title="Manajemen Pengguna"
+        description="Daftar semua pengguna staff terdaftar (Super Admin dan Admin Lembaga)."
         action={
           can(PERMISSIONS.USERS_CREATE) ? (
             <Link to="/dashboard/users/new">
@@ -59,15 +59,15 @@ export function UsersListPage() {
         searchValue={search}
         searchPlaceholder="Cari nama atau email..."
         filterSlot={
-          isSuperAdmin && lazsResult?.data?.length ? (
-            <UserLazFilter lazs={lazsResult.data} />
+          isSuperAdmin && lembagasResult?.data?.length ? (
+            <UserLembagaFilter lembagas={lembagasResult.data} />
           ) : undefined
         }
       />
 
       {isLoading ? (
         <TableSkeleton
-          headers={isSuperAdmin ? ["Nama", "Email", "Status", "Role / Peran", "Lembaga Zakat (LAZ)", "Aksi"] : ["Nama", "Email", "Status", "Role / Peran", "Aksi"]}
+          headers={isSuperAdmin ? ["Nama", "Email", "Status", "Role / Peran", "Lembaga", "Aksi"] : ["Nama", "Email", "Status", "Role / Peran", "Aksi"]}
           rowCount={limit}
           columnTypes={isSuperAdmin ? ["avatar", "text", "text", "text", "text", "action"] : ["avatar", "text", "text", "text", "action"]}
         />

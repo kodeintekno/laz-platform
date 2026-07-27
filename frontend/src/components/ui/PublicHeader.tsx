@@ -59,7 +59,43 @@ export function PublicHeader({ user }: PublicHeaderProps) {
               >
                 Beranda
               </Link>
-              <Link 
+              <Link
+                to="/programs"
+                className={cn(
+                  "text-sm font-medium transition-colors hover:text-emerald-600",
+                  currentPath.startsWith('/programs') ? "text-emerald-600" : "text-gray-500"
+                )}
+              >
+                Program
+              </Link>
+              <Link
+                to="/lembaga"
+                className={cn(
+                  "text-sm font-medium transition-colors hover:text-emerald-600",
+                  currentPath.startsWith('/lembaga') ? "text-emerald-600" : "text-gray-500"
+                )}
+              >
+                Lembaga
+              </Link>
+              <Link
+                to="/relawan"
+                className={cn(
+                  "text-sm font-medium transition-colors hover:text-emerald-600",
+                  currentPath === '/relawan' ? "text-emerald-600" : "text-gray-500"
+                )}
+              >
+                Relawan
+              </Link>
+              <Link
+                to="/riwayat-donasi"
+                className={cn(
+                  "text-sm font-medium transition-colors hover:text-emerald-600",
+                  currentPath === '/riwayat-donasi' ? "text-emerald-600" : "text-gray-500"
+                )}
+              >
+                Riwayat Donasi
+              </Link>
+              <Link
                 to="/about"
                 className={cn(
                   "text-sm font-medium transition-colors hover:text-emerald-600",
@@ -68,10 +104,10 @@ export function PublicHeader({ user }: PublicHeaderProps) {
               >
                 Tentang
               </Link>
-              
+
               <div className="h-6 border-l border-gray-200 mx-1" />
-              
-              <Link 
+
+              <Link
                 to="/reports"
                 className={cn(
                   "text-sm font-medium transition-colors hover:text-emerald-600 flex items-center gap-2",
@@ -81,7 +117,7 @@ export function PublicHeader({ user }: PublicHeaderProps) {
                 <ShieldCheck className="w-4 h-4" />
                 Transparansi
               </Link>
-              <Link 
+              <Link
                 to="/calculator"
                 className={cn(
                   "text-sm font-medium transition-colors hover:text-emerald-600 flex items-center gap-2",
@@ -134,7 +170,7 @@ export function PublicHeader({ user }: PublicHeaderProps) {
                   to="/login"
                   className="bg-emerald-600 text-white px-6 py-2.5 rounded-full text-sm font-semibold hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-200 hover:-translate-y-0.5 hover:shadow-emerald-300 duration-200"
                 >
-                  Mulai Berbagi
+                  Login
                 </Link>
               )}
             </div>
@@ -146,7 +182,7 @@ export function PublicHeader({ user }: PublicHeaderProps) {
                   to="/login"
                   className="bg-emerald-600 text-white px-4 py-2 rounded-xl text-xs font-bold hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-200"
                 >
-                  Mulai
+                  Login
                 </Link>
               )}
               {user && (
@@ -182,6 +218,18 @@ export function PublicHeader({ user }: PublicHeaderProps) {
               <div className="px-5 pt-4 pb-10 space-y-2">
                 <Link to="/" onClick={() => setIsMenuOpen(false)} className="flex items-center gap-4 w-full text-left px-4 py-4 text-sm font-bold text-gray-700 hover:bg-emerald-50 rounded-2xl transition-colors">
                   Beranda
+                </Link>
+                <Link to="/programs" onClick={() => setIsMenuOpen(false)} className="flex items-center gap-4 w-full text-left px-4 py-4 text-sm font-bold text-gray-700 hover:bg-emerald-50 rounded-2xl transition-colors">
+                  Program
+                </Link>
+                <Link to="/lembaga" onClick={() => setIsMenuOpen(false)} className="flex items-center gap-4 w-full text-left px-4 py-4 text-sm font-bold text-gray-700 hover:bg-emerald-50 rounded-2xl transition-colors">
+                  Lembaga
+                </Link>
+                <Link to="/relawan" onClick={() => setIsMenuOpen(false)} className="flex items-center gap-4 w-full text-left px-4 py-4 text-sm font-bold text-gray-700 hover:bg-emerald-50 rounded-2xl transition-colors">
+                  Relawan
+                </Link>
+                <Link to="/riwayat-donasi" onClick={() => setIsMenuOpen(false)} className="flex items-center gap-4 w-full text-left px-4 py-4 text-sm font-bold text-gray-700 hover:bg-emerald-50 rounded-2xl transition-colors">
+                  Riwayat Donasi
                 </Link>
                 <Link to="/about" onClick={() => setIsMenuOpen(false)} className="flex items-center gap-4 w-full text-left px-4 py-4 text-sm font-bold text-gray-700 hover:bg-emerald-50 rounded-2xl transition-colors">
                   Tentang Kami

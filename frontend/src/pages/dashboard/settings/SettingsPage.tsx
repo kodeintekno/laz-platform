@@ -1,16 +1,15 @@
-import { useQuery } from "@tanstack/react-query";
-import { api } from "@/lib/api-client";
+import { useAuth } from "@/auth/AuthProvider";
 import { SettingsForm } from "@/features/settings/components/SettingsForm";
 import { PageHeader } from "@/components/ui";
 import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
 
 export function SettingsPage() {
-  const { data: result, isLoading, isError } = useQuery({
-    queryKey: ["auth", "me"],
-    queryFn: () => api.get<any>("/auth/me"),
-  });
+  // Selalu pakai useAuth() (AuthProvider), JANGAN buat useQuery(["auth","me"])
+  // terpisah di sini — key yang sama dengan bentuk data berbeda akan saling
+  // menimpa cache React Query dan merusak permissions di seluruh sidebar.
+  const { user, isLoading } = useAuth();
 
-  if (isError) {
+  if (!isLoading && !user) {
     return (
       <div className="space-y-6">
         <PageHeader
@@ -30,10 +29,19 @@ export function SettingsPage() {
         title="Pengaturan Akun"
         description="Kelola informasi profil Anda, ubah kata sandi, dan atur preferensi notifikasi di sini."
       />
-      {isLoading || !result?.data ? (
+      {isLoading || !user ? (
         <div className="flex justify-center py-20"><LoadingSpinner /></div>
       ) : (
-        <SettingsForm user={result.data} />
+        <SettingsForm
+          user={{
+            id: user.id,
+            name: user.name ?? null,
+            email: user.email,
+            phoneNumber: user.phoneNumber ?? null,
+            emailNotifications: user.emailNotifications ?? true,
+            waNotifications: user.waNotifications ?? true,
+          }}
+        />
       )}
     </div>
   );

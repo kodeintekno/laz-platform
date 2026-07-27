@@ -14,13 +14,13 @@ export function NewUserPage() {
     queryFn: () => api.get<any[]>("/roles"),
   });
 
-  const { data: lazsResult, isLoading: lazsLoading } = useQuery({
-    queryKey: ["laz", "options"],
-    queryFn: () => api.get<any>("/laz/options"),
+  const { data: lembagasResult, isLoading: lembagasLoading } = useQuery({
+    queryKey: ["lembaga", "options"],
+    queryFn: () => api.get<any>("/lembaga/options"),
     enabled: isSuperAdmin,
   });
 
-  if (rolesLoading || (isSuperAdmin && lazsLoading)) {
+  if (rolesLoading || (isSuperAdmin && lembagasLoading)) {
     return <div className="flex justify-center py-20"><LoadingSpinner /></div>;
   }
 
@@ -28,11 +28,11 @@ export function NewUserPage() {
     <div className="space-y-6 w-full">
       <PageHeader
         title="Tambah Pengguna Baru"
-        description="Buat akun baru untuk pengelola LAZ, relawan, donatur, atau administrator."
+        description="Buat akun baru untuk Super Admin atau Admin Lembaga."
       />
       <UserForm
         roles={rolesResult?.data ?? []}
-        lazs={lazsResult?.data ?? []}
+        lembagas={lembagasResult?.data ?? []}
         isSuperAdmin={isSuperAdmin}
         currentUserId={user?.id ?? ""}
       />

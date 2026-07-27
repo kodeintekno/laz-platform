@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
 import { useUIStore } from "@/stores/ui.store";
+import { useAuth } from "@/auth/AuthProvider";
 import { usePermission } from "@/hooks/usePermission";
 import type { NavItem } from "@/constants/nav";
 import { NAV_ITEMS } from "@/constants/nav";
@@ -25,6 +26,8 @@ import {
   LogOut,
   HelpCircle,
   Building2,
+  HeartHandshake,
+  ClipboardCheck,
 } from "lucide-react";
 
 const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
@@ -39,6 +42,8 @@ const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   ScrollText,
   Settings,
   Building2,
+  HeartHandshake,
+  ClipboardCheck,
 };
 
 /**
@@ -55,8 +60,18 @@ export function Sidebar({ initialItems, user }: { initialItems?: NavItem[], user
   const pathname = usePathname();
   const { isSidebarOpen, toggleSidebar, isSidebarCollapsed, toggleSidebarCollapsed } = useUIStore();
   const { can, isLoading, permissions, roleName } = usePermission();
+  const { user: authUser } = useAuth();
   // When initialItems are provided (from server), skip permission checks
-  const visibleItems = initialItems ?? NAV_ITEMS.filter((item) => !item.permission || can(item.permission));
+  const visibleItems =
+    initialItems ??
+    NAV_ITEMS.filter((item) => {
+      if (item.permission && !can(item.permission)) return false;
+      // SUPER_ADMIN lolos setiap permission check otomatis meski lembagaId-nya
+      // null — item yang hanya relevan untuk staff satu lembaga (mis. profil
+      // lembaga sendiri) harus tetap difilter berdasarkan lembagaId asli.
+      if (item.requiresLembaga && !authUser?.lembagaId) return false;
+      return true;
+    });
   const { data: session } = useSession();
   const activeUser = user || session?.user;
   const [isLogoutConfirmOpen, setIsLogoutConfirmOpen] = useState(false);

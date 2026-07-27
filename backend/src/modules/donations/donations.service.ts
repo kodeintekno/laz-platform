@@ -16,16 +16,15 @@ export class DonationsService {
     private readonly auditService: AuditService,
   ) {}
 
-  async getDashboardDonations(page: number, limit: number, search?: string, lazId?: string) {
-    return this.donationsRepository.findMany(page, limit, search, lazId);
+  async getDashboardDonations(page: number, limit: number, search?: string, lembagaId?: string) {
+    return this.donationsRepository.findMany(page, limit, search, lembagaId);
   }
 
-  async createDonation(data: DonationInput, userId?: string) {
+  async createDonation(data: DonationInput) {
     return this.donationsRepository.createWithPayment({
       amount: data.amount,
       message: data.message,
       isAnonymous: data.isAnonymous,
-      userId,
       programId: data.programId,
       paymentMethod: data.paymentMethod,
       donorName: data.donorName,
@@ -36,6 +35,11 @@ export class DonationsService {
 
   async getDonationById(id: string) {
     return this.donationsRepository.getDonationById(id);
+  }
+
+  /** Riwayat donasi publik berdasarkan nomor telepon — lintas-lembaga, tanpa auth. */
+  async getDonationHistoryByPhone(phone: string, page: number, limit: number) {
+    return this.donationsRepository.findByPhone(phone, page, limit);
   }
 
   async createAdminDonation(data: AdminDonationInput, adminUserId: string) {

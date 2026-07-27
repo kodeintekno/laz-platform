@@ -11,8 +11,8 @@ export class DistributionsService {
     private readonly auditService: AuditService,
   ) {}
 
-  async getDashboardDistributions(page: number, limit: number, search?: string, lazId?: string) {
-    return this.distributionsRepository.findMany(page, limit, search, lazId);
+  async getDashboardDistributions(page: number, limit: number, search?: string, lembagaId?: string) {
+    return this.distributionsRepository.findMany(page, limit, search, lembagaId);
   }
 
   async getPublicDistributions(programSlug: string) {

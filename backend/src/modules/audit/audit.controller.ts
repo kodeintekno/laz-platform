@@ -3,7 +3,7 @@ import { AuditService } from "./audit.service";
 import { RequirePermission } from "../../common/decorators/require-permission.decorator";
 import { PERMISSIONS } from "../../../../shared/constants/permissions";
 import { CurrentUser } from "../../common/decorators/current-user.decorator";
-import { resolveLazScope } from "../../common/utils/laz-scope";
+import { resolveLembagaScope } from "../../common/utils/lembaga-scope";
 import type { RBACSessionUser } from "../../../../shared/types/rbac";
 
 @Controller("api/audit")
@@ -17,7 +17,7 @@ export class AuditController {
     @Query("page") page?: string,
     @Query("limit") limit?: string,
     @Query("search") search?: string,
-    @Query("lazId") lazId?: string,
+    @Query("lembagaId") lembagaId?: string,
     @Query("startDate") startDate?: string,
     @Query("endDate") endDate?: string,
   ) {
@@ -25,7 +25,7 @@ export class AuditController {
       Number(page) || 1,
       Number(limit) || 10,
       search || undefined,
-      resolveLazScope(user, lazId),
+      resolveLembagaScope(user, lembagaId),
       startDate || undefined,
       endDate || undefined,
     );

@@ -11,7 +11,7 @@ export class PaymentsService {
   /**
    * Fetch paginated and searchable payments list.
    */
-  async getPayments(page: number = 1, limit: number = 10, search?: string, lazId?: string) {
-    return this.paymentsRepository.findManyPaged(page, limit, search, lazId);
+  async getPayments(page: number = 1, limit: number = 10, search?: string, lembagaId?: string) {
+    return this.paymentsRepository.findManyPaged(page, limit, search, lembagaId);
   }
 }

@@ -7,7 +7,7 @@ import { PERMISSIONS } from "@shared/constants/permissions";
 import { DonationTable } from "@/features/donations/components/DonationTable";
 import { PageHeader, Button, TableSkeleton } from "@/components/ui";
 import { DataTableToolbar } from "@/components/ui/data-table";
-import { UserLazFilter } from "@/features/users/components/UserLazFilter";
+import { UserLembagaFilter } from "@/features/users/components/UserLembagaFilter";
 import { Link } from "react-router-dom";
 
 export function DonationsListPage() {
@@ -19,16 +19,16 @@ export function DonationsListPage() {
   const page = Number(searchParams.get("page") ?? 1);
   const limit = Number(searchParams.get("limit") ?? 10);
   const search = searchParams.get("search") ?? undefined;
-  const lazId = searchParams.get("lazId") ?? undefined;
+  const lembagaId = searchParams.get("lembagaId") ?? undefined;
 
   const { data: result, isLoading } = useQuery({
-    queryKey: ["donations", { page, limit, search, lazId }],
-    queryFn: () => api.get<any[]>("/donations", { page, limit, search, lazId }),
+    queryKey: ["donations", { page, limit, search, lembagaId }],
+    queryFn: () => api.get<any[]>("/donations", { page, limit, search, lembagaId }),
   });
 
-  const { data: lazsResult } = useQuery({
-    queryKey: ["laz", "options"],
-    queryFn: () => api.get<any>("/laz/options"),
+  const { data: lembagasResult } = useQuery({
+    queryKey: ["lembaga", "options"],
+    queryFn: () => api.get<any>("/lembaga/options"),
     enabled: isSuperAdmin,
   });
 
@@ -60,8 +60,8 @@ export function DonationsListPage() {
         searchValue={search}
         searchPlaceholder="Cari donatur atau program..."
         filterSlot={
-          isSuperAdmin && lazsResult?.data?.length ? (
-            <UserLazFilter lazs={lazsResult.data} />
+          isSuperAdmin && lembagasResult?.data?.length ? (
+            <UserLembagaFilter lembagas={lembagasResult.data} />
           ) : undefined
         }
       />

@@ -12,7 +12,7 @@ export class UsersRepository {
   /**
    * Find paginated users with their assigned roles and LAZs.
    */
-  async findMany(page = 1, limit = 10, search?: string, lazId?: string) {
+  async findMany(page = 1, limit = 10, search?: string, lembagaId?: string) {
     const skip = (page - 1) * limit;
 
     const filterConditions: Prisma.UserWhereInput[] = [];
@@ -26,8 +26,8 @@ export class UsersRepository {
       });
     }
 
-    if (lazId) {
-      filterConditions.push({ lazId });
+    if (lembagaId) {
+      filterConditions.push({ lembagaId });
     }
 
     const where: Prisma.UserWhereInput =
@@ -41,7 +41,7 @@ export class UsersRepository {
         orderBy: { createdAt: "desc" },
         include: {
           role: { select: { id: true, name: true } },
-          laz: { select: { id: true, name: true } },
+          lembaga: { select: { id: true, name: true } },
         },
       }),
       this.prisma.user.count({ where }),
@@ -75,7 +75,7 @@ export class UsersRepository {
       where: { id },
       include: {
         role: { select: { id: true, name: true } },
-        laz: { select: { id: true, name: true } },
+        lembaga: { select: { id: true, name: true } },
       },
     });
   }
@@ -100,7 +100,7 @@ export class UsersRepository {
       data,
       include: {
         role: { select: { id: true, name: true } },
-        laz: { select: { id: true, name: true } },
+        lembaga: { select: { id: true, name: true } },
       },
     });
   }
@@ -114,7 +114,7 @@ export class UsersRepository {
       data,
       include: {
         role: { select: { id: true, name: true } },
-        laz: { select: { id: true, name: true } },
+        lembaga: { select: { id: true, name: true } },
       },
     });
   }
@@ -127,17 +127,17 @@ export class UsersRepository {
       where: { id },
       include: {
         role: { select: { id: true, name: true } },
-        laz: { select: { id: true, name: true } },
+        lembaga: { select: { id: true, name: true } },
       },
     });
   }
 
   /**
-   * Find all LAZ tenants (for Super Admin dropdown).
+   * Find all APPROVED Lembaga tenants (for Super Admin dropdown).
    */
-  async findAllLazs() {
-    return this.prisma.laz.findMany({
-      where: { status: "ACTIVE" },
+  async findAllLembagas() {
+    return this.prisma.lembaga.findMany({
+      where: { status: "APPROVED" },
       orderBy: { name: "asc" },
     });
   }

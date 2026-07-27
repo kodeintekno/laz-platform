@@ -16,6 +16,11 @@ export enum AuditAction {
   ROLE_CHANGE = "ROLE_CHANGE",
   PAYMENT_UPDATE = "PAYMENT_UPDATE",
   DISTRIBUTION_UPDATE = "DISTRIBUTION_UPDATE",
+  LEMBAGA_APPROVE = "LEMBAGA_APPROVE",
+  LEMBAGA_REJECT = "LEMBAGA_REJECT",
+  VOLUNTEER_APPLICATION_REVIEW = "VOLUNTEER_APPLICATION_REVIEW",
+  VOLUNTEER_REPORT_SUBMIT = "VOLUNTEER_REPORT_SUBMIT",
+  VOLUNTEER_REPORT_VERIFY = "VOLUNTEER_REPORT_VERIFY",
 }
 
 export interface CreateAuditLogInput {
@@ -28,5 +33,5 @@ export interface CreateAuditLogInput {
   newData?: Record<string, unknown>;
   ipAddress?: string;
   userAgent?: string;
-  lazId?: string;
+  lembagaId?: string;
 }

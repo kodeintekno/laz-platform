@@ -3,7 +3,7 @@ import { DistributionsService } from "./distributions.service";
 import { RequirePermission } from "../../common/decorators/require-permission.decorator";
 import { CurrentUser } from "../../common/decorators/current-user.decorator";
 import { ZodValidationPipe } from "../../common/pipes/zod-validation.pipe";
-import { resolveLazScope } from "../../common/utils/laz-scope";
+import { resolveLembagaScope } from "../../common/utils/lembaga-scope";
 import { PERMISSIONS } from "../../../../shared/constants/permissions";
 import {
   distributionSchema,
@@ -22,13 +22,13 @@ export class DistributionsController {
     @Query("page") page?: string,
     @Query("limit") limit?: string,
     @Query("search") search?: string,
-    @Query("lazId") lazId?: string,
+    @Query("lembagaId") lembagaId?: string,
   ) {
     const { items, metadata } = await this.distributionsService.getDashboardDistributions(
       Number(page) || 1,
       Number(limit) || 10,
       search || undefined,
-      resolveLazScope(user, lazId),
+      resolveLembagaScope(user, lembagaId),
     );
     return { data: items, meta: metadata };
   }

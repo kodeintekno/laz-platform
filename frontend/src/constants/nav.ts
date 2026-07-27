@@ -13,6 +13,13 @@ export interface NavItem {
   href: string;
   icon: string; // Lucide icon name — resolved in Sidebar component
   permission?: PermissionKey;
+  /**
+   * Item hanya relevan untuk staff yang terikat ke satu lembaga (mis. profil
+   * lembaga sendiri). SUPER_ADMIN lolos setiap permission check secara
+   * otomatis (lihat hasPermission) walau lembagaId-nya null, jadi item ini
+   * perlu difilter terpisah berdasarkan lembagaId, bukan permission saja.
+   */
+  requiresLembaga?: boolean;
   children?: NavItem[];
 }
 
@@ -59,12 +66,30 @@ export const NAV_ITEMS: NavItem[] = [
     icon: "Users",
     permission: PERMISSIONS.USERS_READ,
   },
-  
   {
-    label: "LAZ Management",
-    href: "/dashboard/laz",
+    label: "Manajemen Lembaga",
+    href: "/dashboard/lembaga",
     icon: "Building2",
-    permission: PERMISSIONS.LAZ_MANAGE,
+    permission: PERMISSIONS.LEMBAGA_MANAGE,
+  },
+  {
+    label: "Profil Lembaga",
+    href: "/dashboard/lembaga/profil",
+    icon: "Building2",
+    permission: PERMISSIONS.LEMBAGA_READ,
+    requiresLembaga: true,
+  },
+  {
+    label: "Kegiatan Relawan",
+    href: "/dashboard/relawan/kegiatan",
+    icon: "HeartHandshake",
+    permission: PERMISSIONS.VOLUNTEERS_MANAGE,
+  },
+  {
+    label: "Pendaftaran Relawan",
+    href: "/dashboard/relawan/pendaftaran",
+    icon: "ClipboardCheck",
+    permission: PERMISSIONS.VOLUNTEERS_MANAGE,
   },
   {
     label: "Hak Akses",

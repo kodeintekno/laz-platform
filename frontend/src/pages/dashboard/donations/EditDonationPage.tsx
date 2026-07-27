@@ -11,7 +11,7 @@ export function EditDonationPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const isSuperAdmin = user?.roleName === "SUPER_ADMIN";
-  const lazId = isSuperAdmin ? undefined : user?.lazId;
+  const lembagaId = isSuperAdmin ? undefined : user?.lembagaId;
 
   const { data: donationResult, isLoading: donationLoading, isError } = useQuery({
     queryKey: ["donations", id],
@@ -19,13 +19,13 @@ export function EditDonationPage() {
   });
 
   const { data: programsResult } = useQuery({
-    queryKey: ["programs", "all", lazId],
-    queryFn: () => api.get<any[]>("/programs", { page: 1, limit: 100, lazId }),
+    queryKey: ["programs", "all", lembagaId],
+    queryFn: () => api.get<any[]>("/programs", { page: 1, limit: 100, lembagaId }),
   });
 
   const { data: usersResult } = useQuery({
-    queryKey: ["users", "all", lazId],
-    queryFn: () => api.get<any[]>("/users", { page: 1, limit: 200, lazId }),
+    queryKey: ["users", "all", lembagaId],
+    queryFn: () => api.get<any[]>("/users", { page: 1, limit: 200, lembagaId }),
   });
 
   if (donationLoading) return <div className="flex justify-center py-20"><LoadingSpinner /></div>;

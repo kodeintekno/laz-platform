@@ -7,7 +7,7 @@ import { PERMISSIONS } from "@shared/constants/permissions";
 import { ProgramTable } from "@/features/programs/components/ProgramTable";
 import { PageHeader, Button, TableSkeleton } from "@/components/ui";
 import { DataTableToolbar } from "@/components/ui/data-table";
-import { UserLazFilter } from "@/features/users/components/UserLazFilter";
+import { UserLembagaFilter } from "@/features/users/components/UserLembagaFilter";
 import { Link } from "react-router-dom";
 
 export function ProgramsListPage() {
@@ -19,16 +19,16 @@ export function ProgramsListPage() {
   const page = Number(searchParams.get("page") ?? 1);
   const limit = Number(searchParams.get("limit") ?? 10);
   const search = searchParams.get("search") ?? undefined;
-  const lazId = searchParams.get("lazId") ?? undefined;
+  const lembagaId = searchParams.get("lembagaId") ?? undefined;
 
   const { data: result, isLoading } = useQuery({
-    queryKey: ["programs", { page, limit, search, lazId }],
-    queryFn: () => api.get<any[]>("/programs", { page, limit, search, lazId }),
+    queryKey: ["programs", { page, limit, search, lembagaId }],
+    queryFn: () => api.get<any[]>("/programs", { page, limit, search, lembagaId }),
   });
 
-  const { data: lazsResult } = useQuery({
-    queryKey: ["laz", "options"],
-    queryFn: () => api.get<any>("/laz/options"),
+  const { data: lembagasResult } = useQuery({
+    queryKey: ["lembaga", "options"],
+    queryFn: () => api.get<any>("/lembaga/options"),
     enabled: isSuperAdmin,
   });
 
@@ -61,8 +61,8 @@ export function ProgramsListPage() {
         searchValue={search}
         searchPlaceholder="Cari judul atau deskripsi..."
         filterSlot={
-          isSuperAdmin && lazsResult?.data?.length ? (
-            <UserLazFilter lazs={lazsResult.data} />
+          isSuperAdmin && lembagasResult?.data?.length ? (
+            <UserLembagaFilter lembagas={lembagasResult.data} />
           ) : undefined
         }
       />

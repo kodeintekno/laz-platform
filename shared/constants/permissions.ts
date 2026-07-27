@@ -51,8 +51,13 @@ export const PERMISSIONS = {
   // ── System Settings ──────────────────────────────────────────────
   SETTINGS_MANAGE: "settings.manage",
 
-  // ── Tenant (LAZ) Management ──────────────────────────────────────
-  LAZ_MANAGE: "laz.manage",
+  // ── Lembaga Management ───────────────────────────────────────────
+  LEMBAGA_READ: "lembaga.read",
+  LEMBAGA_APPROVE: "lembaga.approve",
+  LEMBAGA_MANAGE: "lembaga.manage",
+
+  // ── Volunteer Management ─────────────────────────────────────────
+  VOLUNTEERS_MANAGE: "volunteers.manage",
 } as const;
 
 export type PermissionKey = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];

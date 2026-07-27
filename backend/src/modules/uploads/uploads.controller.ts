@@ -11,22 +11,24 @@ import {
 import { FileInterceptor } from "@nestjs/platform-express";
 import { CloudinaryProvider } from "../../lib/upload/cloudinary.provider";
 
-const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB — mengikuti bodySizeLimit lama
+const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB — images & PDF documents
 
 /**
  * Upload Cloudinary — pengganti src/app/api/upload/route.ts.
  * Auth-only (guard global) + CSRF (mutasi). Multer memory storage,
- * 5MB, image-only.
+ * 10MB, gambar atau PDF (dokumen legalitas/KTP/CV).
  */
 @Controller("api/upload")
 export class UploadsController {
+  constructor(private readonly cloudinaryProvider: CloudinaryProvider) {}
+
   @Post()
   @UseInterceptors(
     FileInterceptor("file", {
       limits: { fileSize: MAX_FILE_SIZE },
       fileFilter: (_req, file, cb) => {
-        if (!file.mimetype.startsWith("image/")) {
-          return cb(new BadRequestException("Hanya file gambar yang diizinkan"), false);
+        if (!file.mimetype.startsWith("image/") && file.mimetype !== "application/pdf") {
+          return cb(new BadRequestException("Hanya file gambar atau PDF yang diizinkan"), false);
         }
         cb(null, true);
       },
@@ -39,8 +41,7 @@ export class UploadsController {
     if (!file) {
       throw new BadRequestException("No file provided");
     }
-    const provider = new CloudinaryProvider();
-    const result = await provider.upload(
+    const result = await this.cloudinaryProvider.upload(
       { buffer: file.buffer, mimetype: file.mimetype },
       { folder: folder || undefined },
     );
@@ -52,8 +53,7 @@ export class UploadsController {
     if (!publicId) {
       throw new BadRequestException("publicId query param required");
     }
-    const provider = new CloudinaryProvider();
-    await provider.delete(publicId);
+    await this.cloudinaryProvider.delete(publicId);
     return { deleted: true };
   }
 }

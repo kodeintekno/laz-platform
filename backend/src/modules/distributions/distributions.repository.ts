@@ -11,12 +11,12 @@ export class DistributionsRepository {
   /**
    * List all distributions (admin/dashboard).
    */
-  async findMany(page = 1, limit = 10, search?: string, lazId?: string) {
+  async findMany(page = 1, limit = 10, search?: string, lembagaId?: string) {
     const skip = (page - 1) * limit;
 
     const where: Prisma.DistributionWhereInput = {};
-    if (lazId) {
-      where.lazId = lazId;
+    if (lembagaId) {
+      where.lembagaId = lembagaId;
     }
     if (search) {
       where.OR = [
@@ -57,7 +57,7 @@ export class DistributionsRepository {
   async create(data: DistributionInput, userId: string) {
     const program = await this.prisma.program.findUnique({
       where: { id: data.programId },
-      select: { lazId: true },
+      select: { lembagaId: true },
     });
     if (!program) {
       throw new AppError("PROGRAM_NOT_FOUND", "Program tidak ditemukan", 404);
@@ -72,7 +72,7 @@ export class DistributionsRepository {
         programId: data.programId,
         createdById: userId,
         status: "PENDING",
-        lazId: program.lazId,
+        lembagaId: program.lembagaId,
       },
     });
   }

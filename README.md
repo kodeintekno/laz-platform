@@ -16,29 +16,25 @@ The platform supports multiple organizations (multi-tenant architecture), role-b
 
 ### SUPER_ADMIN
 - Manage platform configuration
-- Manage organizations (LAZ)
+- Review, approve, or reject Lembaga (organization) registrations
 - Manage roles and permissions
-- Full system access
+- Full cross-tenant system access
 
-### ADMIN
-- Manage donation programs
-- Manage donors and donations
-- View operational reports
+### LEMBAGA_ADMIN
+- Manage donation programs for their own Lembaga
+- Manage donations, payments, and distributions
+- Review and verify Volunteer applications for their programs
+- View operational and financial reports
 
-### FINANCE
-- Verify payments
-- Approve distributions
-- Monitor financial activities
+### Volunteer (Relawan)
+- Self-service registration, no admin-created account
+- Browse programs open for volunteer applications (across all Lembaga)
+- Apply to programs; track application status
 
-### RELAWAN
-- Submit distribution requests
-- Upload field documentation
-- Track program implementation
-
-### DONATUR
-- Browse programs
-- Make donations
-- View donation history
+### Donor (Donatur)
+- No account required — always a guest checkout
+- Identified by phone number (required) at checkout
+- Look up donation history via phone number, no login needed
 
 ---
 
@@ -198,23 +194,19 @@ the following accounts are created:
 ## Super Admin
 
 ```text
-Email    : admin@laz.id
+Email    : admin@ruangberbagi.id
 Password : Admin@123456
 ```
 
-## Donatur
+## Default Organization (Lembaga)
 
 ```text
-Email    : donatur@laz.id
-Password : Admin@123456
+Yayasan Peduli Umat
+Slug: yayasan-peduli-umat
+Admin email: admin@yayasan-peduli-umat.id
 ```
 
-## Default Organization
-
-```text
-LAZ Peduli
-Slug: laz-peduli
-```
+Donors never have accounts — checkout is always guest, identified by phone number.
 
 ---
 

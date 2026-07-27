@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Campaign } from '@/types';
 import { formatCurrency, cn } from '@/lib/utils';
-import { Wallet, Users, Target, Loader2 } from 'lucide-react';
+import { Wallet, Target, Clock } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
 export default function CampaignCard({ campaign, onDonate, onClick }: { campaign: Campaign, onDonate: () => void, onClick: () => void }) {
@@ -24,6 +24,11 @@ export default function CampaignCard({ campaign, onDonate, onClick }: { campaign
       </div>
 
       <div className="flex-1 space-y-4">
+        {campaign.lembagaName && (
+          <p className="text-[11px] font-bold uppercase tracking-wide text-emerald-600">
+            Oleh {campaign.lembagaName}
+          </p>
+        )}
         <h3 className="text-xl font-bold text-gray-900 leading-tight group-hover:text-emerald-700 transition-colors">
           {campaign.title}
         </h3>
@@ -48,10 +53,16 @@ export default function CampaignCard({ campaign, onDonate, onClick }: { campaign
         </div>
 
         <div className="space-y-2">
-          <div className="flex justify-between text-xs font-bold mb-1">
+          <div className="flex justify-between items-center text-xs font-bold mb-1">
             <span className="text-emerald-600">Terkumpul: {formatCurrency(campaign.raisedAmount)}</span>
             <span className="text-gray-400">{Math.round(progress)}%</span>
           </div>
+          {campaign.daysRemainingText && (
+            <div className="flex items-center gap-1.5 text-[11px] font-semibold text-gray-500">
+              <Clock className="w-3.5 h-3.5" />
+              {campaign.daysRemainingText}
+            </div>
+          )}
           <div className="h-2 w-full bg-gray-100 rounded-full overflow-hidden relative">
             <motion.div 
               initial={{ width: 0 }}

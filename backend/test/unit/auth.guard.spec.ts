@@ -30,9 +30,9 @@ describe("AuthGuard", () => {
     id: "user-1",
     email: "user@example.com",
     name: "User",
-    roleName: "DONATUR",
+    roleName: "LEMBAGA_ADMIN",
     permissions: [],
-    lazId: "laz-1",
+    lembagaId: "lembaga-1",
   };
 
   beforeEach(() => {

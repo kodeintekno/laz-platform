@@ -11,7 +11,6 @@ import { Pencil, RefreshCw } from "lucide-react";
 
 type DonationWithRelations = Prisma.DonationGetPayload<{
   include: {
-    user: { select: { name: true; email: true } };
     program: { select: { title: true } };
     payment: true;
   };
@@ -92,12 +91,12 @@ export function DonationTable({
       cell: (donation) => (
         <div>
           <div className="font-semibold text-primary">
-            {donation.isAnonymous ? "Hamba Allah" : donation.user?.name || donation.donorName || "Hamba Allah"}
-            {donation.isAnonymous && (donation.user?.name || donation.donorName) && (
-              <span className="ml-2 text-xs text-muted font-normal">(Asli: {donation.user?.name || donation.donorName})</span>
+            {donation.isAnonymous ? "Hamba Allah" : donation.donorName || "Hamba Allah"}
+            {donation.isAnonymous && donation.donorName && (
+              <span className="ml-2 text-xs text-muted font-normal">(Asli: {donation.donorName})</span>
             )}
           </div>
-          {donation.user?.email && <div className="text-secondary text-xs mt-0.5">{donation.user.email}</div>}
+          {donation.donorPhone && <div className="text-secondary text-xs mt-0.5">{donation.donorPhone}</div>}
         </div>
       ),
     },

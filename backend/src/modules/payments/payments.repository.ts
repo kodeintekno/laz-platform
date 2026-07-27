@@ -68,12 +68,12 @@ export class PaymentsRepository {
   /**
    * Find paged and searchable payments.
    */
-  async findManyPaged(page: number = 1, limit: number = 10, search?: string, lazId?: string) {
+  async findManyPaged(page: number = 1, limit: number = 10, search?: string, lembagaId?: string) {
     const skip = (page - 1) * limit;
 
     const where: any = {};
-    if (lazId) {
-      where.lazId = lazId;
+    if (lembagaId) {
+      where.lembagaId = lembagaId;
     }
     if (search) {
       const isStatusEnum = [
@@ -85,8 +85,8 @@ export class PaymentsRepository {
         { id: { contains: search, mode: "insensitive" } },
         { paymentMethod: { contains: search, mode: "insensitive" } },
         { donation: { program: { title: { contains: search, mode: "insensitive" } } } },
-        { donation: { user: { name: { contains: search, mode: "insensitive" } } } },
-        { donation: { user: { email: { contains: search, mode: "insensitive" } } } },
+        { donation: { donorName: { contains: search, mode: "insensitive" } } },
+        { donation: { donorPhone: { contains: search, mode: "insensitive" } } },
       ];
 
       if (isStatusEnum) {
@@ -104,12 +104,6 @@ export class PaymentsRepository {
                 select: {
                   title: true,
                   slug: true,
-                },
-              },
-              user: {
-                select: {
-                  name: true,
-                  email: true,
                 },
               },
             },
