@@ -30,11 +30,12 @@ export default function Transparency() {
     setSearchError(null);
     setSearchResult(null);
     try {
-      const { data } = await api.get<any[]>('/donations/history', {
-        phone: searchPhone.trim(),
-        limit: 50,
-      });
-      setSearchResult({ donations: data });
+      const phone = searchPhone.trim();
+      const [donationsRes, distributionsRes] = await Promise.all([
+        api.get<any[]>('/donations/history', { phone, limit: 50 }),
+        api.get<any[]>('/distributions/history', { phone, limit: 50 }),
+      ]);
+      setSearchResult({ donations: donationsRes.data, distributions: distributionsRes.data });
     } catch (err: any) {
       setSearchError(err?.message ?? 'Format nomor WhatsApp tidak valid');
     } finally {
@@ -150,10 +151,10 @@ export default function Transparency() {
           <div className="space-y-4">
             <h3 className="text-xl font-bold flex items-center gap-2">
               <ShieldCheck className="w-6 h-6 text-emerald-600" />
-              Laporan Penyaluran Donasi Anda
+              Riwayat Donasi &amp; Penyaluran Dana Anda
             </h3>
             <p className="text-sm text-gray-500 leading-relaxed">
-              Demi menjaga kehormatan dan privasi penerima manfaat, laporan detil penyaluran hanya diberikan kepada donatur terkait melalui verifikasi nomor WhatsApp.
+              Demi menjaga kehormatan dan privasi penerima manfaat, laporan detil donasi dan penyaluran dana hanya diberikan kepada donatur terkait melalui verifikasi nomor WhatsApp.
             </p>
           </div>
 
@@ -259,6 +260,45 @@ export default function Transparency() {
               )}
             </AnimatePresence>
           </div>
+
+          {searchResult && (
+            <div className="space-y-4">
+              <h4 className="text-sm font-bold text-gray-700 uppercase tracking-widest flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                Riwayat Penyaluran Dana
+              </h4>
+              {searchResult.distributions.length === 0 ? (
+                <div className="p-8 text-center bg-gray-50 rounded-[2rem] border border-dashed border-gray-200 text-gray-400">
+                  <p className="text-sm italic">Belum ada riwayat penyaluran dana dari lembaga yang Anda donasikan.</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {searchResult.distributions.map((dist: any) => (
+                    <div
+                      key={dist.id}
+                      className="bg-white p-5 rounded-3xl border border-gray-100 shadow-sm space-y-2"
+                    >
+                      <div className="flex items-start justify-between gap-4">
+                        <div>
+                          <p className="font-bold text-gray-900 text-sm">{dist.title}</p>
+                          <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-0.5">
+                            {dist.program?.title} &middot; {dist.lembaga?.name}
+                          </p>
+                        </div>
+                      </div>
+                      <p className="text-xs text-gray-500">{dist.description}</p>
+                      <div className="flex items-end justify-between">
+                        <p className="text-lg font-black text-emerald-600">{formatCurrency(Number(dist.amount))}</p>
+                        <p className="text-[10px] text-gray-400 font-bold">
+                          {new Date(dist.createdAt).toLocaleDateString('id-ID', { dateStyle: 'medium' } as any)}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Live Feed */}

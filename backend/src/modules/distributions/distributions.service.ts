@@ -33,31 +33,7 @@ export class DistributionsService {
     return distribution;
   }
 
-  async approveDistribution(distributionId: string, adminUserId: string) {
-    const updated = await this.distributionsRepository.approve(distributionId, adminUserId);
-
-    await this.auditService.log({
-      userId: adminUserId,
-      action: AuditAction.DISTRIBUTION_UPDATE,
-      entity: "Distribution",
-      entityId: distributionId,
-      newData: updated as any,
-    });
-
-    return updated;
-  }
-
-  async rejectDistribution(distributionId: string, adminUserId: string) {
-    const updated = await this.distributionsRepository.reject(distributionId, adminUserId);
-
-    await this.auditService.log({
-      userId: adminUserId,
-      action: AuditAction.DISTRIBUTION_UPDATE,
-      entity: "Distribution",
-      entityId: distributionId,
-      newData: updated as any,
-    });
-
-    return updated;
+  async getDistributionHistoryByPhone(phone: string, page: number, limit: number) {
+    return this.distributionsRepository.findHistoryByPhone(phone, page, limit);
   }
 }

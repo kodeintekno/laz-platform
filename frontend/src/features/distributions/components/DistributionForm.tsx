@@ -43,7 +43,7 @@ export function DistributionForm({ programId, availableBalance }: { programId: s
         setError(result.error);
         toast.error(result.error);
       } else if (result?.success) {
-        toast.success("Penyaluran dana berhasil diajukan!");
+        toast.success("Penyaluran dana berhasil dicatat!");
         router.push("/dashboard/distributions");
         router.refresh();
       }
@@ -142,7 +142,7 @@ export function DistributionForm({ programId, availableBalance }: { programId: s
             isLoading={isPending}
             intent="primary"
           >
-            Ajukan Penyaluran
+            Catat Penyaluran
           </Button>
         </CardFooter>
       </FormWrapper>
