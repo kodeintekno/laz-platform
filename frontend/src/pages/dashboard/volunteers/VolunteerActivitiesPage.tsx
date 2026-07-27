@@ -145,7 +145,7 @@ export function VolunteerActivitiesPage() {
       <PageHeader
         title="Kegiatan Relawan"
         description="Kelola kegiatan yang membuka pendaftaran relawan untuk lembaga Anda."
-        action={<Button size="sm" onClick={openCreate}>Buat Kegiatan</Button>}
+        action={<Button intent="primary" onClick={openCreate}>Buat Kegiatan</Button>}
       />
 
       <DataTableToolbar searchValue={search} searchPlaceholder="Cari judul atau deskripsi kegiatan..." />

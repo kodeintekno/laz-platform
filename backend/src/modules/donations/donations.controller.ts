@@ -5,7 +5,6 @@ import {
   Get,
   NotFoundException,
   Param,
-  Patch,
   Post,
   Query,
 } from "@nestjs/common";
@@ -95,16 +94,6 @@ export class DonationsController {
   ) {
     const donation = await this.donationsService.createAdminDonation(body, user.id);
     return { donationId: donation.id };
-  }
-
-  @Patch(":id")
-  @RequirePermission(PERMISSIONS.DONATIONS_UPDATE)
-  async updateAdmin(
-    @Param("id") id: string,
-    @Body(new ZodValidationPipe(adminDonationSchema)) body: AdminDonationInput,
-    @CurrentUser() user: RBACSessionUser,
-  ) {
-    return this.donationsService.updateAdminDonation(id, body, user.id);
   }
 
   /** Pengganti generateMockWebhookPayloadAction. */

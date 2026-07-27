@@ -42,7 +42,6 @@ const PERMISSION_DEFINITIONS = [
   // Donations
   { key: "donations.read", description: "Melihat riwayat transaksi donasi masuk" },
   { key: "donations.create", description: "Mencatat transaksi donasi secara manual" },
-  { key: "donations.update", description: "Mengubah status atau informasi donasi" },
   // Payments
   { key: "payments.read", description: "Melihat riwayat transaksi pembayaran" },
   { key: "payments.manage", description: "Mengelola dan verifikasi status pembayaran donasi" },
@@ -82,7 +81,6 @@ const ROLE_PERMISSIONS: Record<string, string[]> = {
     "programs.publish",
     "donations.read",
     "donations.create",
-    "donations.update",
     "payments.read",
     "payments.manage",
     "distributions.read",

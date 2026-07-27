@@ -25,7 +25,6 @@ export const PERMISSIONS = {
   // ── Donation Management ──────────────────────────────────────────
   DONATIONS_READ: "donations.read",
   DONATIONS_CREATE: "donations.create",
-  DONATIONS_UPDATE: "donations.update",
 
   // ── Payment Management ───────────────────────────────────────────
   PAYMENTS_READ: "payments.read",

@@ -16,12 +16,6 @@ export async function createAdminDonationAction(formData: FormData): Promise<Act
   return result;
 }
 
-export async function updateAdminDonationAction(id: string, formData: FormData): Promise<ActionResult> {
-  const result = await asAction(api.patch(`/donations/${id}`, Object.fromEntries(formData.entries())));
-  if ("success" in result) queryClient.invalidateQueries({ queryKey: ["donations"] });
-  return result;
-}
-
 export async function generateMockWebhookPayloadAction(donationId: string): Promise<ActionResult<{ payload: unknown }>> {
   const result = await asAction(
     api.post<{ payload: unknown }>(`/donations/${donationId}/mock-webhook`),

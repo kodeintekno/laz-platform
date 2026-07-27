@@ -51,7 +51,7 @@ export function ProgramsListPage() {
         action={
           can(PERMISSIONS.PROGRAMS_CREATE) ? (
             <Link to="/dashboard/programs/new">
-              <Button size="sm">Buat Program</Button>
+              <Button intent="primary">Buat Program</Button>
             </Link>
           ) : undefined
         }

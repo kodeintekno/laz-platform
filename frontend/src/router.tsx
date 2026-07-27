@@ -31,7 +31,6 @@ import { LembagaRegisterPage } from "@/pages/lembaga/LembagaRegisterPage";
 
 // Volunteer pages (separate auth stack)
 import { VolunteerRegisterPage } from "@/pages/volunteer/VolunteerRegisterPage";
-import { VolunteerLoginPage } from "@/pages/volunteer/VolunteerLoginPage";
 import { VolunteerDashboardPage } from "@/pages/volunteer/VolunteerDashboardPage";
 import { VolunteerActivitiesPage } from "@/pages/volunteer/VolunteerActivitiesPage";
 import { VolunteerApplicationsPage as VolunteerOwnApplicationsPage } from "@/pages/volunteer/VolunteerApplicationsPage";
@@ -47,7 +46,6 @@ import { EditProgramPage } from "@/pages/dashboard/programs/EditProgramPage";
 import { NewDistributionForProgramPage } from "@/pages/dashboard/programs/NewDistributionForProgramPage";
 import { DonationsListPage } from "@/pages/dashboard/donations/DonationsListPage";
 import { NewDonationPage } from "@/pages/dashboard/donations/NewDonationPage";
-import { EditDonationPage } from "@/pages/dashboard/donations/EditDonationPage";
 import { DistributionsListPage } from "@/pages/dashboard/distributions/DistributionsListPage";
 import { PaymentsListPage } from "@/pages/dashboard/payments/PaymentsListPage";
 import { UsersListPage } from "@/pages/dashboard/users/UsersListPage";
@@ -98,7 +96,6 @@ export const router = createBrowserRouter([
       },
       // Volunteer auth routes (separate principal — own chrome)
       { path: "/volunteer/register", element: <VolunteerRegisterPage /> },
-      { path: "/volunteer/login", element: <VolunteerLoginPage /> },
       // Volunteer dashboard
       {
         element: (
@@ -172,14 +169,6 @@ export const router = createBrowserRouter([
             element: (
               <RequirePermission permission={PERMISSIONS.DONATIONS_CREATE}>
                 <NewDonationPage />
-              </RequirePermission>
-            ),
-          },
-          {
-            path: "donations/:id/edit",
-            element: (
-              <RequirePermission permission={PERMISSIONS.DONATIONS_UPDATE}>
-                <EditDonationPage />
               </RequirePermission>
             ),
           },

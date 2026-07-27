@@ -31,23 +31,23 @@ export function VolunteerHistoryPage() {
 
           {applications.map((app: any) => (
             <div key={app.id} className="bg-surface rounded-2xl border border-border/40 p-5">
-              <div className="flex items-center justify-between gap-4">
-                <div>
-                  <p className="font-bold text-primary">{app.activity?.title}</p>
-                  <p className="text-xs text-secondary">{app.lembaga?.name}</p>
+              <div className="flex items-start justify-between gap-4">
+                <div className="min-w-0">
+                  <p className="font-bold text-primary wrap-break-word">{app.activity?.title}</p>
+                  <p className="text-xs text-secondary wrap-break-word">{app.lembaga?.name}</p>
                   {app.verifiedAt && (
                     <p className="text-xs text-secondary">Terverifikasi {fmtDate(app.verifiedAt)}</p>
                   )}
                 </div>
-                <Badge intent="success">Selesai</Badge>
+                <Badge intent="success" className="shrink-0">Selesai</Badge>
               </div>
               {app.reportText && (
                 <div className="mt-3 pt-3 border-t border-border/30">
-                  <p className="text-sm text-secondary whitespace-pre-line">{app.reportText}</p>
+                  <p className="text-sm text-secondary whitespace-pre-line wrap-break-word">{app.reportText}</p>
                 </div>
               )}
               {app.reportNote && (
-                <p className="text-xs text-secondary mt-2 italic">Catatan lembaga: {app.reportNote}</p>
+                <p className="text-xs text-secondary mt-2 italic wrap-break-word">Catatan lembaga: {app.reportNote}</p>
               )}
             </div>
           ))}

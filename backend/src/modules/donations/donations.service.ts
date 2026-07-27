@@ -56,20 +56,6 @@ export class DonationsService {
     return result;
   }
 
-  async updateAdminDonation(id: string, data: AdminDonationInput, adminUserId: string) {
-    const result = await this.donationsRepository.updateAdminDonation(id, data);
-
-    await this.auditService.log({
-      userId: adminUserId,
-      action: AuditAction.UPDATE,
-      entity: "Donation",
-      entityId: id,
-      newData: result as any,
-    });
-
-    return result;
-  }
-
   /**
    * Bangun payload mock-webhook Midtrans (settlement) untuk simulasi
    * pembayaran dari dashboard admin.

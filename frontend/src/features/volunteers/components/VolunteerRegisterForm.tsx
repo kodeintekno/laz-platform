@@ -92,7 +92,7 @@ export function VolunteerRegisterForm() {
 
       <p className="text-center text-sm text-secondary">
         Sudah punya akun relawan?{" "}
-        <Link to="/volunteer/login" className="text-brand-primary hover:underline font-semibold">
+        <Link to="/login" className="text-brand-primary hover:underline font-semibold">
           Masuk di sini
         </Link>
       </p>
