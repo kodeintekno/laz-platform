@@ -120,9 +120,9 @@ export function HomePage() {
       </div>
 
       <div id="programs" className="scroll-mt-32 space-y-12 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-8">
-          <div className="space-y-4">
-            <motion.div 
+        <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-8">
+          <div className="space-y-4 lg:max-w-sm shrink-0">
+            <motion.div
               initial={{ opacity: 0, x: -20 }}
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
@@ -139,61 +139,63 @@ export function HomePage() {
             </p>
           </div>
 
-          <div className="flex flex-wrap items-center gap-4">
-            <div className="relative group flex-1 md:flex-none">
+          <div className="space-y-3 w-full lg:max-w-xl">
+            <div className="relative group w-full">
               <input
                 type="text"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Cari program..."
-                className="w-full md:w-64 bg-white border border-gray-100 rounded-2xl px-6 py-4 text-xs font-bold text-gray-900 shadow-sm hover:shadow-xl hover:shadow-emerald-900/5 transition-all focus:ring-2 focus:ring-emerald-500 outline-none placeholder:text-gray-400 placeholder:font-medium placeholder:normal-case"
+                className="w-full bg-white border border-gray-100 rounded-2xl px-6 py-4 text-xs font-bold text-gray-900 shadow-sm hover:shadow-xl hover:shadow-emerald-900/5 transition-all focus:ring-2 focus:ring-emerald-500 outline-none placeholder:text-gray-400 placeholder:font-medium placeholder:normal-case"
               />
             </div>
 
-            <div className="relative group flex-1 md:flex-none">
-              <select
-                value={selectedCategory}
-                onChange={(e) => setSelectedCategory(e.target.value)}
-                className="w-full md:w-auto appearance-none bg-white border border-gray-100 rounded-2xl px-6 py-4 pr-12 text-xs font-black uppercase tracking-widest text-gray-900 shadow-sm hover:shadow-xl hover:shadow-emerald-900/5 transition-all cursor-pointer focus:ring-2 focus:ring-emerald-500 outline-none min-w-[200px]"
-              >
-                {categories.map((cat) => (
-                  <option key={cat.id} value={cat.id}>
-                    {cat.label}
-                  </option>
-                ))}
-              </select>
-              <div className="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none text-emerald-600 transition-transform group-hover:scale-110">
-                <ChevronDown className="w-4 h-4" />
+            <div className="grid grid-cols-3 gap-3">
+              <div className="relative group">
+                <select
+                  value={selectedCategory}
+                  onChange={(e) => setSelectedCategory(e.target.value)}
+                  className="w-full appearance-none bg-white border border-gray-100 rounded-2xl px-6 py-4 pr-12 text-xs font-black uppercase tracking-widest text-gray-900 shadow-sm hover:shadow-xl hover:shadow-emerald-900/5 transition-all cursor-pointer focus:ring-2 focus:ring-emerald-500 outline-none"
+                >
+                  {categories.map((cat) => (
+                    <option key={cat.id} value={cat.id}>
+                      {cat.label}
+                    </option>
+                  ))}
+                </select>
+                <div className="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none text-emerald-600 transition-transform group-hover:scale-110">
+                  <ChevronDown className="w-4 h-4" />
+                </div>
               </div>
-            </div>
 
-            <div className="relative group flex-1 md:flex-none">
-              <select
-                value={selectedLembaga}
-                onChange={(e) => setSelectedLembaga(e.target.value)}
-                className="w-full md:w-auto appearance-none bg-white border border-gray-100 rounded-2xl px-6 py-4 pr-12 text-xs font-black uppercase tracking-widest text-gray-900 shadow-sm hover:shadow-xl hover:shadow-emerald-900/5 transition-all cursor-pointer focus:ring-2 focus:ring-emerald-500 outline-none min-w-[200px]"
-              >
-                <option value="semua">Semua Lembaga</option>
-                {lembagaOptions.map((l: any) => (
-                  <option key={l.id} value={l.slug}>{l.name}</option>
-                ))}
-              </select>
-              <div className="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none text-emerald-600 transition-transform group-hover:scale-110">
-                <ChevronDown className="w-4 h-4" />
+              <div className="relative group">
+                <select
+                  value={selectedLembaga}
+                  onChange={(e) => setSelectedLembaga(e.target.value)}
+                  className="w-full appearance-none bg-white border border-gray-100 rounded-2xl px-6 py-4 pr-12 text-xs font-black uppercase tracking-widest text-gray-900 shadow-sm hover:shadow-xl hover:shadow-emerald-900/5 transition-all cursor-pointer focus:ring-2 focus:ring-emerald-500 outline-none"
+                >
+                  <option value="semua">Semua Lembaga</option>
+                  {lembagaOptions.map((l: any) => (
+                    <option key={l.id} value={l.slug}>{l.name}</option>
+                  ))}
+                </select>
+                <div className="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none text-emerald-600 transition-transform group-hover:scale-110">
+                  <ChevronDown className="w-4 h-4" />
+                </div>
               </div>
-            </div>
 
-            <div className="relative group flex-1 md:flex-none">
-              <select
-                value={sortOrder}
-                onChange={(e) => setSortOrder(e.target.value as 'desc' | 'asc')}
-                className="w-full md:w-auto appearance-none bg-white border border-gray-100 rounded-2xl px-6 py-4 pr-12 text-xs font-black uppercase tracking-widest text-gray-900 shadow-sm hover:shadow-xl hover:shadow-emerald-900/5 transition-all cursor-pointer focus:ring-2 focus:ring-emerald-500 outline-none min-w-[200px]"
-              >
-                <option value="desc">Terbaru</option>
-                <option value="asc">Segera Berakhir</option>
-              </select>
-              <div className="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none text-emerald-600 transition-transform group-hover:scale-110">
-                <ChevronDown className="w-4 h-4" />
+              <div className="relative group">
+                <select
+                  value={sortOrder}
+                  onChange={(e) => setSortOrder(e.target.value as 'desc' | 'asc')}
+                  className="w-full appearance-none bg-white border border-gray-100 rounded-2xl px-6 py-4 pr-12 text-xs font-black uppercase tracking-widest text-gray-900 shadow-sm hover:shadow-xl hover:shadow-emerald-900/5 transition-all cursor-pointer focus:ring-2 focus:ring-emerald-500 outline-none"
+                >
+                  <option value="desc">Terbaru</option>
+                  <option value="asc">Segera Berakhir</option>
+                </select>
+                <div className="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none text-emerald-600 transition-transform group-hover:scale-110">
+                  <ChevronDown className="w-4 h-4" />
+                </div>
               </div>
             </div>
           </div>
