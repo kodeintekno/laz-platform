@@ -92,8 +92,7 @@ export function DistributionForm({ programId, availableBalance }: { programId: s
             <FormField
               name="amount"
               label="Nominal (Rp)"
-              type="input"
-              inputType="number"
+              type="currency"
               disabled={isPending}
             />
           </div>

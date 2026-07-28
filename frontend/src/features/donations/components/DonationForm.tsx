@@ -3,7 +3,7 @@ import { useFormContext } from "react-hook-form";
 import { ArrowLeft } from "lucide-react";
 import { Link } from "react-router-dom";
 
-import { Button, Card, CardContent, CardFooter, FormWrapper, FormField, FormInput } from "@/components/ui";
+import { Button, Card, CardContent, CardFooter, FormWrapper, FormField } from "@/components/ui";
 import { toast } from "@/stores/toast.store";
 import { createDonationAction } from "@/features/donations/actions/donations.actions";
 import { donationSchema, type DonationInput } from "@/features/donations/validations/donations.schema";
@@ -151,14 +151,12 @@ function DonationFormFields({ isPending }: { isPending: boolean }) {
           ))}
         </div>
 
-        <div className="relative mt-4">
-          <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4 z-10">
-            <span className="text-secondary font-medium sm:text-sm">Rp</span>
-          </div>
-          <FormInput
+        <div className="mt-4">
+          <FormField
             name="amount"
-            type="number"
-            className="pl-12 text-lg font-bold"
+            type="currency"
+            prefix="Rp"
+            className="text-lg font-bold"
             placeholder="Nominal lainnya"
             disabled={isPending}
           />

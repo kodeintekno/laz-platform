@@ -75,8 +75,7 @@ export function AdminDonationForm({
             <FormField
               name="amount"
               label="Nominal Donasi (Rp)"
-              type="input"
-              inputType="number"
+              type="currency"
               disabled={isPending}
             />
 

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Calculator, Coins, Landmark, Scale, HelpCircle, ArrowRight, Info, AlertCircle } from 'lucide-react';
 import { formatCurrency, cn } from '@/lib/utils';
+import { useThousandsInput } from '@/hooks/useThousandsInput';
 import { toast } from '@/stores/toast.store';
 
 interface ZakatCalculatorProps {
@@ -207,23 +208,27 @@ export default function ZakatCalculator({ user, onProceedToDonate }: ZakatCalcul
   );
 }
 
-function InputField({ label, value, onChange, prefix, suffix, description }: { 
-  label: string, 
-  value: number, 
-  onChange: (v: number) => void, 
-  prefix?: string, 
+function InputField({ label, value, onChange, prefix, suffix, description }: {
+  label: string,
+  value: number,
+  onChange: (v: number) => void,
+  prefix?: string,
   suffix?: string,
-  description?: string 
+  description?: string
 }) {
+  const { displayValue, handleChange, inputRef } = useThousandsInput(value, onChange);
+
   return (
     <div className="space-y-1.5">
       <label className="text-xs font-bold text-gray-500">{label}</label>
       <div className="relative">
         {prefix && <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 font-bold text-xs">{prefix}</span>}
-        <input 
-          type="number"
-          value={value === 0 ? '' : value}
-          onChange={(e) => onChange(Number(e.target.value))}
+        <input
+          ref={inputRef}
+          type="text"
+          inputMode="numeric"
+          value={displayValue}
+          onChange={handleChange}
           placeholder="0"
           className={cn(
             "w-full bg-gray-50/50 border border-gray-100 rounded-2xl py-3 focus:ring-2 focus:ring-emerald-500 transition-all font-mono text-sm font-bold",

@@ -1,6 +1,7 @@
 export { FormWrapper, type FormWrapperProps } from "./form-wrapper";
 export { FormField, type FormFieldProps } from "./form-field";
 export { FormInput, type FormInputProps } from "./form-input";
+export { FormCurrencyInput, type FormCurrencyInputProps } from "./form-currency-input";
 export { FormTextarea, type FormTextareaProps } from "./form-textarea";
 export { FormSelect, type FormSelectProps } from "./form-select";
 export { FormCheckbox, type FormCheckboxProps } from "./form-checkbox";

@@ -130,8 +130,7 @@ export function ProgramForm({
             <FormField
               name="targetAmount"
               label="Target Dana (Rp)"
-              type="input"
-              inputType="number"
+              type="currency"
               placeholder="0"
               disabled={isPending}
             />
