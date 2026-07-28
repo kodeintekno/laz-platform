@@ -121,7 +121,7 @@ export function HomePage() {
 
       <div id="programs" className="scroll-mt-32 space-y-12 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-8">
-          <div className="space-y-4 lg:max-w-sm shrink-0">
+          <div className="space-y-4 lg:w-1/4 shrink-0">
             <motion.div
               initial={{ opacity: 0, x: -20 }}
               whileInView={{ opacity: 1, x: 0 }}
@@ -139,7 +139,7 @@ export function HomePage() {
             </p>
           </div>
 
-          <div className="space-y-3 w-full lg:max-w-xl">
+          <div className="space-y-3 w-full lg:w-3/4">
             <div className="relative group w-full">
               <input
                 type="text"

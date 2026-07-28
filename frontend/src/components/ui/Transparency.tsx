@@ -1,47 +1,12 @@
-import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { api } from '@/lib/api-client';
+import { useState } from 'react';
 import { formatCurrency, cn } from '@/lib/utils';
-import { ShieldCheck, BarChart3, Users, Download, CheckCircle2, Info, Search, Send, Smartphone } from 'lucide-react';
-import { motion, AnimatePresence } from 'motion/react';
+import { ShieldCheck, BarChart3, Users, Download, CheckCircle2 } from 'lucide-react';
+import { motion } from 'motion/react';
 import BeneficiaryImpactReport from './BeneficiaryImpactReport';
-
-const DONATION_STATUS_LABEL: Record<string, string> = {
-  PAID: 'Berhasil',
-  PENDING: 'Menunggu Pembayaran',
-  FAILED: 'Gagal',
-  EXPIRED: 'Kedaluwarsa',
-};
+import { DonationHistoryLookup } from '@/features/donations/components/DonationHistoryLookup';
 
 export default function Transparency() {
   const [globalStats] = useState({ totalRaised: 1250000000, totalDistributed: 980000000, donorCount: 15420 });
-
-  // Search state
-  const [searchPhone, setSearchPhone] = useState('');
-  const [isSearching, setIsSearching] = useState(false);
-  const [searchResult, setSearchResult] = useState<any>(null);
-  const [searchError, setSearchError] = useState<string | null>(null);
-
-  const handleSearch = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!searchPhone.trim()) return;
-
-    setIsSearching(true);
-    setSearchError(null);
-    setSearchResult(null);
-    try {
-      const phone = searchPhone.trim();
-      const [donationsRes, distributionsRes] = await Promise.all([
-        api.get<any[]>('/donations/history', { phone, limit: 50 }),
-        api.get<any[]>('/distributions/history', { phone, limit: 50 }),
-      ]);
-      setSearchResult({ donations: donationsRes.data, distributions: distributionsRes.data });
-    } catch (err: any) {
-      setSearchError(err?.message ?? 'Format nomor WhatsApp tidak valid');
-    } finally {
-      setIsSearching(false);
-    }
-  };
 
   const [downloadingIndex, setDownloadingIndex] = useState<number | null>(null);
   const [isGeneralLoading, setIsGeneralLoading] = useState(false);
@@ -158,147 +123,7 @@ export default function Transparency() {
             </p>
           </div>
 
-          <form onSubmit={handleSearch} className="relative group">
-            <input 
-              type="tel"
-              value={searchPhone}
-              onChange={(e) => setSearchPhone(e.target.value)}
-              placeholder="Masukkan nomor WhatsApp Anda..."
-              className="w-full bg-white border border-gray-100 rounded-3xl py-6 pl-14 pr-32 text-sm font-bold shadow-sm focus:ring-2 focus:ring-emerald-500 transition-all outline-none"
-            />
-            <div className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400">
-              <Smartphone className="w-5 h-5" />
-            </div>
-            <button 
-              type="submit"
-              disabled={isSearching}
-              className="absolute right-3 top-1/2 -translate-y-1/2 bg-emerald-600 text-white px-6 py-3 rounded-2xl text-xs font-black uppercase tracking-widest hover:bg-emerald-700 transition-all disabled:opacity-50 flex items-center gap-2 cursor-pointer"
-            >
-              {isSearching ? <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <Search className="w-3 h-3" />}
-              Cek Laporan
-            </button>
-          </form>
-
-          <div className="space-y-4 min-h-[300px]">
-            <AnimatePresence mode="wait">
-              {!searchResult && !isSearching && !searchError && (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  className="p-12 text-center bg-gray-50 rounded-[2.5rem] border border-dashed border-gray-200 text-gray-400 space-y-4"
-                >
-                  <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center mx-auto text-gray-200">
-                    <ShieldCheck className="w-8 h-8" />
-                  </div>
-                  <p className="text-sm italic">Silakan masukkan nomor WhatsApp yang Anda gunakan saat berdonasi untuk melihat laporan penyaluran dana Anda.</p>
-                </motion.div>
-              )}
-
-              {searchError && (
-                <motion.div
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="p-12 text-center bg-red-50 rounded-[2.5rem] border border-red-100 text-red-500 space-y-2"
-                >
-                  <Info className="w-12 h-12 mx-auto mb-2 opacity-50" />
-                  <p className="font-bold">Nomor Tidak Valid</p>
-                  <p className="text-xs opacity-80">{searchError}</p>
-                </motion.div>
-              )}
-
-              {searchResult && searchResult.donations.length === 0 && (
-                <motion.div
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="p-12 text-center bg-red-50 rounded-[2.5rem] border border-red-100 text-red-500 space-y-2"
-                >
-                  <Info className="w-12 h-12 mx-auto mb-2 opacity-50" />
-                  <p className="font-bold">Data Tidak Ditemukan</p>
-                  <p className="text-xs opacity-80">Maaf, kami tidak menemukan riwayat donasi untuk nomor ini. Pastikan nomor yang Anda masukkan sudah benar.</p>
-                </motion.div>
-              )}
-
-              {searchResult && searchResult.donations.length > 0 && (
-                <motion.div
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="space-y-3"
-                >
-                  {searchResult.donations.map((d: any) => (
-                    <div
-                      key={d.id}
-                      className="bg-white p-5 rounded-3xl border border-gray-100 shadow-sm space-y-2"
-                    >
-                      <div className="flex items-start justify-between gap-4">
-                        <div>
-                          <Link
-                            to={`/programs/${d.program?.slug}`}
-                            className="font-bold text-gray-900 text-sm hover:text-emerald-600 transition-colors"
-                          >
-                            {d.program?.title}
-                          </Link>
-                          <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-0.5">
-                            {d.lembaga?.name}
-                          </p>
-                        </div>
-                        <span className="px-2 py-0.5 bg-gray-50 text-[8px] font-bold text-gray-400 rounded uppercase tracking-tighter border border-gray-100 shrink-0">
-                          {DONATION_STATUS_LABEL[d.status] ?? d.status}
-                        </span>
-                      </div>
-                      <div className="flex items-end justify-between">
-                        <p className="text-lg font-black text-emerald-600">{formatCurrency(Number(d.amount))}</p>
-                        <p className="text-[10px] text-gray-400 font-bold">
-                          {new Date(d.createdAt).toLocaleDateString('id-ID', { dateStyle: 'medium' } as any)}
-                        </p>
-                      </div>
-                      {d.message && (
-                        <p className="text-xs italic bg-gray-50 p-2 rounded-lg text-gray-500">"{d.message}"</p>
-                      )}
-                    </div>
-                  ))}
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
-
-          {searchResult && (
-            <div className="space-y-4">
-              <h4 className="text-sm font-bold text-gray-700 uppercase tracking-widest flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                Riwayat Penyaluran Dana
-              </h4>
-              {searchResult.distributions.length === 0 ? (
-                <div className="p-8 text-center bg-gray-50 rounded-[2rem] border border-dashed border-gray-200 text-gray-400">
-                  <p className="text-sm italic">Belum ada riwayat penyaluran dana dari lembaga yang Anda donasikan.</p>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {searchResult.distributions.map((dist: any) => (
-                    <div
-                      key={dist.id}
-                      className="bg-white p-5 rounded-3xl border border-gray-100 shadow-sm space-y-2"
-                    >
-                      <div className="flex items-start justify-between gap-4">
-                        <div>
-                          <p className="font-bold text-gray-900 text-sm">{dist.title}</p>
-                          <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-0.5">
-                            {dist.program?.title} &middot; {dist.lembaga?.name}
-                          </p>
-                        </div>
-                      </div>
-                      <p className="text-xs text-gray-500">{dist.description}</p>
-                      <div className="flex items-end justify-between">
-                        <p className="text-lg font-black text-emerald-600">{formatCurrency(Number(dist.amount))}</p>
-                        <p className="text-[10px] text-gray-400 font-bold">
-                          {new Date(dist.createdAt).toLocaleDateString('id-ID', { dateStyle: 'medium' } as any)}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
+          <DonationHistoryLookup searchButtonLabel="Cek Laporan" inputPlaceholder="Masukkan nomor WhatsApp Anda..." />
         </div>
 
         {/* Live Feed */}
