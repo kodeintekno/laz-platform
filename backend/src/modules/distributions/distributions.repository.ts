@@ -11,12 +11,12 @@ export class DistributionsRepository {
   /**
    * List all distributions (admin/dashboard).
    */
-  async findMany(page = 1, limit = 10, search?: string, lazId?: string) {
+  async findMany(page = 1, limit = 10, search?: string, lembagaId?: string) {
     const skip = (page - 1) * limit;
 
     const where: Prisma.DistributionWhereInput = {};
-    if (lazId) {
-      where.lazId = lazId;
+    if (lembagaId) {
+      where.lembagaId = lembagaId;
     }
     if (search) {
       where.OR = [
@@ -52,91 +52,51 @@ export class DistributionsRepository {
   }
 
   /**
-   * Create a new distribution request.
+   * Create and immediately finalize a distribution (no approval step).
+   *
+   * Balance check + increment happens as one conditional UPDATE (not a plain
+   * read-then-write) so two concurrent submissions can't both pass a
+   * check-then-update race and jointly over-distribute a program's funds —
+   * the WHERE clause re-verifies the remaining balance atomically under the
+   * row lock Postgres takes for the UPDATE itself.
    */
   async create(data: DistributionInput, userId: string) {
-    const program = await this.prisma.program.findUnique({
-      where: { id: data.programId },
-      select: { lazId: true },
-    });
-    if (!program) {
-      throw new AppError("PROGRAM_NOT_FOUND", "Program tidak ditemukan", 404);
-    }
-
-    return this.prisma.distribution.create({
-      data: {
-        amount: data.amount,
-        title: data.title,
-        description: data.description,
-        receiptImageUrl: data.receiptImageUrl,
-        programId: data.programId,
-        createdById: userId,
-        status: "PENDING",
-        lazId: program.lazId,
-      },
-    });
-  }
-
-  /**
-   * Approve a distribution and atomically increment the program's distributedAmount.
-   */
-  async approve(distributionId: string, adminUserId: string) {
     return this.prisma.$transaction(async (tx) => {
-      const distribution = await tx.distribution.findUnique({
-        where: { id: distributionId },
+      const program = await tx.program.findUnique({
+        where: { id: data.programId },
+        select: { lembagaId: true },
       });
+      if (!program) {
+        throw new AppError("PROGRAM_NOT_FOUND", "Program tidak ditemukan", 404);
+      }
 
-      if (!distribution)
-        throw new AppError("DISTRIBUTION_NOT_FOUND", "Distribution not found", 404);
-      if (distribution.status !== "PENDING")
+      const affected = await tx.$executeRaw`
+        UPDATE "programs"
+        SET "distributedAmount" = "distributedAmount" + ${data.amount}
+        WHERE "id" = ${data.programId}
+          AND "currentAmount" - "distributedAmount" >= ${data.amount}
+      `;
+
+      if (affected === 0) {
         throw new AppError(
-          "INVALID_STATUS",
-          "Only PENDING distributions can be approved",
+          "INSUFFICIENT_BALANCE",
+          "Saldo program tidak mencukupi untuk penyaluran ini",
           409,
         );
+      }
 
-      // Update distribution status
-      const updated = await tx.distribution.update({
-        where: { id: distributionId },
+      return tx.distribution.create({
         data: {
+          amount: data.amount,
+          title: data.title,
+          description: data.description,
+          receiptImageUrl: data.receiptImageUrl,
+          programId: data.programId,
+          createdById: userId,
           status: "COMPLETED",
-          approvedById: adminUserId,
+          lembagaId: program.lembagaId,
         },
       });
-
-      // Increment the program's distributed amount
-      await tx.program.update({
-        where: { id: distribution.programId },
-        data: {
-          distributedAmount: {
-            increment: distribution.amount,
-          },
-        },
-      });
-
-      return updated;
-    });
-  }
-
-  /**
-   * Reject a distribution.
-   */
-  async reject(distributionId: string, adminUserId: string) {
-    const distribution = await this.prisma.distribution.findUnique({
-      where: { id: distributionId },
-    });
-
-    if (!distribution)
-      throw new AppError("DISTRIBUTION_NOT_FOUND", "Distribution not found", 404);
-    if (distribution.status !== "PENDING")
-      throw new AppError("INVALID_STATUS", "Only PENDING distributions can be rejected", 409);
-
-    return this.prisma.distribution.update({
-      where: { id: distributionId },
-      data: {
-        status: "REJECTED",
-        approvedById: adminUserId,
-      },
     });
   }
 
@@ -154,5 +114,54 @@ export class DistributionsRepository {
         createdBy: { select: { name: true } },
       },
     });
+  }
+
+  /**
+   * Riwayat penyaluran/pengeluaran berdasarkan nomor telepon donatur — publik,
+   * lintas-lembaga. Distribution tidak menyimpan donorPhone (bukan entitas milik
+   * donatur), jadi semantiknya: "pengeluaran dari lembaga yang pernah saya
+   * donasikan", bukan penelusuran per-donasi.
+   */
+  async findHistoryByPhone(phone: string, page = 1, limit = 10) {
+    const donorLembagas = await this.prisma.donation.findMany({
+      where: { donorPhone: phone },
+      select: { lembagaId: true },
+      distinct: ["lembagaId"],
+    });
+    const lembagaIds = donorLembagas.map((d) => d.lembagaId);
+
+    if (lembagaIds.length === 0) {
+      return { items: [], metadata: { total: 0, page, limit, totalPages: 1 } };
+    }
+
+    const skip = (page - 1) * limit;
+    const where: Prisma.DistributionWhereInput = {
+      lembagaId: { in: lembagaIds },
+      status: "COMPLETED",
+    };
+
+    const [items, total] = await Promise.all([
+      this.prisma.distribution.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: { createdAt: "desc" },
+        include: {
+          program: { select: { title: true, slug: true } },
+          lembaga: { select: { name: true, slug: true } },
+        },
+      }),
+      this.prisma.distribution.count({ where }),
+    ]);
+
+    return {
+      items,
+      metadata: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit) || 1,
+      },
+    };
   }
 }

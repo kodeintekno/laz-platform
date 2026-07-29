@@ -140,10 +140,11 @@ export function RoleMatrix({ roles, permissions, initialActiveMappings }: RoleMa
     const labels: Record<string, string> = {
       users: "Pengguna & Keanggotaan",
       roles: "Hak Akses & Role",
-      laz: "Lembaga Amil Zakat (LAZ)",
+      lembaga: "Manajemen Lembaga",
       donations: "Transaksi Donasi & Zakat",
       programs: "Program Pendayagunaan",
       distributions: "Penyaluran Dana",
+      volunteers: "Relawan",
     };
     return labels[name.toLowerCase()] || name.toUpperCase();
   };

@@ -1,32 +1,30 @@
-"use client";
-
 import React from "react";
 import { Badge, ActionDropdown } from "@/components/ui";
 import type { ColumnDef } from "@/components/ui/data-table";
 import type { Prisma } from "@prisma/client";
 import { Pencil, Trash2 } from "lucide-react";
 
-export type UserWithRoleAndLaz = Prisma.UserGetPayload<{
+export type UserWithRoleAndLembaga = Prisma.UserGetPayload<{
   include: {
     role: { select: { id: true; name: true } };
-    laz: { select: { id: true; name: true } };
+    lembaga: { select: { id: true; name: true } };
   };
 }>;
 
 interface GetUserColumnsProps {
-  onEdit: (user: UserWithRoleAndLaz) => void;
-  onDelete: (user: UserWithRoleAndLaz) => void;
-  showLazColumn: boolean;
+  onEdit: (user: UserWithRoleAndLembaga) => void;
+  onDelete: (user: UserWithRoleAndLembaga) => void;
+  showLembagaColumn: boolean;
   currentUserId: string;
 }
 
 export function getUserColumns({
   onEdit,
   onDelete,
-  showLazColumn,
+  showLembagaColumn,
   currentUserId,
-}: GetUserColumnsProps): ColumnDef<UserWithRoleAndLaz>[] {
-  const columns: ColumnDef<UserWithRoleAndLaz>[] = [
+}: GetUserColumnsProps): ColumnDef<UserWithRoleAndLembaga>[] {
+  const columns: ColumnDef<UserWithRoleAndLembaga>[] = [
     {
       header: "Nama",
       accessorKey: "name",
@@ -85,18 +83,9 @@ export function getUserColumns({
         if (normalized === "SUPER_ADMIN") {
           intent = "destructive";
           label = "Super Admin";
-        } else if (normalized === "ADMIN") {
+        } else if (normalized === "LEMBAGA_ADMIN") {
           intent = "info";
-          label = "Admin";
-        } else if (normalized === "FINANCE") {
-          intent = "warning";
-          label = "Finance";
-        } else if (normalized === "RELAWAN") {
-          intent = "success";
-          label = "Relawan";
-        } else if (normalized === "DONATUR") {
-          intent = "muted";
-          label = "Donatur";
+          label = "Admin Lembaga";
         }
 
         return (
@@ -108,11 +97,11 @@ export function getUserColumns({
     },
   ];
 
-  if (showLazColumn) {
+  if (showLembagaColumn) {
     columns.push({
-      header: "Lembaga Zakat (LAZ)",
-      accessorKey: "laz.name",
-      cell: (user) => <span className="text-secondary text-sm">{user.laz?.name || "N/A"}</span>,
+      header: "Lembaga",
+      accessorKey: "lembaga.name",
+      cell: (user) => <span className="text-secondary text-sm">{user.lembaga?.name || "N/A"}</span>,
     });
   }
 
@@ -121,7 +110,7 @@ export function getUserColumns({
     align: "right",
     cell: (user) => {
       const isSelf = user.id === currentUserId;
-      
+
       const items: {
         label: string;
         icon: React.ComponentType<{ className?: string }>;

@@ -8,8 +8,8 @@ export class AnalyticsRepository {
   /**
    * Get high-level KPI aggregations for the dashboard.
    */
-  async getDashboardMetrics(lazId?: string) {
-    const whereLaz = lazId ? { lazId } : {};
+  async getDashboardMetrics(lembagaId?: string) {
+    const whereLembaga = lembagaId ? { lembagaId } : {};
 
     const [
       totalDonationsPaid,
@@ -18,18 +18,18 @@ export class AnalyticsRepository {
       totalUsersCount,
     ] = await Promise.all([
       this.prisma.donation.aggregate({
-        where: { status: "PAID", ...whereLaz },
+        where: { status: "PAID", ...whereLembaga },
         _sum: { amount: true },
       }),
       this.prisma.distribution.aggregate({
-        where: { status: "COMPLETED", ...whereLaz },
+        where: { status: "COMPLETED", ...whereLembaga },
         _sum: { amount: true },
       }),
       this.prisma.program.count({
-        where: { status: "PUBLISHED", ...whereLaz },
+        where: { status: "PUBLISHED", ...whereLembaga },
       }),
       this.prisma.user.count({
-        where: { status: "ACTIVE", ...whereLaz },
+        where: { status: "ACTIVE", ...whereLembaga },
       }),
     ]);
 
@@ -44,14 +44,13 @@ export class AnalyticsRepository {
   /**
    * Get the 5 most recent PAID donations.
    */
-  async getRecentDonations(lazId?: string) {
+  async getRecentDonations(lembagaId?: string) {
     return this.prisma.donation.findMany({
-      where: { status: "PAID", ...(lazId ? { lazId } : {}) },
+      where: { status: "PAID", ...(lembagaId ? { lembagaId } : {}) },
       orderBy: { updatedAt: "desc" },
       take: 5,
       include: {
         program: { select: { title: true } },
-        user: { select: { name: true } },
       },
     });
   }
@@ -59,14 +58,43 @@ export class AnalyticsRepository {
   /**
    * Get the 5 most recent COMPLETED distributions.
    */
-  async getRecentDistributions(lazId?: string) {
+  async getRecentDistributions(lembagaId?: string) {
     return this.prisma.distribution.findMany({
-      where: { status: "COMPLETED", ...(lazId ? { lazId } : {}) },
+      where: { status: "COMPLETED", ...(lembagaId ? { lembagaId } : {}) },
       orderBy: { updatedAt: "desc" },
       take: 5,
       include: {
         program: { select: { title: true } },
       },
     });
+  }
+
+  /** Statistik platform lintas-tenant — SUPER_ADMIN only. */
+  async getPlatformOverview() {
+    const [
+      lembagaPending,
+      lembagaApproved,
+      lembagaRejected,
+      totalPrograms,
+      totalDonationsAgg,
+      totalVolunteers,
+      pendingVolunteerApplications,
+    ] = await Promise.all([
+      this.prisma.lembaga.count({ where: { status: "PENDING" } }),
+      this.prisma.lembaga.count({ where: { status: "APPROVED" } }),
+      this.prisma.lembaga.count({ where: { status: "REJECTED" } }),
+      this.prisma.program.count(),
+      this.prisma.donation.aggregate({ where: { status: "PAID" }, _sum: { amount: true } }),
+      this.prisma.volunteer.count(),
+      this.prisma.volunteerApplication.count({ where: { status: "PENDING" } }),
+    ]);
+
+    return {
+      lembaga: { pending: lembagaPending, approved: lembagaApproved, rejected: lembagaRejected },
+      totalPrograms,
+      totalDonationsAmount: Number(totalDonationsAgg._sum.amount || 0),
+      totalVolunteers,
+      pendingVolunteerApplications,
+    };
   }
 }

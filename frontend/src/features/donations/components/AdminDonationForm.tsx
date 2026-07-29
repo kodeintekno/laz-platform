@@ -9,13 +9,9 @@ import { FormWrapper, FormField, Button, Card, CardContent, CardFooter } from "@
 export function AdminDonationForm({
   programs,
   users,
-  initialData,
-  action,
 }: {
   programs: { id: string; title: string }[];
   users: { id: string; name: string | null; email: string | null }[];
-  initialData?: any;
-  action?: (id: string, formData: FormData) => Promise<any>;
 }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -25,19 +21,14 @@ export function AdminDonationForm({
     setError(null);
     startTransition(async () => {
       const formData = new FormData();
-      
+
       Object.entries(data).forEach(([key, value]) => {
         if (value !== undefined && value !== null && value !== "") {
           formData.append(key, value.toString());
         }
       });
 
-      let result;
-      if (action && initialData) {
-        result = await action(initialData.id, formData);
-      } else {
-        result = await createAdminDonationAction(formData);
-      }
+      const result = await createAdminDonationAction(formData);
 
       if (result?.error) {
         setError(result.error);
@@ -61,13 +52,12 @@ export function AdminDonationForm({
       schema={adminDonationSchema}
       onSubmit={onSubmit}
       defaultValues={{
-        programId: initialData?.programId || "",
-        userId: initialData?.userId || "",
-        donorName: initialData?.donorName || "",
-        amount: initialData ? Number(initialData.amount) : 50000,
-        message: initialData?.message || "",
-        isAnonymous: initialData?.isAnonymous ?? false,
-        status: initialData?.status || "PAID",
+        programId: "",
+        donorName: "",
+        amount: 50000,
+        message: "",
+        isAnonymous: false,
+        status: "PAID",
       }}
       error={error}
     >
@@ -85,8 +75,7 @@ export function AdminDonationForm({
             <FormField
               name="amount"
               label="Nominal Donasi (Rp)"
-              type="input"
-              inputType="number"
+              type="currency"
               disabled={isPending}
             />
 
@@ -147,7 +136,7 @@ export function AdminDonationForm({
             Batal
           </Button>
           <Button type="submit" intent="primary" isLoading={isPending}>
-            {initialData ? "Simpan Perubahan" : "Simpan Donasi"}
+            Simpan Donasi
           </Button>
         </CardFooter>
       </Card>

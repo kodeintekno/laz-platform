@@ -6,15 +6,3 @@ export async function createDistributionAction(formData: FormData): Promise<Acti
   if ("success" in result) queryClient.invalidateQueries({ queryKey: ["distributions"] });
   return result;
 }
-
-export async function approveDistributionAction(id: string): Promise<ActionResult> {
-  const result = await asAction(api.post(`/distributions/${id}/approve`));
-  if ("success" in result) queryClient.invalidateQueries({ queryKey: ["distributions"] });
-  return result;
-}
-
-export async function rejectDistributionAction(id: string): Promise<ActionResult> {
-  const result = await asAction(api.post(`/distributions/${id}/reject`));
-  if ("success" in result) queryClient.invalidateQueries({ queryKey: ["distributions"] });
-  return result;
-}

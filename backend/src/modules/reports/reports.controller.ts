@@ -2,7 +2,7 @@ import { Controller, Get, Query } from "@nestjs/common";
 import { ReportsService } from "./reports.service";
 import { RequirePermission } from "../../common/decorators/require-permission.decorator";
 import { CurrentUser } from "../../common/decorators/current-user.decorator";
-import { resolveLazScope } from "../../common/utils/laz-scope";
+import { resolveLembagaScope } from "../../common/utils/lembaga-scope";
 import { PERMISSIONS } from "../../../../shared/constants/permissions";
 import type { RBACSessionUser } from "../../../../shared/types/rbac";
 
@@ -12,25 +12,25 @@ export class ReportsController {
 
   @Get("summary")
   @RequirePermission(PERMISSIONS.REPORTS_READ)
-  async summary(@CurrentUser() user: RBACSessionUser, @Query("lazId") lazId?: string) {
-    return this.reportsService.getSummaryStats(resolveLazScope(user, lazId));
+  async summary(@CurrentUser() user: RBACSessionUser, @Query("lembagaId") lembagaId?: string) {
+    return this.reportsService.getSummaryStats(resolveLembagaScope(user, lembagaId));
   }
 
   @Get("donation-trend")
   @RequirePermission(PERMISSIONS.REPORTS_READ)
-  async donationTrend(@CurrentUser() user: RBACSessionUser, @Query("lazId") lazId?: string) {
-    return this.reportsService.getDonationTrend(resolveLazScope(user, lazId));
+  async donationTrend(@CurrentUser() user: RBACSessionUser, @Query("lembagaId") lembagaId?: string) {
+    return this.reportsService.getDonationTrend(resolveLembagaScope(user, lembagaId));
   }
 
   @Get("top-programs")
   @RequirePermission(PERMISSIONS.REPORTS_READ)
   async topPrograms(
     @CurrentUser() user: RBACSessionUser,
-    @Query("lazId") lazId?: string,
+    @Query("lembagaId") lembagaId?: string,
     @Query("limit") limit?: string,
   ) {
     return this.reportsService.getTopPrograms(
-      resolveLazScope(user, lazId),
+      resolveLembagaScope(user, lembagaId),
       Number(limit) || 5,
     );
   }

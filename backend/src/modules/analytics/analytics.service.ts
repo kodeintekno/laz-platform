@@ -5,11 +5,11 @@ import { AnalyticsRepository } from "./analytics.repository";
 export class AnalyticsService {
   constructor(private readonly analyticsRepository: AnalyticsRepository) {}
 
-  async getDashboardOverview(lazId?: string) {
+  async getDashboardOverview(lembagaId?: string) {
     const [metrics, recentDonations, recentDistributions] = await Promise.all([
-      this.analyticsRepository.getDashboardMetrics(lazId),
-      this.analyticsRepository.getRecentDonations(lazId),
-      this.analyticsRepository.getRecentDistributions(lazId),
+      this.analyticsRepository.getDashboardMetrics(lembagaId),
+      this.analyticsRepository.getRecentDonations(lembagaId),
+      this.analyticsRepository.getRecentDistributions(lembagaId),
     ]);
 
     return {
@@ -19,7 +19,12 @@ export class AnalyticsService {
     };
   }
 
-  async getDashboardMetrics(lazId?: string) {
-    return this.analyticsRepository.getDashboardMetrics(lazId);
+  async getDashboardMetrics(lembagaId?: string) {
+    return this.analyticsRepository.getDashboardMetrics(lembagaId);
+  }
+
+  /** Statistik platform lintas-tenant — hanya untuk SUPER_ADMIN. */
+  async getPlatformOverview() {
+    return this.analyticsRepository.getPlatformOverview();
   }
 }

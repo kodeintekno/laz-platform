@@ -17,9 +17,7 @@ import { CurrentUser } from "../../common/decorators/current-user.decorator";
 import { ZodValidationPipe } from "../../common/pipes/zod-validation.pipe";
 import {
   loginSchema,
-  registerSchema,
   type LoginInput,
-  type RegisterInput,
 } from "../../../../shared/validations/auth.schema";
 import type { RBACSessionUser } from "../../../../shared/types/rbac";
 import { getCsrf } from "../../config/csrf";
@@ -57,27 +55,6 @@ export class AuthController {
       userAgent: req.headers["user-agent"],
     });
 
-    return user;
-  }
-
-  @Post("register")
-  @Public()
-  @Throttle(STRICT_THROTTLE)
-  async register(
-    @Body(new ZodValidationPipe(registerSchema)) body: RegisterInput,
-    @Req() req: Request,
-  ): Promise<RBACSessionUser> {
-    await this.authService.register(body);
-
-    // Auto login after successful registration (perilaku lama dipertahankan)
-    const user = await this.authService.signIn({
-      email: body.email,
-      password: body.password,
-    });
-    if (!user) {
-      throw new UnauthorizedException("Email atau password salah");
-    }
-    await this.establishSession(req, user.id);
     return user;
   }
 

@@ -5,7 +5,7 @@ import { useAuth } from "@/auth/AuthProvider";
 import { DistributionTable } from "@/features/distributions/components/DistributionTable";
 import { PageHeader, TableSkeleton } from "@/components/ui";
 import { DataTableToolbar } from "@/components/ui/data-table";
-import { UserLazFilter } from "@/features/users/components/UserLazFilter";
+import { UserLembagaFilter } from "@/features/users/components/UserLembagaFilter";
 
 export function DistributionsListPage() {
   const { user } = useAuth();
@@ -15,16 +15,16 @@ export function DistributionsListPage() {
   const page = Number(searchParams.get("page") ?? 1);
   const limit = Number(searchParams.get("limit") ?? 10);
   const search = searchParams.get("search") ?? undefined;
-  const lazId = searchParams.get("lazId") ?? undefined;
+  const lembagaId = searchParams.get("lembagaId") ?? undefined;
 
   const { data: result, isLoading } = useQuery({
-    queryKey: ["distributions", { page, limit, search, lazId }],
-    queryFn: () => api.get<any[]>("/distributions", { page, limit, search, lazId }),
+    queryKey: ["distributions", { page, limit, search, lembagaId }],
+    queryFn: () => api.get<any[]>("/distributions", { page, limit, search, lembagaId }),
   });
 
-  const { data: lazsResult } = useQuery({
-    queryKey: ["laz", "options"],
-    queryFn: () => api.get<any>("/laz/options"),
+  const { data: lembagasResult } = useQuery({
+    queryKey: ["lembaga", "options"],
+    queryFn: () => api.get<any>("/lembaga/options"),
     enabled: isSuperAdmin,
   });
 
@@ -43,8 +43,8 @@ export function DistributionsListPage() {
         searchValue={search}
         searchPlaceholder="Cari rincian penyaluran atau nama program..."
         filterSlot={
-          isSuperAdmin && lazsResult?.data?.length ? (
-            <UserLazFilter lazs={lazsResult.data} />
+          isSuperAdmin && lembagasResult?.data?.length ? (
+            <UserLembagaFilter lembagas={lembagasResult.data} />
           ) : undefined
         }
       />

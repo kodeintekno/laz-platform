@@ -18,14 +18,6 @@ const makeUserRepository = () => ({
   updateLastLogin: vi.fn().mockResolvedValue(undefined),
 });
 
-const makeAuditService = () => ({
-  log: vi.fn().mockResolvedValue(undefined),
-});
-
-const makePrismaService = () => ({
-  laz: { findFirst: vi.fn() },
-});
-
 const ACTIVE_USER = {
   id: "user-1",
   email: "user@example.com",
@@ -33,31 +25,24 @@ const ACTIVE_USER = {
   password: "hashed_password",
   status: "ACTIVE",
   roleId: "role-1",
-  lazId: "laz-1",
+  lembagaId: "lembaga-1",
   avatarUrl: null,
   avatarPublicId: null,
+  lembaga: { status: "APPROVED", rejectionReason: null },
   role: {
-    name: "DONATUR",
-    rolePermissions: [{ permission: { key: "donation:read" } }],
+    name: "LEMBAGA_ADMIN",
+    rolePermissions: [{ permission: { key: "donations.read" } }],
   },
 };
 
 describe("AuthService", () => {
   let service: AuthService;
   let userRepository: ReturnType<typeof makeUserRepository>;
-  let auditService: ReturnType<typeof makeAuditService>;
-  let prismaService: ReturnType<typeof makePrismaService>;
 
   beforeEach(() => {
     vi.clearAllMocks();
     userRepository = makeUserRepository();
-    auditService = makeAuditService();
-    prismaService = makePrismaService();
-    service = new AuthService(
-      userRepository as any,
-      auditService as any,
-      prismaService as any,
-    );
+    service = new AuthService(userRepository as any);
   });
 
   // ──────────────────────────────────────────────
@@ -73,7 +58,7 @@ describe("AuthService", () => {
       expect(await service.signIn(credentials)).toBeNull();
     });
 
-    it("returns null when user has no password (OAuth user)", async () => {
+    it("returns null when user has no password", async () => {
       userRepository.findByEmail.mockResolvedValue({ ...ACTIVE_USER, password: null });
 
       expect(await service.signIn(credentials)).toBeNull();
@@ -105,9 +90,9 @@ describe("AuthService", () => {
         id: "user-1",
         email: "user@example.com",
         name: "Test User",
-        roleName: "DONATUR",
-        permissions: ["donation:read"],
-        lazId: "laz-1",
+        roleName: "LEMBAGA_ADMIN",
+        permissions: ["donations.read"],
+        lembagaId: "lembaga-1",
       });
     });
 
@@ -119,59 +104,43 @@ describe("AuthService", () => {
 
       expect(userRepository.updateLastLogin).toHaveBeenCalledWith("user-1");
     });
-  });
 
-  // ──────────────────────────────────────────────
-  // register
-  // ──────────────────────────────────────────────
+    it("throws AppError with LEMBAGA_PENDING when the LEMBAGA_ADMIN's lembaga is still pending", async () => {
+      userRepository.findByEmail.mockResolvedValue({
+        ...ACTIVE_USER,
+        lembaga: { status: "PENDING", rejectionReason: null },
+      });
+      vi.mocked(bcrypt.compare).mockResolvedValue(true as never);
 
-  describe("register", () => {
-    const registerData = { email: "new@example.com", name: "New User", password: "pass123" };
-
-    it("throws AppError with EMAIL_TAKEN when email already exists", async () => {
-      userRepository.findByEmail.mockResolvedValue(ACTIVE_USER);
-
-      await expect(service.register(registerData)).rejects.toMatchObject({
-        code: "EMAIL_TAKEN",
+      await expect(service.signIn(credentials)).rejects.toMatchObject({
+        code: "LEMBAGA_PENDING",
       });
     });
 
-    it("throws AppError with MISSING_ROLE when DONATUR role not found", async () => {
-      userRepository.findByEmail.mockResolvedValue(null);
-      userRepository.findRoleByName.mockResolvedValue(null);
+    it("throws AppError with LEMBAGA_REJECTED (including the reason) when the lembaga was rejected", async () => {
+      userRepository.findByEmail.mockResolvedValue({
+        ...ACTIVE_USER,
+        lembaga: { status: "REJECTED", rejectionReason: "Dokumen tidak lengkap" },
+      });
+      vi.mocked(bcrypt.compare).mockResolvedValue(true as never);
 
-      await expect(service.register(registerData)).rejects.toMatchObject({
-        code: "MISSING_ROLE",
+      await expect(service.signIn(credentials)).rejects.toMatchObject({
+        code: "LEMBAGA_REJECTED",
+        message: expect.stringContaining("Dokumen tidak lengkap"),
       });
     });
 
-    it("throws AppError with MISSING_LAZ when no LAZ tenant exists", async () => {
-      userRepository.findByEmail.mockResolvedValue(null);
-      userRepository.findRoleByName.mockResolvedValue({ id: "role-1" });
-      prismaService.laz.findFirst.mockResolvedValue(null);
-
-      await expect(service.register(registerData)).rejects.toMatchObject({
-        code: "MISSING_LAZ",
+    it("does not gate SUPER_ADMIN on lembaga status (no lembaga attached)", async () => {
+      userRepository.findByEmail.mockResolvedValue({
+        ...ACTIVE_USER,
+        lembagaId: null,
+        lembaga: null,
+        role: { name: "SUPER_ADMIN", rolePermissions: [] },
       });
-    });
+      vi.mocked(bcrypt.compare).mockResolvedValue(true as never);
 
-    it("creates user with hashed password and writes audit log", async () => {
-      userRepository.findByEmail.mockResolvedValue(null);
-      userRepository.findRoleByName.mockResolvedValue({ id: "role-1" });
-      prismaService.laz.findFirst.mockResolvedValue({ id: "laz-1" });
-      vi.mocked(bcrypt.hash).mockResolvedValue("hashed_pw" as never);
-      userRepository.create.mockResolvedValue({ id: "new-user", email: registerData.email });
-
-      await expect(service.register(registerData)).resolves.toBeUndefined();
-      expect(userRepository.create).toHaveBeenCalledWith(
-        expect.objectContaining({
-          email: registerData.email,
-          password: "hashed_pw",
-          lazId: "laz-1",
-          roleId: "role-1",
-        }),
-      );
-      expect(auditService.log).toHaveBeenCalledOnce();
+      const result = await service.signIn(credentials);
+      expect(result).toMatchObject({ roleName: "SUPER_ADMIN" });
     });
   });
 
@@ -200,7 +169,7 @@ describe("AuthService", () => {
       expect(result).toMatchObject({
         id: "user-1",
         email: "user@example.com",
-        permissions: ["donation:read"],
+        permissions: ["donations.read"],
       });
     });
 

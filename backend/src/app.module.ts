@@ -19,7 +19,8 @@ import { PaymentsModule } from "./modules/payments/payments.module";
 import { DistributionsModule } from "./modules/distributions/distributions.module";
 import { UsersModule } from "./modules/users/users.module";
 import { RbacModule } from "./modules/rbac/rbac.module";
-import { LazModule } from "./modules/laz/laz.module";
+import { LembagaModule } from "./modules/lembaga/lembaga.module";
+import { VolunteersModule } from "./modules/volunteers/volunteers.module";
 import { AnalyticsModule } from "./modules/analytics/analytics.module";
 import { ReportsModule } from "./modules/reports/reports.module";
 import { SettingsModule } from "./modules/settings/settings.module";
@@ -62,6 +63,13 @@ const isDev = process.env.NODE_ENV !== "production";
     PrismaModule,
     AuditModule,
     AuthModule,
+    // VolunteersModule must be registered before PublicModule: PublicModule
+    // imports LembagaModule internally, and LembagaController's GET
+    // api/lembaga/:id would otherwise shadow the literal routes
+    // api/lembaga/volunteer-activities and api/lembaga/volunteer-applications
+    // (registration order across the whole module graph determines Express
+    // route-matching precedence, not just this array's position).
+    VolunteersModule,
     PublicModule,
     ProgramsModule,
     DonationsModule,
@@ -69,7 +77,7 @@ const isDev = process.env.NODE_ENV !== "production";
     DistributionsModule,
     UsersModule,
     RbacModule,
-    LazModule,
+    LembagaModule,
     AnalyticsModule,
     ReportsModule,
     SettingsModule,

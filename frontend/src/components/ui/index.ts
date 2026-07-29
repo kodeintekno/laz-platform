@@ -6,6 +6,7 @@
 export { LoadingSpinner } from "./LoadingSpinner";
 export { Button } from "./Button";
 export { Input } from "./Input";
+export { CurrencyInput } from "./CurrencyInput";
 export { Textarea } from "./Textarea";
 export { Select } from "./Select";
 export { Card, CardHeader, CardTitle, CardContent, CardFooter } from "./Card";

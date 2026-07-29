@@ -19,7 +19,7 @@ export function AuditPage() {
   const { data: result, isLoading } = useQuery({
     queryKey: ["audit", { page, limit, search, startDate, endDate }],
     queryFn: () =>
-      api.get<any[]>("/audit", { page, limit, search, startDate, endDate, lazId: user?.lazId }),
+      api.get<any[]>("/audit", { page, limit, search, startDate, endDate, lembagaId: user?.lembagaId }),
   });
 
   const pagination = result?.meta

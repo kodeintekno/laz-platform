@@ -1,27 +1,12 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { formatCurrency, cn } from '@/lib/utils';
-import { ShieldCheck, BarChart3, Users, Download, CheckCircle2, Info, Search, Send, Smartphone } from 'lucide-react';
-import { motion, AnimatePresence } from 'motion/react';
+import { ShieldCheck, BarChart3, Users, Download, CheckCircle2 } from 'lucide-react';
+import { motion } from 'motion/react';
 import BeneficiaryImpactReport from './BeneficiaryImpactReport';
+import { DonationHistoryLookup } from '@/features/donations/components/DonationHistoryLookup';
 
 export default function Transparency() {
   const [globalStats] = useState({ totalRaised: 1250000000, totalDistributed: 980000000, donorCount: 15420 });
-  
-  // Search state
-  const [searchPhone, setSearchPhone] = useState('');
-  const [isSearching, setIsSearching] = useState(false);
-  const [searchResult, setSearchResult] = useState<any>(null);
-
-  const handleSearch = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!searchPhone) return;
-    
-    setIsSearching(true);
-    // Simulate delay
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    setSearchResult({ donations: [], distributions: [] });
-    setIsSearching(false);
-  };
 
   const [downloadingIndex, setDownloadingIndex] = useState<number | null>(null);
   const [isGeneralLoading, setIsGeneralLoading] = useState(false);
@@ -131,62 +116,14 @@ export default function Transparency() {
           <div className="space-y-4">
             <h3 className="text-xl font-bold flex items-center gap-2">
               <ShieldCheck className="w-6 h-6 text-emerald-600" />
-              Laporan Penyaluran Donasi Anda
+              Riwayat Donasi &amp; Penyaluran Dana Anda
             </h3>
             <p className="text-sm text-gray-500 leading-relaxed">
-              Demi menjaga kehormatan dan privasi penerima manfaat, laporan detil penyaluran hanya diberikan kepada donatur terkait melalui verifikasi nomor WhatsApp.
+              Demi menjaga kehormatan dan privasi penerima manfaat, laporan detil donasi dan penyaluran dana hanya diberikan kepada donatur terkait melalui verifikasi nomor WhatsApp.
             </p>
           </div>
 
-          <form onSubmit={handleSearch} className="relative group">
-            <input 
-              type="tel"
-              value={searchPhone}
-              onChange={(e) => setSearchPhone(e.target.value)}
-              placeholder="Masukkan nomor WhatsApp Anda..."
-              className="w-full bg-white border border-gray-100 rounded-3xl py-6 pl-14 pr-32 text-sm font-bold shadow-sm focus:ring-2 focus:ring-emerald-500 transition-all outline-none"
-            />
-            <div className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400">
-              <Smartphone className="w-5 h-5" />
-            </div>
-            <button 
-              type="submit"
-              disabled={isSearching}
-              className="absolute right-3 top-1/2 -translate-y-1/2 bg-emerald-600 text-white px-6 py-3 rounded-2xl text-xs font-black uppercase tracking-widest hover:bg-emerald-700 transition-all disabled:opacity-50 flex items-center gap-2 cursor-pointer"
-            >
-              {isSearching ? <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <Search className="w-3 h-3" />}
-              Cek Laporan
-            </button>
-          </form>
-
-          <div className="space-y-4 min-h-[300px]">
-            <AnimatePresence mode="wait">
-              {!searchResult && !isSearching && (
-                <motion.div 
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  className="p-12 text-center bg-gray-50 rounded-[2.5rem] border border-dashed border-gray-200 text-gray-400 space-y-4"
-                >
-                  <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center mx-auto text-gray-200">
-                    <ShieldCheck className="w-8 h-8" />
-                  </div>
-                  <p className="text-sm italic">Silakan masukkan nomor WhatsApp yang Anda gunakan saat berdonasi untuk melihat laporan penyaluran dana Anda.</p>
-                </motion.div>
-              )}
-
-              {searchResult && searchResult.donations.length === 0 && (
-                <motion.div 
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="p-12 text-center bg-red-50 rounded-[2.5rem] border border-red-100 text-red-500 space-y-2"
-                >
-                  <Info className="w-12 h-12 mx-auto mb-2 opacity-50" />
-                  <p className="font-bold">Data Tidak Ditemukan</p>
-                  <p className="text-xs opacity-80">Maaf, kami tidak menemukan riwayat donasi untuk nomor ini. Pastikan nomor yang Anda masukkan sudah benar.</p>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
+          <DonationHistoryLookup searchButtonLabel="Cek Laporan" inputPlaceholder="Masukkan nomor WhatsApp Anda..." />
         </div>
 
         {/* Live Feed */}

@@ -4,6 +4,7 @@ import { AuditService } from "../audit/audit.service";
 import { AuditAction } from "../audit/audit.types";
 import { PrismaService } from "../../prisma/prisma.service";
 import { CloudinaryProvider } from "../../lib/upload/cloudinary.provider";
+import { AppError } from "../../common/errors/app.error";
 import type { ProgramInput } from "../../../../shared/validations/programs.schema";
 
 /**
@@ -29,12 +30,20 @@ export class ProgramsService {
     private readonly prisma: PrismaService,
   ) {}
 
-  async getDashboardPrograms(page: number, limit: number, search?: string, lazId?: string) {
-    return this.programsRepository.findMany(page, limit, search, lazId);
+  async getDashboardPrograms(page: number, limit: number, search?: string, lembagaId?: string) {
+    return this.programsRepository.findMany(page, limit, search, lembagaId);
   }
 
-  async getPublishedPrograms() {
-    return this.programsRepository.findPublished();
+  async getPublishedPrograms(options?: {
+    page?: number;
+    limit?: number;
+    search?: string;
+    category?: string;
+    lembagaId?: string;
+    lembagaSlug?: string;
+    sort?: "newest" | "most-funded" | "ending-soon";
+  }) {
+    return this.programsRepository.findPublished(options);
   }
 
   async getProgramBySlug(slug: string) {
@@ -46,11 +55,18 @@ export class ProgramsService {
 
     const admin = await this.prisma.user.findUnique({
       where: { id: adminId },
-      select: { lazId: true },
+      select: { lembagaId: true },
     });
 
     if (!admin) {
       throw new NotFoundException("Admin tidak ditemukan");
+    }
+    if (!admin.lembagaId) {
+      throw new AppError(
+        "LEMBAGA_REQUIRED",
+        "Akun ini tidak terhubung dengan lembaga manapun sehingga tidak dapat membuat program",
+        422,
+      );
     }
 
     const newProgram = await this.programsRepository.create({
@@ -64,7 +80,7 @@ export class ProgramsService {
       startDate: data.startDate ? new Date(data.startDate) : null,
       endDate: data.endDate ? new Date(data.endDate) : null,
       createdById: adminId,
-      lazId: admin.lazId,
+      lembagaId: admin.lembagaId,
     });
 
     await this.auditService.log({
@@ -81,7 +97,7 @@ export class ProgramsService {
   async updateProgram(id: string, data: ProgramInput, adminId: string) {
     const admin = await this.prisma.user.findUnique({
       where: { id: adminId },
-      select: { lazId: true },
+      select: { lembagaId: true },
     });
 
     if (!admin) {

@@ -14,7 +14,7 @@ import { UsersService } from "./users.service";
 import { RequirePermission } from "../../common/decorators/require-permission.decorator";
 import { CurrentUser } from "../../common/decorators/current-user.decorator";
 import { ZodValidationPipe } from "../../common/pipes/zod-validation.pipe";
-import { resolveLazScope } from "../../common/utils/laz-scope";
+import { resolveLembagaScope } from "../../common/utils/lembaga-scope";
 import { PERMISSIONS } from "../../../../shared/constants/permissions";
 import {
   createUserSchema,
@@ -35,13 +35,13 @@ export class UsersController {
     @Query("page") page?: string,
     @Query("limit") limit?: string,
     @Query("search") search?: string,
-    @Query("lazId") lazId?: string,
+    @Query("lembagaId") lembagaId?: string,
   ) {
     const { items, metadata } = await this.usersService.getUsers(
       Number(page) || 1,
       Number(limit) || 10,
       search || undefined,
-      resolveLazScope(user, lazId),
+      resolveLembagaScope(user, lembagaId),
     );
     return { data: items, meta: metadata };
   }
@@ -70,7 +70,7 @@ export class UsersController {
     return this.usersService.createUser(
       body,
       user.id,
-      user.lazId,
+      user.lembagaId ?? undefined,
       user.roleName === "SUPER_ADMIN",
     );
   }
@@ -86,7 +86,7 @@ export class UsersController {
       id,
       body,
       user.id,
-      user.lazId,
+      user.lembagaId ?? undefined,
       user.roleName === "SUPER_ADMIN",
     );
   }
@@ -97,7 +97,7 @@ export class UsersController {
     return this.usersService.deleteUser(
       id,
       user.id,
-      user.lazId,
+      user.lembagaId ?? undefined,
       user.roleName === "SUPER_ADMIN",
     );
   }

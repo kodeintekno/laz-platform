@@ -26,7 +26,7 @@ export function NewDistributionForProgramPage() {
   return (
     <div className="space-y-6 w-full">
       <PageHeader
-        title="Ajukan Penyaluran Dana"
+        title="Catat Penyaluran Dana"
         description={`Program: ${program.title} (Saldo: Rp ${availableBalance.toLocaleString("id-ID")})`}
       />
       <DistributionForm programId={program.id} availableBalance={availableBalance} />

@@ -11,7 +11,7 @@ import { toast } from "@/stores/toast.store";
 interface UserFormProps {
   initialData?: User;
   roles: { id: string; name: string }[];
-  lazs?: { id: string; name: string }[];
+  lembagas?: { id: string; name: string }[];
   isSuperAdmin?: boolean;
   currentUserId: string;
   action?: (prevState: any, formData: FormData) => Promise<any>;
@@ -20,7 +20,7 @@ interface UserFormProps {
 export function UserForm({
   initialData,
   roles,
-  lazs = [],
+  lembagas = [],
   isSuperAdmin = false,
   currentUserId,
   action,
@@ -65,11 +65,11 @@ export function UserForm({
     })),
   ];
 
-  const lazOptions = [
-    { label: "Pilih Lembaga Amil Zakat...", value: "" },
-    ...lazs.map((laz) => ({
-      label: laz.name,
-      value: laz.id,
+  const lembagaOptions = [
+    { label: "Pilih Lembaga...", value: "" },
+    ...lembagas.map((lembaga) => ({
+      label: lembaga.name,
+      value: lembaga.id,
     })),
   ];
 
@@ -90,7 +90,7 @@ export function UserForm({
                 name: initialData.name || "",
                 email: initialData.email,
                 roleId: initialData.roleId || "",
-                lazId: initialData.lazId,
+                lembagaId: initialData.lembagaId,
                 status: initialData.status,
                 password: "",
                 confirmPassword: "",
@@ -99,7 +99,7 @@ export function UserForm({
                 name: "",
                 email: "",
                 roleId: "",
-                lazId: isSuperAdmin ? "" : (lazs[0]?.id || ""),
+                lembagaId: isSuperAdmin ? "" : (lembagas[0]?.id || ""),
                 status: "ACTIVE",
                 password: "",
                 confirmPassword: "",
@@ -148,12 +148,12 @@ export function UserForm({
             {isSuperAdmin && (
               <div className="md:col-span-2">
                 <FormField
-                  name="lazId"
-                  label="Lembaga Amil Zakat (LAZ)"
+                  name="lembagaId"
+                  label="Lembaga"
                   type="select"
-                  options={lazOptions}
+                  options={lembagaOptions}
                   disabled={isPending || isSelf}
-                  description={isSelf ? "Super Admin terkunci pada LAZ default." : "Pilih lembaga amil zakat tempat pengguna ini bernaung."}
+                  description={isSelf ? "Super Admin tidak terikat pada lembaga manapun." : "Pilih lembaga tempat pengguna ini bernaung."}
                 />
               </div>
             )}

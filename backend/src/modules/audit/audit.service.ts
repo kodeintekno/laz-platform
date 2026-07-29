@@ -35,10 +35,10 @@ export class AuditService {
     page: number = 1,
     limit: number = 10,
     search?: string,
-    lazId?: string,
+    lembagaId?: string,
     startDate?: string,
     endDate?: string,
   ) {
-    return this.auditRepository.getAuditLogs(page, limit, search, lazId, startDate, endDate);
+    return this.auditRepository.getAuditLogs(page, limit, search, lembagaId, startDate, endDate);
   }
 }

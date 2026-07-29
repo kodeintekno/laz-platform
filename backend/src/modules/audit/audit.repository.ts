@@ -18,21 +18,21 @@ export class AuditRepository {
    * Create an immutable audit log entry.
    */
   async create(input: CreateAuditLogInput) {
-    let lazId = input.lazId;
-    if (!lazId && input.userId) {
+    let lembagaId = input.lembagaId;
+    if (!lembagaId && input.userId) {
       const user = await this.prisma.user.findUnique({
         where: { id: input.userId },
-        select: { lazId: true },
+        select: { lembagaId: true },
       });
       if (user) {
-        lazId = user.lazId;
+        lembagaId = user.lembagaId ?? undefined;
       }
     }
 
     return this.prisma.auditLog.create({
       data: {
         userId: input.userId,
-        lazId: lazId || undefined,
+        lembagaId: lembagaId || undefined,
         action: input.action as never, // Prisma enum cast
         entity: input.entity,
         entityId: input.entityId,
@@ -51,15 +51,15 @@ export class AuditRepository {
     page: number = 1,
     limit: number = 10,
     search?: string,
-    lazId?: string,
+    lembagaId?: string,
     startDate?: string,
     endDate?: string,
   ) {
     const skip = (page - 1) * limit;
 
     const where: any = {};
-    if (lazId) {
-      where.lazId = lazId;
+    if (lembagaId) {
+      where.lembagaId = lembagaId;
     }
     if (startDate) {
       where.createdAt = { gte: new Date(startDate) };
@@ -71,6 +71,7 @@ export class AuditRepository {
       const isActionEnum = [
         "LOGIN", "LOGOUT", "CREATE", "UPDATE", "DELETE",
         "ROLE_CHANGE", "PAYMENT_UPDATE", "DISTRIBUTION_UPDATE",
+        "LEMBAGA_APPROVE", "LEMBAGA_REJECT", "VOLUNTEER_APPLICATION_REVIEW",
       ].includes(search.toUpperCase());
 
       where.OR = [

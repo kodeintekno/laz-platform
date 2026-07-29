@@ -8,11 +8,12 @@ import { FormInput } from "./form-input";
 import { FormTextarea } from "./form-textarea";
 import { FormSelect } from "./form-select";
 import { FormCheckbox } from "./form-checkbox";
+import { FormCurrencyInput } from "./form-currency-input";
 
 export interface FormFieldProps {
   name: string;
   label?: string;
-  type: "input" | "textarea" | "select" | "checkbox" | "custom";
+  type: "input" | "textarea" | "select" | "checkbox" | "custom" | "currency";
   placeholder?: string;
   description?: string;
   disabled?: boolean;
@@ -54,6 +55,17 @@ export function FormField({
             id={fieldId}
             name={name}
             type={inputType}
+            placeholder={placeholder}
+            disabled={disabled}
+            aria-describedby={`${description ? descId : ""} ${error ? errorId : ""}`.trim()}
+            {...props}
+          />
+        );
+      case "currency":
+        return (
+          <FormCurrencyInput
+            id={fieldId}
+            name={name}
             placeholder={placeholder}
             disabled={disabled}
             aria-describedby={`${description ? descId : ""} ${error ? errorId : ""}`.trim()}

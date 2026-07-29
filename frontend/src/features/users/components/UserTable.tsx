@@ -6,11 +6,11 @@ import { DataTable } from "@/components/ui/data-table";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { toast } from "@/stores/toast.store";
 import { deleteUserAction } from "../actions/users.actions";
-import { getUserColumns, type UserWithRoleAndLaz } from "./user-columns";
+import { getUserColumns, type UserWithRoleAndLembaga } from "./user-columns";
 import { logger } from "@/lib/logger";
 
 interface UserTableProps {
-  users: UserWithRoleAndLaz[];
+  users: UserWithRoleAndLembaga[];
   roles: { id: string; name: string }[];
   isSuperAdmin: boolean;
   currentUserId: string;
@@ -34,17 +34,17 @@ export function UserTable({
   const [isPending, startTransition] = useTransition();
   const [confirmState, setConfirmState] = useState<{
     isOpen: boolean;
-    user: UserWithRoleAndLaz | null;
+    user: UserWithRoleAndLembaga | null;
   }>({
     isOpen: false,
     user: null,
   });
 
-  const handleEdit = (user: UserWithRoleAndLaz) => {
+  const handleEdit = (user: UserWithRoleAndLembaga) => {
     router.push(`/dashboard/users/${user.id}/edit`);
   };
 
-  const handleDelete = (user: UserWithRoleAndLaz) => {
+  const handleDelete = (user: UserWithRoleAndLembaga) => {
     logger.info({ userId: user.id }, "Delete request initiated for User");
     setConfirmState({
       isOpen: true,
@@ -72,7 +72,7 @@ export function UserTable({
   const columns = getUserColumns({
     onEdit: handleEdit,
     onDelete: handleDelete,
-    showLazColumn: isSuperAdmin,
+    showLembagaColumn: isSuperAdmin,
     currentUserId,
   });
 

@@ -27,7 +27,7 @@ interface FileUploadProps {
   initialPublicId?: string;
   error?: string | null;
   description?: string;
-  /** Cloudinary folder to group the uploaded asset (e.g. "laz-logos") */
+  /** Cloudinary folder to group the uploaded asset (e.g. "lembaga-logos") */
   folder?: string;
   /** Optional external AbortController ref to allow parent to cancel upload */
   abortRef?: React.MutableRefObject<AbortController | null>;

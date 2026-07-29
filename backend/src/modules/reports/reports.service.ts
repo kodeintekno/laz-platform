@@ -8,13 +8,13 @@ export class ReportsService {
   /**
    * Retrieves summary statistics for the dashboard.
    */
-  async getSummaryStats(lazId?: string) {
-    const whereClause = lazId ? { lazId } : {};
+  async getSummaryStats(lembagaId?: string) {
+    const whereClause = lembagaId ? { lembagaId } : {};
 
     const [
       totalDonationsAgg,
       totalDistributionsAgg,
-      donorsCount,
+      distinctDonorPhones,
       activeProgramsCount,
     ] = await Promise.all([
       // Sum of all PAID donations
@@ -27,13 +27,11 @@ export class ReportsService {
         _sum: { amount: true },
         where: { ...whereClause, status: "COMPLETED" },
       }),
-      // Count unique donors
-      this.prisma.user.count({
-        where: {
-          donations: {
-            some: { ...whereClause, status: "PAID" },
-          },
-        },
+      // Count unique donors (by phone — donors have no account)
+      this.prisma.donation.findMany({
+        where: { ...whereClause, status: "PAID", donorPhone: { not: null } },
+        distinct: ["donorPhone"],
+        select: { donorPhone: true },
       }),
       // Count active programs
       this.prisma.program.count({
@@ -44,7 +42,7 @@ export class ReportsService {
     return {
       totalDonationsAmount: Number(totalDonationsAgg._sum.amount || 0),
       totalDistributionsAmount: Number(totalDistributionsAgg._sum.amount || 0),
-      totalDonors: donorsCount,
+      totalDonors: distinctDonorPhones.length,
       activePrograms: activeProgramsCount,
     };
   }
@@ -52,11 +50,11 @@ export class ReportsService {
   /**
    * Retrieves the trend of PAID donations over the last 30 days.
    */
-  async getDonationTrend(lazId?: string) {
+  async getDonationTrend(lembagaId?: string) {
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
-    const whereClause = lazId ? { lazId } : {};
+    const whereClause = lembagaId ? { lembagaId } : {};
 
     // Fetch the data and aggregate it in memory (assuming volume is manageable).
     const donations = await this.prisma.donation.findMany({
@@ -107,8 +105,8 @@ export class ReportsService {
   /**
    * Retrieves programs sorted by highest funding progress.
    */
-  async getTopPrograms(lazId?: string, limit: number = 5) {
-    const whereClause = lazId ? { lazId } : {};
+  async getTopPrograms(lembagaId?: string, limit: number = 5) {
+    const whereClause = lembagaId ? { lembagaId } : {};
 
     const programs = await this.prisma.program.findMany({
       where: { ...whereClause },
@@ -121,7 +119,7 @@ export class ReportsService {
         targetAmount: true,
         distributedAmount: true,
         status: true,
-        laz: {
+        lembaga: {
           select: { name: true },
         },
       },

@@ -12,7 +12,7 @@ export interface ProgramCardProps {
     targetAmount: number;
     currentAmount: number;
     endDate: Date | null;
-    laz?: {
+    lembaga?: {
       name: string;
       logoUrl: string | null;
     } | null;
@@ -71,17 +71,17 @@ export function ProgramCard({ program, now = Date.now(), isPriority = false }: P
         </div>
       </div>
       <div className="p-5 flex-1 flex flex-col">
-        {program.laz && (
+        {program.lembaga && (
           <div className="flex items-center gap-2 mb-2.5">
-            {program.laz.logoUrl ? (
-              <Image src={program.laz.logoUrl} alt={program.laz.name} width={18} height={18} className="rounded-full object-cover shadow-sm" />
+            {program.lembaga.logoUrl ? (
+              <Image src={program.lembaga.logoUrl} alt={program.lembaga.name} width={18} height={18} className="rounded-full object-cover shadow-sm" />
             ) : (
               <div className="w-[18px] h-[18px] rounded-full bg-surface-muted text-primary flex items-center justify-center text-[9px] font-bold shadow-sm">
-                {program.laz.name.charAt(0)}
+                {program.lembaga.name.charAt(0)}
               </div>
             )}
             <span className="text-xs font-medium text-secondary truncate">
-              Oleh <span className="font-semibold text-primary">{program.laz.name}</span>
+              Oleh <span className="font-semibold text-primary">{program.lembaga.name}</span>
             </span>
           </div>
         )}

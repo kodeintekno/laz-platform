@@ -52,20 +52,23 @@ export function ProgramDetailPage() {
         </div>
 
         <div className="lg:w-5/12 p-6 lg:p-8 flex flex-col">
-          {program.laz && (
-            <div className="flex items-center gap-3 mb-5 p-3.5 bg-surface-muted rounded-xl border border-border/50">
-              {program.laz.logoUrl ? (
-                <img src={program.laz.logoUrl} alt={program.laz.name} className="w-9 h-9 rounded-full object-cover" />
+          {program.lembaga && (
+            <Link
+              to={`/lembaga/${program.lembaga.slug}`}
+              className="flex items-center gap-3 mb-5 p-3.5 bg-surface-muted rounded-xl border border-border/50 hover:border-brand-primary transition"
+            >
+              {program.lembaga.logoUrl ? (
+                <img src={program.lembaga.logoUrl} alt={program.lembaga.name} className="w-9 h-9 rounded-full object-cover" />
               ) : (
                 <div className="w-9 h-9 rounded-full bg-surface flex items-center justify-center text-sm font-bold border border-border/50">
-                  {program.laz.name.charAt(0)}
+                  {program.lembaga.name.charAt(0)}
                 </div>
               )}
               <div>
                 <p className="text-xs text-secondary font-medium">Penggalang Dana</p>
-                <p className="text-sm font-bold text-primary">{program.laz.name}</p>
+                <p className="text-sm font-bold text-primary">{program.lembaga.name}</p>
               </div>
-            </div>
+            </Link>
           )}
 
           <h1 className="text-2xl font-bold text-primary mb-6 leading-tight">{program.title}</h1>
@@ -116,11 +119,11 @@ export function ProgramDetailPage() {
                 program.donations.map((d: any) => (
                   <div key={d.id} className="flex gap-4 items-start">
                     <div className="h-10 w-10 shrink-0 rounded-full bg-brand-primary/10 flex items-center justify-center text-brand-primary font-bold">
-                      {d.isAnonymous || !d.user?.name ? "H" : d.user.name.charAt(0).toUpperCase()}
+                      {d.isAnonymous || !d.donorName ? "H" : d.donorName.charAt(0).toUpperCase()}
                     </div>
                     <div>
                       <p className="text-sm font-bold text-primary">
-                        {d.isAnonymous ? "Hamba Allah" : d.user?.name ?? "Hamba Allah"}
+                        {d.isAnonymous ? "Hamba Allah" : d.donorName ?? "Hamba Allah"}
                       </p>
                       <p className="text-sm font-semibold text-brand-primary">{fmt(Number(d.amount))}</p>
                       <p className="text-xs text-secondary mt-0.5">{fmtDate(d.createdAt)}</p>

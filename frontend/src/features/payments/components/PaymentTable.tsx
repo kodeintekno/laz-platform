@@ -68,13 +68,13 @@ export function PaymentTable({ payments, search, pagination }: PaymentTableProps
       cell: (payment) => (
         <div>
           <div className="font-semibold text-primary">
-            {payment.donation.isAnonymous ? "Hamba Allah" : payment.donation.user?.name || "Hamba Allah"}
-            {payment.donation.isAnonymous && payment.donation.user && (
-              <span className="ml-2 text-xs text-muted font-normal">(Asli: {payment.donation.user.name})</span>
+            {payment.donation.isAnonymous ? "Hamba Allah" : payment.donation.donorName || "Hamba Allah"}
+            {payment.donation.isAnonymous && payment.donation.donorName && (
+              <span className="ml-2 text-xs text-muted font-normal">(Asli: {payment.donation.donorName})</span>
             )}
           </div>
-          {payment.donation.user?.email && (
-            <div className="text-xs text-muted mt-0.5">{payment.donation.user.email}</div>
+          {payment.donation.donorPhone && (
+            <div className="text-xs text-muted mt-0.5">{payment.donation.donorPhone}</div>
           )}
         </div>
       ),

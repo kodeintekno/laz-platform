@@ -21,8 +21,8 @@ export class UsersService {
     private readonly auditService: AuditService,
   ) {}
 
-  async getUsers(page: number, limit: number, search?: string, lazId?: string) {
-    return this.usersRepository.findMany(page, limit, search, lazId);
+  async getUsers(page: number, limit: number, search?: string, lembagaId?: string) {
+    return this.usersRepository.findMany(page, limit, search, lembagaId);
   }
 
   async getRoles() {
@@ -33,8 +33,8 @@ export class UsersService {
     return this.usersRepository.findById(id);
   }
 
-  async getAllLazs() {
-    return this.usersRepository.findAllLazs();
+  async getAllLembagas() {
+    return this.usersRepository.findAllLembagas();
   }
 
   /**
@@ -43,7 +43,7 @@ export class UsersService {
   async createUser(
     input: CreateUserInput,
     adminId: string,
-    adminLazId?: string,
+    adminLembagaId?: string,
     isSuperAdmin?: boolean,
   ) {
     // 1. Check if email is unique
@@ -53,9 +53,9 @@ export class UsersService {
     }
 
     // 2. Resolve target tenant scoping
-    const targetLazId = isSuperAdmin ? input.lazId : (adminLazId || input.lazId);
-    if (!targetLazId) {
-      throw new AppError("LAZ_REQUIRED", "LAZ tujuan harus ditentukan.", 422);
+    const targetLembagaId = isSuperAdmin ? input.lembagaId : (adminLembagaId || input.lembagaId);
+    if (!targetLembagaId) {
+      throw new AppError("LEMBAGA_REQUIRED", "Lembaga tujuan harus ditentukan.", 422);
     }
 
     // 3. Hash password
@@ -67,7 +67,7 @@ export class UsersService {
       email: input.email,
       password: hashedPassword,
       roleId: input.roleId,
-      lazId: targetLazId,
+      lembagaId: targetLembagaId,
       status: input.status,
     });
 
@@ -81,7 +81,7 @@ export class UsersService {
         name: user.name,
         email: user.email,
         roleId: user.roleId,
-        lazId: user.lazId,
+        lembagaId: user.lembagaId,
         status: user.status,
       },
     });
@@ -96,7 +96,7 @@ export class UsersService {
     id: string,
     input: UpdateUserInput,
     adminId: string,
-    adminLazId?: string,
+    adminLembagaId?: string,
     isSuperAdmin?: boolean,
   ) {
     // 1. Fetch current user state
@@ -106,7 +106,7 @@ export class UsersService {
     }
 
     // 2. Safety Check: Scoped to same tenant if not Super Admin
-    if (!isSuperAdmin && existingUser.lazId !== adminLazId) {
+    if (!isSuperAdmin && existingUser.lembagaId !== adminLembagaId) {
       throw new ForbiddenException(
         "Akses ditolak: Anda tidak dapat mengubah data pengguna dari lembaga amil zakat lain.",
       );
@@ -145,7 +145,7 @@ export class UsersService {
     };
 
     if (isSuperAdmin) {
-      updateData.lazId = input.lazId;
+      updateData.lembagaId = input.lembagaId;
     }
 
     if (input.password && input.password.trim() !== "") {
@@ -170,14 +170,14 @@ export class UsersService {
         name: existingUser.name,
         email: existingUser.email,
         roleId: existingUser.roleId,
-        lazId: existingUser.lazId,
+        lembagaId: existingUser.lembagaId,
         status: existingUser.status,
       },
       newData: {
         name: updatedUser.name,
         email: updatedUser.email,
         roleId: updatedUser.roleId,
-        lazId: updatedUser.lazId,
+        lembagaId: updatedUser.lembagaId,
         status: updatedUser.status,
       },
     });
@@ -188,7 +188,7 @@ export class UsersService {
   /**
    * Delete a user with safety checks.
    */
-  async deleteUser(id: string, adminId: string, adminLazId?: string, isSuperAdmin?: boolean) {
+  async deleteUser(id: string, adminId: string, adminLembagaId?: string, isSuperAdmin?: boolean) {
     // 1. Fetch current user state
     const existingUser = await this.usersRepository.findById(id);
     if (!existingUser) {
@@ -196,7 +196,7 @@ export class UsersService {
     }
 
     // 2. Safety Check: Scoped to same tenant if not Super Admin
-    if (!isSuperAdmin && existingUser.lazId !== adminLazId) {
+    if (!isSuperAdmin && existingUser.lembagaId !== adminLembagaId) {
       throw new ForbiddenException(
         "Akses ditolak: Anda tidak dapat menghapus pengguna dari lembaga amil zakat lain.",
       );
@@ -235,7 +235,7 @@ export class UsersService {
         name: deletedUser.name,
         email: deletedUser.email,
         roleId: deletedUser.roleId,
-        lazId: deletedUser.lazId,
+        lembagaId: deletedUser.lembagaId,
         status: deletedUser.status,
       },
     });

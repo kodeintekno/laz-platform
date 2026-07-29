@@ -22,9 +22,9 @@ export function EditUserPage() {
     queryFn: () => api.get<any[]>("/roles"),
   });
 
-  const { data: lazsResult } = useQuery({
-    queryKey: ["laz", "options"],
-    queryFn: () => api.get<any>("/laz/options"),
+  const { data: lembagasResult } = useQuery({
+    queryKey: ["lembaga", "options"],
+    queryFn: () => api.get<any>("/lembaga/options"),
     enabled: isSuperAdmin,
   });
 
@@ -43,7 +43,7 @@ export function EditUserPage() {
       <UserForm
         initialData={userResult.data as any}
         roles={rolesResult?.data ?? []}
-        lazs={lazsResult?.data ?? []}
+        lembagas={lembagasResult?.data ?? []}
         isSuperAdmin={isSuperAdmin}
         currentUserId={user?.id ?? ""}
       />

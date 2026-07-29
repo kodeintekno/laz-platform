@@ -1,21 +1,33 @@
 import { z } from "zod";
 
+/** Nomor HP Indonesia: 08xx, 628xx, atau +628xx. */
+export const INDONESIA_PHONE_REGEX = /^(?:\+62|62|0)8[1-9][0-9]{6,10}$/;
+
 export const donationSchema = z.object({
   programId: z.string().min(1, "Program tidak valid"),
   amount: z.coerce.number().min(10000, "Minimal donasi Rp 10.000"),
   message: z.string().max(250, "Pesan maksimal 250 karakter").optional(),
   isAnonymous: z.coerce.boolean().default(false),
   paymentMethod: z.string().min(1, "Pilih metode pembayaran"),
-  donorName: z.string().max(100, "Nama maksimal 100 karakter").optional(),
+  donorName: z.string().min(1, "Nama wajib diisi").max(100, "Nama maksimal 100 karakter"),
   donorEmail: z.string().email("Format email tidak valid").or(z.literal("")).optional(),
-  donorPhone: z.string().max(20, "No. Handphone maksimal 20 karakter").optional(),
+  donorPhone: z
+    .string()
+    .regex(INDONESIA_PHONE_REGEX, "Format nomor telepon tidak valid"),
 });
 
 export type DonationInput = z.infer<typeof donationSchema>;
 
+export const donationHistoryQuerySchema = z.object({
+  phone: z.string().regex(INDONESIA_PHONE_REGEX, "Format nomor telepon tidak valid"),
+  page: z.coerce.number().min(1).default(1),
+  limit: z.coerce.number().min(1).max(50).default(10),
+});
+
+export type DonationHistoryQuery = z.infer<typeof donationHistoryQuerySchema>;
+
 export const adminDonationSchema = z.object({
   programId: z.string().min(1, "Program wajib diisi"),
-  userId: z.string().optional(),
   donorName: z.string().max(100, "Nama maksimal 100 karakter").optional(),
   amount: z.coerce.number().min(1000, "Minimal Rp 1.000"),
   message: z.string().max(250, "Pesan maksimal 250 karakter").optional(),

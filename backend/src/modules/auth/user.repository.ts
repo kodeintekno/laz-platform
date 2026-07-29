@@ -26,6 +26,7 @@ export class UserRepository {
             },
           },
         },
+        lembaga: { select: { status: true, rejectionReason: true } },
       },
     });
   }
@@ -46,6 +47,7 @@ export class UserRepository {
             },
           },
         },
+        lembaga: { select: { status: true, rejectionReason: true } },
       },
     });
   }

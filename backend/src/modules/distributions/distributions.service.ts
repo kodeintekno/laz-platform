@@ -11,8 +11,8 @@ export class DistributionsService {
     private readonly auditService: AuditService,
   ) {}
 
-  async getDashboardDistributions(page: number, limit: number, search?: string, lazId?: string) {
-    return this.distributionsRepository.findMany(page, limit, search, lazId);
+  async getDashboardDistributions(page: number, limit: number, search?: string, lembagaId?: string) {
+    return this.distributionsRepository.findMany(page, limit, search, lembagaId);
   }
 
   async getPublicDistributions(programSlug: string) {
@@ -33,31 +33,7 @@ export class DistributionsService {
     return distribution;
   }
 
-  async approveDistribution(distributionId: string, adminUserId: string) {
-    const updated = await this.distributionsRepository.approve(distributionId, adminUserId);
-
-    await this.auditService.log({
-      userId: adminUserId,
-      action: AuditAction.DISTRIBUTION_UPDATE,
-      entity: "Distribution",
-      entityId: distributionId,
-      newData: updated as any,
-    });
-
-    return updated;
-  }
-
-  async rejectDistribution(distributionId: string, adminUserId: string) {
-    const updated = await this.distributionsRepository.reject(distributionId, adminUserId);
-
-    await this.auditService.log({
-      userId: adminUserId,
-      action: AuditAction.DISTRIBUTION_UPDATE,
-      entity: "Distribution",
-      entityId: distributionId,
-      newData: updated as any,
-    });
-
-    return updated;
+  async getDistributionHistoryByPhone(phone: string, page: number, limit: number) {
+    return this.distributionsRepository.findHistoryByPhone(phone, page, limit);
   }
 }
