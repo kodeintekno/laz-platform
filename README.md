@@ -1,40 +1,39 @@
 # LAZ Platform
 
-Multi-Tenant ZISWAF (Zakat, Infak, Sedekah, dan Wakaf) donation management platform built with Next.js, Prisma, PostgreSQL, and NextAuth.
-
-Status: MVP Completed ✅
+Multi-tenant ZISWAF (Zakat, Infak, Sedekah, dan Wakaf) donation management platform. Built as an NestJS 11 API backend paired with a Vite 7 + React 19 single-page frontend, backed by PostgreSQL via Prisma ORM.
 
 ---
 
 # Product Overview
 
-LAZ Platform is a web-based fundraising and social finance management platform that enables Islamic charitable organizations (LAZ) to manage donation programs, collect donations, track fund distributions, and maintain audit trails.
+LAZ Platform is a web-based fundraising and social finance management platform that enables Islamic charitable organizations (LAZ), called **Lembaga**, to manage donation programs, collect donations, track fund distributions, and maintain audit trails.
 
-The platform supports multiple organizations (multi-tenant architecture), role-based access control (RBAC), donation tracking, and operational reporting.
+The platform supports multiple organizations (multi-tenant architecture), role-based access control (RBAC), donation tracking, volunteer management, and operational reporting.
 
 ## Primary Actors
 
 ### SUPER_ADMIN
-- Manage platform configuration
+- Platform-wide access (`lembagaId: null`)
 - Review, approve, or reject Lembaga (organization) registrations
-- Manage roles and permissions
-- Full cross-tenant system access
+- Manage roles and permissions across the platform
 
 ### LEMBAGA_ADMIN
 - Manage donation programs for their own Lembaga
 - Manage donations, payments, and distributions
-- Review and verify Volunteer applications for their programs
+- Review and verify Volunteer applications for their activities
 - View operational and financial reports
 
+> `SUPER_ADMIN` and `LEMBAGA_ADMIN` are the only two roles in the RBAC table. There is no `DONATUR`/`FINANCE`/`RELAWAN` role — donors and volunteers are separate principals, not `User`/RBAC accounts.
+
 ### Volunteer (Relawan)
-- Self-service registration, no admin-created account
-- Browse programs open for volunteer applications (across all Lembaga)
-- Apply to programs; track application status
+- Self-service registration, a distinct principal from `User`/RBAC, authenticated via its own session
+- Browses volunteer activities across all Lembaga and applies to them
+- Submits activity reports; tracked through a review/verification lifecycle
 
 ### Donor (Donatur)
-- No account required — always a guest checkout
+- No account, ever — always guest checkout
 - Identified by phone number (required) at checkout
-- Look up donation history via phone number, no login needed
+- Looks up donation history via phone number, cross-tenant, no login needed
 
 ---
 
@@ -42,92 +41,111 @@ The platform supports multiple organizations (multi-tenant architecture), role-b
 
 | Feature | Status |
 |----------|----------|
-| Authentication | ✅ Complete |
+| Authentication (session-based) | ✅ Complete |
 | Authorization (RBAC) | ✅ Complete |
+| Lembaga Onboarding & Approval | ✅ Complete |
 | Program Management | ✅ Complete |
 | Donation Management | ✅ Complete |
 | Guest Donation Flow | ✅ Complete |
 | Distribution Management | ✅ Complete |
+| Volunteer Applications & Activities | ✅ Complete |
 | Audit Logging | ✅ Complete |
 | Dashboard Analytics | ✅ Complete |
 | Responsive UI | ✅ Complete |
-| File Uploads | ✅ Complete |
+| File Uploads (Cloudinary) | ✅ Complete |
 | Multi-Tenant Foundation | ✅ Complete |
-| Payment Gateway Integration | ⚠️ Partial |
-| Notifications | ⚠️ Planned |
+| Payment Gateway (Midtrans) | ⚠️ Partial (webhook wired, sandbox) |
+| Notifications (Email/WA) | ⚠️ Planned |
 | PDF/CSV Export | ⚠️ Planned |
 
 ---
 
 # Tech Stack
 
-## Frontend
-- Next.js 16
-- React 19
+## Backend (`backend/`)
+- [NestJS 11](https://nestjs.com/) (Express adapter, `@nestjs/platform-express`)
 - TypeScript
-- Tailwind CSS v4
+- Prisma ORM 7 (`@prisma/client`, `@prisma/adapter-pg`)
+- PostgreSQL (via `pg`)
+- `express-session` + `connect-pg-simple` (server-side sessions, Postgres-backed store)
+- `csrf-csrf` (double-submit CSRF protection)
+- `@nestjs/throttler` (rate limiting)
+- `nestjs-pino` / `pino` (structured logging)
+- `helmet` (security headers)
+- `bcryptjs` (password hashing)
+- `cloudinary` (file/image storage)
+- Midtrans (payment gateway, webhook-verified)
+- `zod` (validation)
+- `vitest` (testing)
 
-## Backend
-- Next.js Server Actions
-- NextAuth v5
-- Prisma ORM
+## Frontend (`frontend/`)
+- [Vite 7](https://vite.dev/) + React 19
+- TypeScript
+- React Router v7 (`createBrowserRouter`)
+- TanStack React Query v5 (data fetching/caching)
+- Tailwind CSS v4
+- Zustand (client state)
+- React Hook Form + Zod resolvers
+- Recharts (dashboard charts)
+- `motion` (animation)
+- `lucide-react` (icons)
+
+## Shared (`shared/`)
+- Shared TypeScript types, Zod validation schemas, and RBAC/permission constants consumed by both backend and frontend.
 
 ## Database
-- PostgreSQL
-- Neon (Production)
+- PostgreSQL, managed with Prisma migrations (`backend/prisma/schema.prisma`)
 
 ## Storage
-- Cloudinary
-
-## State Management
-- Zustand
+- Cloudinary (logos, documents, receipts, avatars)
 
 ---
 
 # Environment Variables
 
-Create a `.env.development` file:
+## Backend (`backend/.env`)
+
+See `backend/.env.example`:
 
 ```env
-DATABASE_URL="postgresql://postgres:password@localhost:5432/laz_db?schema=public"
+NODE_ENV="development"
+PORT=4000
 
-AUTH_SECRET="your-secret-key"
+# Database
+DATABASE_URL="postgresql://<USER>@<HOST>:<PORT>/<DB_NAME>?schema=public"
+
+# Session & CSRF secrets — REQUIRED, app crashes on boot if missing
+SESSION_SECRET="<RANDOM_64_CHARS>"
+CSRF_SECRET="<RANDOM_64_CHARS>"
+
+# CORS allowlist (comma-separated origins) — Vite dev server by default
+CORS_ORIGIN="http://localhost:5173"
+
+# Midtrans webhook signature key
+MIDTRANS_SERVER_KEY="SB-Mid-server-laz-platform-dev"
+
+# Cloudinary credentials
+CLOUDINARY_CLOUD_NAME="<YOUR_CLOUD_NAME>"
+CLOUDINARY_API_KEY="<YOUR_API_KEY>"
+CLOUDINARY_API_SECRET="<YOUR_API_SECRET>"
+
+# Seed admin credentials (development only)
+SEED_ADMIN_EMAIL="admin-dev@laz.id"
+SEED_ADMIN_PASSWORD="DevAdmin@123"
 
 # Optional
-MIDTRANS_SERVER_KEY=""
-
-# Optional
-CLOUDINARY_URL=""
-
-# Optional
-CLOUDINARY_CLOUD_NAME=""
-CLOUDINARY_API_KEY=""
-CLOUDINARY_API_SECRET=""
-
-# Optional
-NEXT_PUBLIC_BASE_URL="http://localhost:3000"
-NEXT_PUBLIC_API_URL="http://localhost:3000/api"
-
-# Optional
-SEED_ADMIN_EMAIL="admin@laz.id"
-SEED_ADMIN_PASSWORD="Admin@123456"
+LOG_LEVEL="debug"
 ```
 
-## Required Variables
+## Frontend (`frontend/.env`)
 
-| Variable | Description |
-|-----------|-----------|
-| DATABASE_URL | PostgreSQL connection string |
-| AUTH_SECRET | NextAuth secret key |
+See `frontend/.env.example`:
 
-## Optional Variables
-
-| Variable | Description |
-|-----------|-----------|
-| MIDTRANS_SERVER_KEY | Required only when integrating payment gateway |
-| CLOUDINARY_* | Required only for Cloudinary uploads |
-| NEXT_PUBLIC_* | Production deployment configuration |
-| SEED_ADMIN_* | Override default seed credentials |
+```env
+# Dev uses the Vite proxy (/api -> http://localhost:4000);
+# in production, prefer a single origin behind a reverse proxy so cookies stay simple.
+VITE_API_URL="/api"
+```
 
 ---
 
@@ -135,36 +153,38 @@ SEED_ADMIN_PASSWORD="Admin@123456"
 
 ## 1. Install Dependencies
 
+From the repo root (installs backend + frontend + root dev deps):
+
 ```bash
 npm install
 ```
 
 ## 2. Configure Environment Variables
 
-Create:
-
-```text
-.env.development
+```bash
+cp backend/.env.example backend/.env
+cp frontend/.env.example frontend/.env
 ```
 
-and fill the required variables.
+Fill in `backend/.env` with a local `DATABASE_URL` and generate random values for `SESSION_SECRET` / `CSRF_SECRET`.
 
 ## 3. Generate Prisma Client
 
 ```bash
-npx prisma generate
+npm --prefix backend run postinstall
+# or: npx --prefix backend prisma generate
 ```
 
 ## 4. Synchronize Database Schema
 
 ```bash
-npx prisma db push
+npm run db:push
 ```
 
 ## 5. Seed Initial Data
 
 ```bash
-npx prisma db seed
+npm run db:seed
 ```
 
 ## 6. Run Development Server
@@ -173,38 +193,43 @@ npx prisma db seed
 npm run dev
 ```
 
-Application will be available at:
+This runs backend and frontend concurrently:
 
-```text
-http://localhost:3000
-```
+- Backend API: `http://localhost:4000`
+- Frontend (Vite dev server, proxies `/api` to backend): `http://localhost:5173`
 
 ---
 
 # Default Seed Accounts
 
-After running:
-
-```bash
-npx prisma db seed
-```
-
-the following accounts are created:
+After running `npm run db:seed`:
 
 ## Super Admin
 
 ```text
-Email    : admin@ruangberbagi.id
-Password : Admin@123456
+Email    : admin@ruangberbagi.id  (or SEED_ADMIN_EMAIL if set)
+Password : Admin@123456           (or SEED_ADMIN_PASSWORD if set)
 ```
 
-## Default Organization (Lembaga)
+## Default Organization (Lembaga) — APPROVED
 
 ```text
 Yayasan Peduli Umat
 Slug: yayasan-peduli-umat
 Admin email: admin@yayasan-peduli-umat.id
+Password: same as SEED_ADMIN_PASSWORD
 ```
+
+A second Lembaga (`Yayasan Harapan Baru`) is also seeded with `status: PENDING`, to exercise the approval-queue UI.
+
+## Sample Volunteer
+
+```text
+Email    : relawan@ruangberbagi.id
+Password : Volunteer@123
+```
+
+In non-production environments, the seed also creates sample programs, donations, distributions, volunteer activities, and applications across their full status lifecycle.
 
 Donors never have accounts — checkout is always guest, identified by phone number.
 
@@ -213,57 +238,55 @@ Donors never have accounts — checkout is always guest, identified by phone num
 # Repository Structure
 
 ```text
-src/
-├── app/
-├── components/
-├── features/
-│   ├── auth/
-│   ├── programs/
-│   ├── donations/
-│   ├── distributions/
-│   ├── audit/
-│   ├── reports/
-│   └── rbac/
-├── hooks/
-├── lib/
-├── types/
-└── middleware/
-
-prisma/
-├── schema.prisma
-└── seed.ts
-
-public/
+laz-platform/
+├── backend/                 # NestJS 11 API (Express adapter)
+│   ├── src/
+│   │   ├── modules/         # auth, users, lembaga, programs, donations,
+│   │   │                    # payments, distributions, volunteers, webhooks, ...
+│   │   ├── config/          # session, csrf, env
+│   │   └── main.ts
+│   ├── prisma/
+│   │   ├── schema.prisma
+│   │   └── seed.ts
+│   └── dist/                # compiled output → dist/backend/src/main.js
+│
+├── frontend/                 # Vite 7 + React 19 SPA
+│   └── src/
+│       ├── compat/          # shims: next/link, next/image, next/navigation, next-auth/react, @prisma/client
+│       ├── features/        # programs, donations, distributions, lembaga, volunteers, users, rbac, settings, auth
+│       ├── pages/            # public + dashboard + volunteer route pages
+│       ├── layouts/          # PublicLayout, AuthLayout, DashboardLayout, VolunteerLayout
+│       └── lib/               # api-client, query-client, logger, upload/uploadService
+│
+└── shared/                    # Shared TypeScript types, Zod schemas, RBAC constants
 ```
 
 ---
 
 # Project Status
 
-Current Version: MVP v1.0
-
 ## Completed
 
-- Authentication
-- Authorization (RBAC)
+- Session-based Authentication & CSRF protection
+- Authorization (RBAC: SUPER_ADMIN / LEMBAGA_ADMIN)
+- Lembaga self-service registration & approval workflow
 - Program Management
-- Donation Management
-- Guest Donations
+- Donation Management (guest checkout)
 - Distribution Tracking
+- Volunteer Activities & Applications lifecycle
 - Audit Logging
 - Dashboard Analytics
 - Responsive Design
-- File Upload Integration
+- Cloudinary File Upload Integration
 
 ## Planned
 
-- Production Payment Gateway
-- Email Notifications
-- WhatsApp Notifications
-- PDF Export
-- CSV Export
-- Advanced Reporting
-- Multi-Tenant Security Hardening
+- Production Midtrans payment gateway hardening
+- Email notifications
+- WhatsApp notifications
+- PDF export
+- CSV export
+- Advanced reporting
 
 ---
 
@@ -271,21 +294,15 @@ Current Version: MVP v1.0
 
 ## Payment Gateway
 
-The current donation checkout uses a mock/sandbox payment flow.
-
-Midtrans webhook verification is available, but production payment integration has not been fully enabled.
+Midtrans webhook signature verification is implemented (`backend/src/modules/payments/webhook.service.ts`), but production payment integration runs against the sandbox key by default.
 
 ## Notifications
 
-Email and WhatsApp notification services are not yet integrated.
+Email and WhatsApp notification services are not yet integrated (schema already tracks `emailNotifications` / `waNotifications` preferences on `User`).
 
 ## Reporting
 
-PDF and CSV export features are not available in the MVP release.
-
-## Multi-Tenant Hardening
-
-Additional ownership validation is required for mutation endpoints before public multi-tenant deployment.
+PDF and CSV export features are not yet available.
 
 ---
 
@@ -293,26 +310,10 @@ Additional ownership validation is required for mutation endpoints before public
 
 Before deploying to production:
 
-- Configure PostgreSQL production database
-- Configure AUTH_SECRET
+- Provision a production PostgreSQL database and set `DATABASE_URL`
+- Generate strong, unique `SESSION_SECRET` and `CSRF_SECRET` values
+- Set `CORS_ORIGIN` to the deployed frontend origin
 - Configure Cloudinary credentials
-- Configure Midtrans credentials
-- Review multi-tenant ownership validation
-- Run database migration and seed process
-
----
-
-# MVP Release
-
-Version: v1.0.0-mvp
-
-Release Status: Demo Ready ✅
-
-Suitable for:
-- Product demonstrations
-- Internal testing
-- Stakeholder reviews
-
-Not yet recommended for:
-- Public multi-tenant production deployment
-- Financial transaction processing with real payments
+- Configure production `MIDTRANS_SERVER_KEY`
+- Run `npm run build`, then start the backend with `node dist/backend/src/main.js`
+- Run `npm run db:migrate` (Prisma `migrate deploy`) and `npm run db:seed`
