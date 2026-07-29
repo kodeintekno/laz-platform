@@ -7,9 +7,12 @@
  * 3. Role ↔ Permission matrix
  * 4. One SUPER_ADMIN user (lembagaId = null — platform-level)
  * 5. One APPROVED sample Lembaga + its LEMBAGA_ADMIN
- * 6. Dummy programs/donations/distributions (dev only)
- * 7. One PENDING Lembaga (with dummy documents) for the approval-queue UI
- * 8. One sample Volunteer + VolunteerApplication
+ * 6. Five dummy programs/donations/distributions (dev only)
+ * 7. A second APPROVED Lembaga + its LEMBAGA_ADMIN (dev only)
+ * 8. One PENDING Lembaga (with dummy documents) for the approval-queue UI —
+ *    3 lembaga in total (2 APPROVED + 1 PENDING)
+ * 9. Two sample Volunteers
+ * 10. Two VolunteerActivity + VolunteerApplication across the full status lifecycle
  *
  * Run with: npx prisma db seed
  *
@@ -132,25 +135,6 @@ async function main() {
     process.stdout.write(".");
   }
   console.log(` ✓ ${ROLE_DEFINITIONS.length} roles\n`);
-
-  // 2.5 Remove deprecated roles (FINANCE, DONATUR, RELAWAN) if they still exist
-  console.log("🧹 Removing deprecated roles (FINANCE, DONATUR, RELAWAN)...");
-  const deprecatedRoles = await prisma.role.findMany({
-    where: { name: { in: ["FINANCE", "DONATUR", "RELAWAN"] } },
-  });
-  for (const role of deprecatedRoles) {
-    const usersOnRole = await prisma.user.count({ where: { roleId: role.id } });
-    if (usersOnRole > 0) {
-      console.log(
-        ` ⚠️  Melewati penghapusan role ${role.name}: masih dipakai oleh ${usersOnRole} user.`,
-      );
-      continue;
-    }
-    await prisma.rolePermission.deleteMany({ where: { roleId: role.id } });
-    await prisma.role.delete({ where: { id: role.id } });
-    console.log(` ✓ Role ${role.name} dihapus`);
-  }
-  console.log();
 
   // 3. Upsert role-permission mappings (and clear stale ones for roles we manage)
   console.log("🔗 Seeding role-permission mappings...");
@@ -305,6 +289,37 @@ async function main() {
           { title: "Penyaluran Tangki Air Tahap 2", amount: 15000000, desc: "Penyaluran 8 truk tangki air ke Desa Karanganyar. Program selesai." },
         ],
       },
+      {
+        title: "Bantuan Pendidikan Anak Yatim & Dhuafa",
+        slug: "bantuan-pendidikan-yatim-dhuafa",
+        description: "Dukung biaya sekolah dan perlengkapan belajar anak yatim serta dhuafa binaan lembaga.",
+        targetAmount: 40000000,
+        category: "INFAK" as const,
+        status: "PUBLISHED" as const,
+        imageUrl: "https://images.unsplash.com/photo-1497633762265-9d179a990aa6?q=80&w=800&auto=format&fit=crop",
+        startDate: new Date(),
+        endDate: new Date(Date.now() + 45 * 24 * 60 * 60 * 1000),
+        createdById: lembagaAdminUser.id,
+        donations: [
+          { amount: 3000000, status: "PAID", method: "OVO", anon: false, name: "Rina Marlina", phone: "081211110007", msg: "Semoga bermanfaat untuk sekolah adik-adik" },
+          { amount: 1500000, status: "PAID", method: "DANA", anon: true, name: "Hamba Allah", phone: "081211110008", msg: "" },
+        ],
+      },
+      {
+        title: "Wakaf Sumur Bor untuk Pesantren Terpencil",
+        slug: "wakaf-sumur-bor-pesantren",
+        description: "Bangun sumur bor agar santri dan warga sekitar pesantren pelosok memiliki akses air bersih.",
+        targetAmount: 30000000,
+        category: "WAKAF" as const,
+        status: "PUBLISHED" as const,
+        imageUrl: "https://images.unsplash.com/photo-1500932334442-8761ee4810a7?q=80&w=800&auto=format&fit=crop",
+        startDate: new Date(),
+        endDate: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000),
+        createdById: lembagaAdminUser.id,
+        donations: [
+          { amount: 10000000, status: "PAID", method: "BCA_VA", anon: false, name: "H. Slamet Riyadi", phone: "081211110009", msg: "Wakaf untuk pesantren" },
+        ],
+      },
     ];
 
     const createdProgramsBySlug: Record<string, { id: string }> = {};
@@ -379,7 +394,48 @@ async function main() {
     }
     console.log(" ✓ Dummy programs, donations, and distributions seeded");
 
-    // 7. One PENDING Lembaga with dummy documents (for approval-queue UI) ──────
+    // 7. A second APPROVED Lembaga + its LEMBAGA_ADMIN (for multi-tenant demo) ─
+    console.log("\n🏢 Seeding second APPROVED Lembaga...");
+    const secondLembaga = await prisma.lembaga.upsert({
+      where: { slug: "yayasan-cahaya-ummat" },
+      update: {
+        name: "Yayasan Cahaya Ummat",
+        status: "APPROVED",
+      },
+      create: {
+        name: "Yayasan Cahaya Ummat",
+        slug: "yayasan-cahaya-ummat",
+        logoUrl: "https://example.com/logo-cahaya-ummat.png",
+        status: "APPROVED",
+        approvedAt: new Date(),
+        picName: "Muhammad Iqbal",
+        picPhone: "081345678901",
+        address: "Jl. Diponegoro No. 10, Surabaya",
+        description: "Yayasan yang fokus pada pemberdayaan ekonomi dan pendidikan masyarakat dhuafa.",
+        izinYayasanNumber: "AHU-0002345.AH.01.04.Tahun 2021",
+      },
+    });
+    console.log(` ✓ Lembaga created: ${secondLembaga.name}`);
+
+    await prisma.user.upsert({
+      where: { email: "admin@yayasan-cahaya-ummat.id" },
+      update: {
+        roleId: lembagaAdminRoleId,
+        status: "ACTIVE",
+        lembagaId: secondLembaga.id,
+      },
+      create: {
+        email: "admin@yayasan-cahaya-ummat.id",
+        name: "Admin Yayasan Cahaya Ummat",
+        password: hashedPassword,
+        status: "ACTIVE",
+        roleId: lembagaAdminRoleId,
+        lembagaId: secondLembaga.id,
+      },
+    });
+    console.log(" ✓ Lembaga admin created");
+
+    // 8. One PENDING Lembaga with dummy documents (for approval-queue UI) ──────
     console.log("\n🏢 Seeding sample PENDING Lembaga (for approval queue)...");
     const pendingLembaga = await prisma.lembaga.upsert({
       where: { slug: "yayasan-harapan-baru" },
@@ -416,9 +472,10 @@ async function main() {
     });
     console.log(" ✓ Pending lembaga + dummy documents seeded");
 
-    // 8. Sample Volunteer + VolunteerActivity + VolunteerApplication ───────────
-    console.log("\n🙋 Seeding sample Volunteer...");
+    // 9. Two sample Volunteers ──────────────────────────────────────────────────
+    console.log("\n🙋 Seeding sample Volunteers...");
     const volunteerPassword = await bcrypt.hash("Volunteer@123", 12);
+
     const volunteer = await prisma.volunteer.upsert({
       where: { email: "relawan@ruangberbagi.id" },
       update: {},
@@ -432,6 +489,21 @@ async function main() {
       },
     });
 
+    const volunteer2 = await prisma.volunteer.upsert({
+      where: { email: "relawan2@ruangberbagi.id" },
+      update: {},
+      create: {
+        name: "Rizky Pratama",
+        email: "relawan2@ruangberbagi.id",
+        password: volunteerPassword,
+        phone: "081377778888",
+        address: "Jl. Gotong Royong No. 7, Bogor",
+        status: "ACTIVE",
+      },
+    });
+    console.log(" ✓ 2 volunteers seeded");
+
+    // 10. Two VolunteerActivity + applications across the full status lifecycle ─
     console.log("📅 Seeding sample Volunteer Activities...");
 
     const dummyActivities = [
@@ -454,26 +526,6 @@ async function main() {
         quota: 20,
         status: "OPEN" as const,
         programSlug: "bantu-pembangunan-masjid-pelosok",
-      },
-      {
-        slug: "activity-edukasi-zakat",
-        title: "Edukasi Zakat ke Warga",
-        description: "Sosialisasi dan edukasi seputar tata cara zakat fitrah dan zakat maal ke warga sekitar.",
-        location: "Balai Desa, Jakarta Timur",
-        activityDate: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000),
-        quota: 8,
-        status: "OPEN" as const,
-        programSlug: "zakat-fitrah-maal",
-      },
-      {
-        slug: "activity-pendataan-mustahik",
-        title: "Pendataan Mustahik",
-        description: "Kegiatan lapangan mendata calon penerima manfaat (mustahik) di wilayah binaan lembaga.",
-        location: "Kantor Yayasan Peduli Umat, Jakarta Pusat",
-        activityDate: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000),
-        quota: 5,
-        status: "OPEN" as const,
-        programSlug: null,
       },
     ];
 
@@ -508,23 +560,29 @@ async function main() {
 
     const dummyApplications = [
       {
-        activitySlug: "activity-edukasi-zakat",
-        status: "PENDING" as const,
-      },
-      {
-        activitySlug: "activity-pendataan-mustahik",
-        status: "REJECTED" as const,
-        rejectionReason: "Kuota kegiatan sudah terpenuhi lebih dulu.",
-      },
-      {
+        volunteerId: volunteer.id,
         activitySlug: "activity-renovasi-masjid",
         status: "APPROVED" as const,
       },
       {
+        volunteerId: volunteer.id,
         activitySlug: "activity-distribusi-air-bersih",
-        status: "REPORT_SUBMITTED" as const,
+        status: "COMPLETED" as const,
         reportText: "Telah membantu distribusi 5 tangki air bersih ke Desa Sukamaju bersama tim lembaga.",
         reportSubmittedAt: new Date(Date.now() - 18 * 24 * 60 * 60 * 1000),
+        verifiedById: lembagaAdminUser.id,
+        verifiedAt: new Date(Date.now() - 17 * 24 * 60 * 60 * 1000),
+      },
+      {
+        volunteerId: volunteer2.id,
+        activitySlug: "activity-renovasi-masjid",
+        status: "PENDING" as const,
+      },
+      {
+        volunteerId: volunteer2.id,
+        activitySlug: "activity-distribusi-air-bersih",
+        status: "REJECTED" as const,
+        rejectionReason: "Kuota kegiatan sudah terpenuhi lebih dulu.",
       },
     ];
 
@@ -533,7 +591,7 @@ async function main() {
       await prisma.volunteerApplication.upsert({
         where: {
           volunteerId_activityId: {
-            volunteerId: volunteer.id,
+            volunteerId: app.volunteerId,
             activityId: activity.id,
           },
         },
@@ -541,55 +599,20 @@ async function main() {
           status: app.status,
         },
         create: {
-          volunteerId: volunteer.id,
+          volunteerId: app.volunteerId,
           activityId: activity.id,
           lembagaId: approvedLembaga.id,
           status: app.status,
           rejectionReason: "rejectionReason" in app ? app.rejectionReason : undefined,
           reportText: "reportText" in app ? app.reportText : undefined,
           reportSubmittedAt: "reportSubmittedAt" in app ? app.reportSubmittedAt : undefined,
+          verifiedById: "verifiedById" in app ? app.verifiedById : undefined,
+          verifiedAt: "verifiedAt" in app ? app.verifiedAt : undefined,
         },
       });
     }
 
-    // One additional COMPLETED application, on its own activity, verified by the lembaga admin
-    const completedActivity = await prisma.volunteerActivity.upsert({
-      where: { id: "seed-activity-santunan-yatim" },
-      update: {},
-      create: {
-        id: "seed-activity-santunan-yatim",
-        lembagaId: approvedLembaga.id,
-        createdById: lembagaAdminUser.id,
-        title: "Santunan Anak Yatim",
-        description: "Kegiatan pembagian santunan dan bingkisan untuk anak yatim binaan lembaga.",
-        location: "Panti Asuhan Harapan, Jakarta Selatan",
-        activityDate: new Date(Date.now() - 40 * 24 * 60 * 60 * 1000),
-        quota: 15,
-        status: "CLOSED",
-      },
-    });
-
-    await prisma.volunteerApplication.upsert({
-      where: {
-        volunteerId_activityId: {
-          volunteerId: volunteer.id,
-          activityId: completedActivity.id,
-        },
-      },
-      update: { status: "COMPLETED" },
-      create: {
-        volunteerId: volunteer.id,
-        activityId: completedActivity.id,
-        lembagaId: approvedLembaga.id,
-        status: "COMPLETED",
-        reportText: "Ikut serta membagikan santunan dan bingkisan kepada 30 anak yatim binaan lembaga.",
-        reportSubmittedAt: new Date(Date.now() - 39 * 24 * 60 * 60 * 1000),
-        verifiedById: lembagaAdminUser.id,
-        verifiedAt: new Date(Date.now() - 38 * 24 * 60 * 60 * 1000),
-      },
-    });
-
-    console.log(" ✓ Volunteer applications seeded (PENDING, REJECTED, APPROVED, REPORT_SUBMITTED, COMPLETED)");
+    console.log(" ✓ Volunteer applications seeded (PENDING, REJECTED, APPROVED, COMPLETED)");
   }
 
   console.log("\n✅ Seeding complete!\n");
