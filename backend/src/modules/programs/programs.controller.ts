@@ -93,7 +93,7 @@ export class ProgramsController {
   }
 
   @Patch(":id/feature")
-  @RequirePermission(PERMISSIONS.PROGRAMS_PUBLISH)
+  @RequirePermission(PERMISSIONS.PROGRAMS_APPROVE)
   async setFeatured(
     @Param("id") id: string,
     @Body(new ZodValidationPipe(programFeatureSchema)) body: ProgramFeatureInput,

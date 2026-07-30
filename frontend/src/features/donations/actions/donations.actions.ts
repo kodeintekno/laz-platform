@@ -11,7 +11,7 @@ export async function createDonationAction(formData: FormData): Promise<ActionRe
 }
 
 export async function createAdminDonationAction(formData: FormData): Promise<ActionResult> {
-  const result = await asAction(api.post("/donations/admin", Object.fromEntries(formData.entries())));
+  const result = await asAction(api.post("/donations", Object.fromEntries(formData.entries())));
   if ("success" in result) queryClient.invalidateQueries({ queryKey: ["donations"] });
   return result;
 }

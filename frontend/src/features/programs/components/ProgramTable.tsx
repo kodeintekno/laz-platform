@@ -49,7 +49,7 @@ export function ProgramTable({ programs, pagination }: ProgramTableProps) {
   const router = useRouter();
   const { can } = usePermission();
   const canApprove = can(PERMISSIONS.PROGRAMS_APPROVE);
-  const canFeature = can(PERMISSIONS.PROGRAMS_PUBLISH);
+  const canFeature = can(PERMISSIONS.PROGRAMS_APPROVE);
   const [isPending, startTransition] = useTransition();
   const [confirmState, setConfirmState] = useState<{
     isOpen: boolean;

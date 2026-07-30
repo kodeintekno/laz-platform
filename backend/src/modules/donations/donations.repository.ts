@@ -167,9 +167,16 @@ export class DonationsRepository {
     return this.prisma.$transaction(async (tx) => {
       const program = await tx.program.findUnique({
         where: { id: data.programId },
-        select: { lembagaId: true },
+        select: { lembagaId: true, status: true },
       });
       if (!program) throw new AppError("PROGRAM_NOT_FOUND", "Program tidak ditemukan", 404);
+      if (program.status === "PENDING_REVIEW") {
+        throw new AppError(
+          "PROGRAM_PENDING_REVIEW",
+          "Program masih menunggu persetujuan, donasi manual belum bisa ditambahkan",
+          400,
+        );
+      }
 
       const donation = await tx.donation.create({
         data: {
