@@ -3,17 +3,14 @@ import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api-client";
 import { useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
-import { 
-  ShieldCheck, 
-  BarChart3, 
-  TrendingUp, 
-  ChevronDown, 
+import {
+  ShieldCheck,
+  BarChart3,
+  TrendingUp,
+  ArrowRight,
   Globe,
   Smartphone,
   Apple,
-  Heart,
-  Wallet,
-  Award
 } from "lucide-react";
 import { motion } from "motion/react";
 
@@ -29,26 +26,10 @@ import Testimonials from "@/components/ui/Testimonials";
 
 export function HomePage() {
   const navigate = useNavigate();
-  const [selectedCategory, setSelectedCategory] = useState<string>('semua');
-  const [sortOrder, setSortOrder] = useState<'desc' | 'asc'>('desc');
-  const [search, setSearch] = useState('');
-  const [selectedLembaga, setSelectedLembaga] = useState<string>('semua');
 
-  const { data: programsResult } = useQuery({
-    queryKey: ["public", "programs", { search, category: selectedCategory, lembagaSlug: selectedLembaga, sort: sortOrder }],
-    queryFn: () =>
-      api.get<any[]>("/public/programs", {
-        search: search || undefined,
-        category: selectedCategory === 'semua' ? undefined : selectedCategory.toUpperCase(),
-        lembagaSlug: selectedLembaga === 'semua' ? undefined : selectedLembaga,
-        sort: sortOrder === 'asc' ? 'ending-soon' : 'newest',
-        limit: 24,
-      }),
-  });
-
-  const { data: lembagaResult } = useQuery({
-    queryKey: ["public", "lembaga", "options"],
-    queryFn: () => api.get<any[]>("/public/lembaga", { limit: 50 }),
+  const { data: featuredResult } = useQuery({
+    queryKey: ["public", "programs", "featured"],
+    queryFn: () => api.get<any[]>("/public/programs/featured"),
   });
 
   const { data: statsResult } = useQuery({
@@ -56,17 +37,7 @@ export function HomePage() {
     queryFn: () => api.get<any>("/public/stats"),
   });
 
-  const categories = [
-    { id: 'semua', label: 'Semua', icon: Globe },
-    { id: 'zakat', label: 'Zakat', icon: ShieldCheck },
-    { id: 'wakaf', label: 'Wakaf', icon: Award },
-    { id: 'sedekah', label: 'Sedekah', icon: Heart },
-    { id: 'infak', label: 'Infak', icon: Wallet },
-  ];
-
-  const lembagaOptions = lembagaResult?.data ?? [];
-
-  const rawPrograms = programsResult?.data ?? [];
+  const rawPrograms = featuredResult?.data ?? [];
   const mappedCampaigns = rawPrograms.map((p: any) => {
     let daysRemainingText = "Tanpa Batas Waktu";
     if (p.endDate) {
@@ -121,7 +92,7 @@ export function HomePage() {
 
       <div id="programs" className="scroll-mt-32 space-y-12 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-8">
-          <div className="space-y-4 lg:w-1/4 shrink-0">
+          <div className="space-y-4 lg:w-1/2">
             <motion.div
               initial={{ opacity: 0, x: -20 }}
               whileInView={{ opacity: 1, x: 0 }}
@@ -132,87 +103,35 @@ export function HomePage() {
               Langkah Kebaikan
             </motion.div>
             <h2 className="text-4xl font-black text-gray-900 tracking-tight">
-              Program <span className="text-emerald-600">Terbaru</span>
+              Program <span className="text-emerald-600">Utama</span>
             </h2>
             <p className="text-gray-500 max-w-lg font-medium text-sm leading-relaxed">
               Pilih program yang sesuai dengan niat Anda dan mari bantu sesama dengan cara yang paling bermakna.
             </p>
           </div>
 
-          <div className="space-y-3 w-full lg:w-3/4">
-            <div className="relative group w-full">
-              <input
-                type="text"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Cari program..."
-                className="w-full bg-white border border-gray-100 rounded-2xl px-6 py-4 text-xs font-bold text-gray-900 shadow-sm hover:shadow-xl hover:shadow-emerald-900/5 transition-all focus:ring-2 focus:ring-emerald-500 outline-none placeholder:text-gray-400 placeholder:font-medium placeholder:normal-case"
-              />
-            </div>
-
-            <div className="grid grid-cols-3 gap-3">
-              <div className="relative group">
-                <select
-                  value={selectedCategory}
-                  onChange={(e) => setSelectedCategory(e.target.value)}
-                  className="w-full appearance-none bg-white border border-gray-100 rounded-2xl px-6 py-4 pr-12 text-xs font-black uppercase tracking-widest text-gray-900 shadow-sm hover:shadow-xl hover:shadow-emerald-900/5 transition-all cursor-pointer focus:ring-2 focus:ring-emerald-500 outline-none"
-                >
-                  {categories.map((cat) => (
-                    <option key={cat.id} value={cat.id}>
-                      {cat.label}
-                    </option>
-                  ))}
-                </select>
-                <div className="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none text-emerald-600 transition-transform group-hover:scale-110">
-                  <ChevronDown className="w-4 h-4" />
-                </div>
-              </div>
-
-              <div className="relative group">
-                <select
-                  value={selectedLembaga}
-                  onChange={(e) => setSelectedLembaga(e.target.value)}
-                  className="w-full appearance-none bg-white border border-gray-100 rounded-2xl px-6 py-4 pr-12 text-xs font-black uppercase tracking-widest text-gray-900 shadow-sm hover:shadow-xl hover:shadow-emerald-900/5 transition-all cursor-pointer focus:ring-2 focus:ring-emerald-500 outline-none"
-                >
-                  <option value="semua">Semua Lembaga</option>
-                  {lembagaOptions.map((l: any) => (
-                    <option key={l.id} value={l.slug}>{l.name}</option>
-                  ))}
-                </select>
-                <div className="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none text-emerald-600 transition-transform group-hover:scale-110">
-                  <ChevronDown className="w-4 h-4" />
-                </div>
-              </div>
-
-              <div className="relative group">
-                <select
-                  value={sortOrder}
-                  onChange={(e) => setSortOrder(e.target.value as 'desc' | 'asc')}
-                  className="w-full appearance-none bg-white border border-gray-100 rounded-2xl px-6 py-4 pr-12 text-xs font-black uppercase tracking-widest text-gray-900 shadow-sm hover:shadow-xl hover:shadow-emerald-900/5 transition-all cursor-pointer focus:ring-2 focus:ring-emerald-500 outline-none"
-                >
-                  <option value="desc">Terbaru</option>
-                  <option value="asc">Segera Berakhir</option>
-                </select>
-                <div className="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none text-emerald-600 transition-transform group-hover:scale-110">
-                  <ChevronDown className="w-4 h-4" />
-                </div>
-              </div>
-            </div>
-          </div>
+          <button
+            type="button"
+            onClick={() => navigate('/programs')}
+            className="group inline-flex items-center gap-2 self-start lg:self-center bg-white border border-gray-100 rounded-2xl px-6 py-4 text-xs font-black uppercase tracking-widest text-emerald-600 shadow-sm hover:shadow-xl hover:shadow-emerald-900/5 hover:bg-emerald-600 hover:text-white transition-all"
+          >
+            Lihat Semua Program
+            <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
+          </button>
         </div>
 
-        {filteredCampaigns.length > 0 ? (
-          <CampaignGrid 
-            campaigns={filteredCampaigns} 
+        {mappedCampaigns.length > 0 ? (
+          <CampaignGrid
+            campaigns={mappedCampaigns}
             onClick={(campaign) => navigate(`/programs/${campaign.slug}`)}
-            onDonate={(campaign) => navigate(`/donate/${campaign.slug}`)} 
+            onDonate={(campaign) => navigate(`/donate/${campaign.slug}`)}
           />
         ) : (
           <div className="text-center py-40 bg-white rounded-[3rem] border border-dashed border-gray-200 flex flex-col items-center gap-4">
             <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center text-gray-300">
               <Globe className="w-8 h-8" />
             </div>
-            <p className="text-gray-400 font-bold uppercase tracking-widest text-xs">Belum ada program aktif di kategori ini</p>
+            <p className="text-gray-400 font-bold uppercase tracking-widest text-xs">Belum ada program utama saat ini</p>
           </div>
         )}
       </div>

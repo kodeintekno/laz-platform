@@ -5,7 +5,13 @@ import { AuditAction } from "../audit/audit.types";
 import { PrismaService } from "../../prisma/prisma.service";
 import { CloudinaryProvider } from "../../lib/upload/cloudinary.provider";
 import { AppError } from "../../common/errors/app.error";
-import type { ProgramInput } from "../../../../shared/validations/programs.schema";
+import { hasPermission } from "../../../../shared/lib/permissions";
+import { PERMISSIONS } from "../../../../shared/constants/permissions";
+import { MAX_FEATURED_PROGRAMS, type ProgramInput } from "../../../../shared/validations/programs.schema";
+import type { RBACSessionUser } from "../../../../shared/types/rbac";
+
+/** Statuses only a SUPER_ADMIN (programs.approve) may set — everyone else must go through approve/reject. */
+const APPROVAL_GATED_STATUSES = new Set(["PUBLISHED", "REJECTED"]);
 
 /**
  * Generate a unique slug from a title.
@@ -30,8 +36,25 @@ export class ProgramsService {
     private readonly prisma: PrismaService,
   ) {}
 
-  async getDashboardPrograms(page: number, limit: number, search?: string, lembagaId?: string) {
-    return this.programsRepository.findMany(page, limit, search, lembagaId);
+  async getDashboardPrograms(
+    page: number,
+    limit: number,
+    search?: string,
+    lembagaId?: string,
+    status?: string,
+  ) {
+    return this.programsRepository.findMany(page, limit, search, lembagaId, status);
+  }
+
+  /** Only SUPER_ADMIN (programs.approve) may push a program straight to PUBLISHED/REJECTED — everyone else must go through the dedicated approve/reject endpoints. */
+  private assertAllowedStatus(actor: RBACSessionUser, status: string) {
+    if (APPROVAL_GATED_STATUSES.has(status) && !hasPermission(actor, PERMISSIONS.PROGRAMS_APPROVE)) {
+      throw new AppError(
+        "FORBIDDEN_STATUS",
+        "Hanya Super Admin yang dapat mempublikasikan atau menolak program. Ajukan program untuk direview.",
+        403,
+      );
+    }
   }
 
   async getPublishedPrograms(options?: {
@@ -50,7 +73,9 @@ export class ProgramsService {
     return this.programsRepository.getProgramBySlug(slug);
   }
 
-  async createProgram(data: ProgramInput, adminId: string) {
+  async createProgram(data: ProgramInput, actor: RBACSessionUser) {
+    this.assertAllowedStatus(actor, data.status);
+    const adminId = actor.id;
     const slug = generateSlug(data.title);
 
     const admin = await this.prisma.user.findUnique({
@@ -94,7 +119,10 @@ export class ProgramsService {
     return newProgram;
   }
 
-  async updateProgram(id: string, data: ProgramInput, adminId: string) {
+  async updateProgram(id: string, data: ProgramInput, actor: RBACSessionUser) {
+    this.assertAllowedStatus(actor, data.status);
+    const adminId = actor.id;
+
     const admin = await this.prisma.user.findUnique({
       where: { id: adminId },
       select: { lembagaId: true },
@@ -144,6 +172,98 @@ export class ProgramsService {
     });
 
     return updatedProgram;
+  }
+
+  async approveProgram(id: string, approverId: string) {
+    const existing = await this.programsRepository.findById(id);
+    if (!existing) throw new NotFoundException("Program tidak ditemukan");
+    if (existing.status !== "PENDING_REVIEW") {
+      throw new AppError(
+        "INVALID_STATUS",
+        "Hanya program berstatus Menunggu Review yang dapat disetujui",
+        409,
+      );
+    }
+
+    const updated = await this.programsRepository.approve(id, approverId);
+
+    await this.auditService.log({
+      userId: approverId,
+      action: AuditAction.PROGRAM_APPROVE,
+      entity: "Program",
+      entityId: id,
+      oldData: { status: existing.status },
+      newData: { status: updated.status },
+    });
+
+    return updated;
+  }
+
+  async rejectProgram(id: string, reason: string, approverId: string) {
+    const existing = await this.programsRepository.findById(id);
+    if (!existing) throw new NotFoundException("Program tidak ditemukan");
+    if (existing.status !== "PENDING_REVIEW") {
+      throw new AppError(
+        "INVALID_STATUS",
+        "Hanya program berstatus Menunggu Review yang dapat ditolak",
+        409,
+      );
+    }
+
+    const updated = await this.programsRepository.reject(id, reason, approverId);
+
+    await this.auditService.log({
+      userId: approverId,
+      action: AuditAction.PROGRAM_REJECT,
+      entity: "Program",
+      entityId: id,
+      oldData: { status: existing.status },
+      newData: { status: updated.status, rejectionReason: reason },
+    });
+
+    return updated;
+  }
+
+  /** Get up to MAX_FEATURED_PROGRAMS programs curated for the homepage. */
+  async getFeaturedPrograms() {
+    return this.programsRepository.findFeatured(MAX_FEATURED_PROGRAMS);
+  }
+
+  /** Mark/unmark a program as featured on the homepage — SUPER_ADMIN only, capped at MAX_FEATURED_PROGRAMS. */
+  async setFeaturedProgram(id: string, isFeatured: boolean, actor: RBACSessionUser) {
+    const existing = await this.programsRepository.findById(id);
+    if (!existing) throw new NotFoundException("Program tidak ditemukan");
+
+    if (isFeatured) {
+      if (existing.status !== "PUBLISHED") {
+        throw new AppError(
+          "INVALID_STATUS",
+          "Hanya program berstatus Published yang dapat dijadikan program utama",
+          409,
+        );
+      }
+      const featuredCount = await this.programsRepository.countFeatured(id);
+      if (featuredCount >= MAX_FEATURED_PROGRAMS) {
+        throw new AppError(
+          "FEATURED_LIMIT_REACHED",
+          `Maksimal ${MAX_FEATURED_PROGRAMS} program utama dapat dipilih. Batalkan salah satu terlebih dahulu.`,
+          409,
+        );
+      }
+    }
+
+    const updated = await this.programsRepository.setFeatured(id, isFeatured);
+
+    await this.auditService.log({
+      userId: actor.id,
+      action: AuditAction.UPDATE,
+      entity: "Program",
+      entityId: id,
+      oldData: { isFeatured: existing.isFeatured },
+      newData: { isFeatured: updated.isFeatured },
+    });
+
+    return updated;
   }
 
   async deleteProgram(id: string, adminId: string) {

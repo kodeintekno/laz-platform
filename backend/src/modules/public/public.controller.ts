@@ -39,6 +39,13 @@ export class PublicController {
     return { data: items, meta: metadata };
   }
 
+  /** Programs curated by SUPER_ADMIN to appear on the homepage (max 3). Must be registered before ":slug". */
+  @Get("programs/featured")
+  @Public()
+  async featuredPrograms() {
+    return this.programsService.getFeaturedPrograms();
+  }
+
   @Get("programs/:slug")
   @Public()
   async programBySlug(@Param("slug") slug: string) {

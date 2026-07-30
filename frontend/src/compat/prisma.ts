@@ -88,6 +88,9 @@ export interface Program {
   description: string;
   category: string;
   status: string;
+  rejectionReason?: string | null;
+  approvedAt?: Date | string | null;
+  approvedById?: string | null;
   imageUrl?: string | null;
   imagePublicId?: string | null;
   targetAmount: number;

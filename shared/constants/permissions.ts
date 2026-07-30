@@ -21,6 +21,7 @@ export const PERMISSIONS = {
   PROGRAMS_UPDATE: "programs.update",
   PROGRAMS_DELETE: "programs.delete",
   PROGRAMS_PUBLISH: "programs.publish",
+  PROGRAMS_APPROVE: "programs.approve",
 
   // ── Donation Management ──────────────────────────────────────────
   DONATIONS_READ: "donations.read",

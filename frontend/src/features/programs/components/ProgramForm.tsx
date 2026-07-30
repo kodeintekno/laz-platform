@@ -7,6 +7,8 @@ import { createProgramAction } from "@/features/programs/actions/programs.action
 import { FormWrapper, FormField, Button, Card, CardContent, CardFooter } from "@/components/ui";
 import { FileUpload } from "@/components/ui/FileUpload";
 import { logger } from "@/lib/logger";
+import { usePermission } from "@/hooks/usePermission";
+import { PERMISSIONS } from "@shared/constants/permissions";
 import { type Program } from "@prisma/client";
 
 export function ProgramForm({
@@ -17,6 +19,8 @@ export function ProgramForm({
   action?: (prevState: any, formData: FormData) => Promise<any>;
 }) {
   const router = useRouter();
+  const { can } = usePermission();
+  const canApprove = can(PERMISSIONS.PROGRAMS_APPROVE);
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
 
@@ -71,17 +75,33 @@ export function ProgramForm({
   };
 
   const PROGRAM_CATEGORIES = ["ZAKAT", "INFAK", "SEDEKAH", "WAKAF"] as const;
-  const PROGRAM_STATUSES = [{ label: "Draft (Sembunyikan)", value: "DRAFT" }, { label: "Published (Tampilkan Publik)", value: "PUBLISHED" }] as const;
+  const ALL_STATUS_LABELS: Record<string, string> = {
+    DRAFT: "Draft (Sembunyikan)",
+    PENDING_REVIEW: "Ajukan untuk Direview",
+    PUBLISHED: "Published (Tampilkan Publik)",
+    REJECTED: "Ditolak",
+    COMPLETED: "Selesai",
+    CANCELLED: "Dibatalkan",
+  };
+  // LEMBAGA_ADMIN can only submit Draft or ajukan-review — publikasi harus lewat persetujuan Super Admin.
+  const SELF_SERVICE_STATUSES = ["DRAFT", "PENDING_REVIEW"];
+  const allowedStatuses = canApprove
+    ? Object.keys(ALL_STATUS_LABELS)
+    : SELF_SERVICE_STATUSES.includes(initialData?.status ?? "DRAFT")
+      ? SELF_SERVICE_STATUSES
+      : [...SELF_SERVICE_STATUSES, initialData!.status];
 
   const categoryOptions = PROGRAM_CATEGORIES.map((cat) => ({
     label: cat,
     value: cat,
   }));
 
-  const statusOptions = PROGRAM_STATUSES.map((s) => ({
-    label: s.label,
-    value: s.value,
+  const statusOptions = allowedStatuses.map((value) => ({
+    label: ALL_STATUS_LABELS[value] ?? value,
+    value,
   }));
+
+  const isStatusLocked = !canApprove && initialData && !SELF_SERVICE_STATUSES.includes(initialData.status);
 
   return (
     <Card>
@@ -110,6 +130,18 @@ export function ProgramForm({
         error={error}
       >
         <CardContent className="space-y-6">
+          {initialData?.status === "REJECTED" && initialData.rejectionReason && (
+            <div className="rounded-xl border border-destructive/30 bg-destructive/10 p-4 text-sm">
+              <p className="font-bold text-destructive mb-1">Program ini ditolak oleh Super Admin</p>
+              <p className="text-secondary">{initialData.rejectionReason}</p>
+              {!canApprove && (
+                <p className="text-secondary mt-1">
+                  Perbaiki program lalu ubah status menjadi "Ajukan untuk Direview" untuk mengajukan ulang.
+                </p>
+              )}
+            </div>
+          )}
+
           <FormField
             name="title"
             label="Judul Program"
@@ -140,7 +172,8 @@ export function ProgramForm({
               label="Status Publikasi"
               type="select"
               options={statusOptions}
-              disabled={isPending}
+              disabled={isPending || isStatusLocked}
+              description={isStatusLocked ? "Hanya Super Admin yang dapat mengubah status ini." : undefined}
             />
           </div>
 

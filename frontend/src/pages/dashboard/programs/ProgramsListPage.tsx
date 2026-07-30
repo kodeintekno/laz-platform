@@ -10,21 +10,38 @@ import { DataTableToolbar } from "@/components/ui/data-table";
 import { UserLembagaFilter } from "@/features/users/components/UserLembagaFilter";
 import { Link } from "react-router-dom";
 
+const STATUS_TABS = [
+  { value: undefined, label: "Semua" },
+  { value: "PENDING_REVIEW", label: "Menunggu Review" },
+  { value: "PUBLISHED", label: "Published" },
+  { value: "DRAFT", label: "Draft" },
+  { value: "REJECTED", label: "Ditolak" },
+] as const;
+
 export function ProgramsListPage() {
   const { user } = useAuth();
   const { can } = usePermission();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const isSuperAdmin = user?.roleName === "SUPER_ADMIN";
 
   const page = Number(searchParams.get("page") ?? 1);
   const limit = Number(searchParams.get("limit") ?? 10);
   const search = searchParams.get("search") ?? undefined;
   const lembagaId = searchParams.get("lembagaId") ?? undefined;
+  const status = searchParams.get("status") ?? undefined;
 
   const { data: result, isLoading } = useQuery({
-    queryKey: ["programs", { page, limit, search, lembagaId }],
-    queryFn: () => api.get<any[]>("/programs", { page, limit, search, lembagaId }),
+    queryKey: ["programs", { page, limit, search, lembagaId, status }],
+    queryFn: () => api.get<any[]>("/programs", { page, limit, search, lembagaId, status }),
   });
+
+  const setStatusFilter = (value?: string) => {
+    const next = new URLSearchParams(searchParams);
+    if (value) next.set("status", value);
+    else next.delete("status");
+    next.delete("page");
+    setSearchParams(next);
+  };
 
   const { data: lembagasResult } = useQuery({
     queryKey: ["lembaga", "options"],
@@ -49,13 +66,29 @@ export function ProgramsListPage() {
         title="Program Management"
         description="Kelola semua program kampanye zakat, infak, dan sedekah."
         action={
-          can(PERMISSIONS.PROGRAMS_CREATE) ? (
+          can(PERMISSIONS.PROGRAMS_CREATE) && !isSuperAdmin ? (
             <Link to="/dashboard/programs/new">
               <Button intent="primary">Buat Program</Button>
             </Link>
           ) : undefined
         }
       />
+
+      <div className="flex flex-wrap gap-2 border-b border-border/40 pb-3">
+        {STATUS_TABS.map((tab) => (
+          <button
+            key={tab.label}
+            onClick={() => setStatusFilter(tab.value)}
+            className={`px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wide transition ${
+              status === tab.value
+                ? "bg-brand-primary text-white"
+                : "bg-surface-muted text-secondary hover:text-primary"
+            }`}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
 
       <DataTableToolbar
         searchValue={search}
