@@ -1,179 +1,480 @@
-import { useState, useTransition } from "react";
+import { useState, useTransition, useEffect, useCallback, useRef } from "react";
 import { useNavigate, Link } from "react-router-dom";
+import {
+  useForm,
+  FormProvider,
+  type FieldPath,
+} from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import {
   lembagaRegistrationSchema,
   type LembagaRegistrationInput,
 } from "../validations/lembaga.schema";
-import { FormWrapper, FormField, Button } from "@/components/ui";
+import { FormField, Button } from "@/components/ui";
+import { StepIndicator, type StepConfig } from "@/components/ui/StepIndicator";
 import { FileUpload } from "@/components/ui/FileUpload";
+import { Alert } from "@/components/ui/Alert";
 import { api } from "@/lib/api-client";
 import { toast } from "@/stores/toast.store";
+
+// ---------------------------------------------------------------------------
+// Draft persistence helpers
+// ---------------------------------------------------------------------------
+const DRAFT_KEY = "laz_lembaga_reg_draft";
+const STEP_KEY = "laz_lembaga_reg_step";
 
 type UploadState = { url: string; publicId: string };
 const EMPTY_UPLOAD: UploadState = { url: "", publicId: "" };
 
+type UploadDraft = {
+  logo: UploadState;
+  officePhoto: UploadState;
+  aktaYayasan: UploadState;
+  skKemenkumham: UploadState;
+  npwp: UploadState;
+  otherDocument: UploadState;
+};
+
+const EMPTY_UPLOADS: UploadDraft = {
+  logo: EMPTY_UPLOAD,
+  officePhoto: EMPTY_UPLOAD,
+  aktaYayasan: EMPTY_UPLOAD,
+  skKemenkumham: EMPTY_UPLOAD,
+  npwp: EMPTY_UPLOAD,
+  otherDocument: EMPTY_UPLOAD,
+};
+
+function loadDraft(): Partial<LembagaRegistrationInput> {
+  try {
+    const raw = localStorage.getItem(DRAFT_KEY);
+    return raw ? JSON.parse(raw) : {};
+  } catch {
+    return {};
+  }
+}
+
+function loadUploadDraft(): UploadDraft {
+  try {
+    const raw = localStorage.getItem(`${DRAFT_KEY}_uploads`);
+    return raw ? { ...EMPTY_UPLOADS, ...JSON.parse(raw) } : EMPTY_UPLOADS;
+  } catch {
+    return EMPTY_UPLOADS;
+  }
+}
+
+function loadStep(): number {
+  try {
+    const raw = localStorage.getItem(STEP_KEY);
+    return raw ? Math.max(0, Math.min(2, parseInt(raw, 10))) : 0;
+  } catch {
+    return 0;
+  }
+}
+
+function saveDraft(data: Partial<LembagaRegistrationInput>) {
+  try {
+    localStorage.setItem(DRAFT_KEY, JSON.stringify(data));
+  } catch {}
+}
+
+function saveUploadDraft(uploads: UploadDraft) {
+  try {
+    localStorage.setItem(`${DRAFT_KEY}_uploads`, JSON.stringify(uploads));
+  } catch {}
+}
+
+function saveStep(step: number) {
+  try {
+    localStorage.setItem(STEP_KEY, String(step));
+  } catch {}
+}
+
+function clearDraft() {
+  localStorage.removeItem(DRAFT_KEY);
+  localStorage.removeItem(`${DRAFT_KEY}_uploads`);
+  localStorage.removeItem(STEP_KEY);
+}
+
+// ---------------------------------------------------------------------------
+// Step definitions
+// ---------------------------------------------------------------------------
+const STEPS: StepConfig[] = [
+  { label: "Data Lembaga", description: "Profil & informasi" },
+  { label: "Dokumen Legalitas", description: "Upload dokumen resmi" },
+  { label: "Akun Admin", description: "Kredensial login" },
+];
+
+// Fields per step for targeted validation
+const STEP_FIELDS: FieldPath<LembagaRegistrationInput>[][] = [
+  ["name", "picName", "picPhone", "address", "description", "website", "izinYayasanNumber"],
+  [], // uploads only — no required text fields in step 2
+  ["adminName", "adminEmail", "adminPassword", "confirmPassword"],
+];
+
+// ---------------------------------------------------------------------------
+// Inner step panels (they consume FormProvider context)
+// ---------------------------------------------------------------------------
+function Step1({ isPending, uploads, setUploads }: {
+  isPending: boolean;
+  uploads: UploadDraft;
+  setUploads: (fn: (prev: UploadDraft) => UploadDraft) => void;
+}) {
+  return (
+    <div className="space-y-4">
+      <div className="mb-2">
+        <h3 className="text-lg font-bold text-primary">Data Lembaga</h3>
+        <p className="text-sm text-secondary">Isi informasi dasar lembaga/yayasan Anda.</p>
+      </div>
+      <FormField
+        name="name"
+        label="Nama Lembaga"
+        type="input"
+        placeholder="Yayasan Peduli Umat"
+        disabled={isPending}
+        description="URL profil publik lembaga akan dibuat otomatis dari nama ini."
+      />
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <FormField name="picName" label="Nama Penanggung Jawab" type="input" disabled={isPending} />
+        <FormField name="picPhone" label="No. Telepon PIC (Opsional)" type="input" inputType="tel" disabled={isPending} />
+      </div>
+      <FormField name="address" label="Alamat Lengkap" type="textarea" rows={2} disabled={isPending} />
+      <FormField name="description" label="Deskripsi Lembaga (Opsional)" type="textarea" rows={3} disabled={isPending} />
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <FormField name="website" label="Website (Opsional)" type="input" placeholder="https://" disabled={isPending} />
+        <FormField name="izinYayasanNumber" label="Nomor Izin Yayasan (Opsional)" type="input" disabled={isPending} />
+      </div>
+      <FileUpload
+        name="logoUrl"
+        label="Logo Lembaga (Opsional)"
+        folder="lembaga/logo"
+        disabled={isPending}
+        initialUrl={uploads.logo.url}
+        initialPublicId={uploads.logo.publicId}
+        onUpload={(p) => setUploads(prev => ({ ...prev, logo: p }))}
+        onRemove={() => setUploads(prev => ({ ...prev, logo: EMPTY_UPLOAD }))}
+      />
+      <FileUpload
+        name="officePhotoUrl"
+        label="Foto Kantor (Opsional)"
+        folder="lembaga/office-photo"
+        disabled={isPending}
+        initialUrl={uploads.officePhoto.url}
+        initialPublicId={uploads.officePhoto.publicId}
+        onUpload={(p) => setUploads(prev => ({ ...prev, officePhoto: p }))}
+        onRemove={() => setUploads(prev => ({ ...prev, officePhoto: EMPTY_UPLOAD }))}
+      />
+    </div>
+  );
+}
+
+function Step2({ isPending, uploads, setUploads }: {
+  isPending: boolean;
+  uploads: UploadDraft;
+  setUploads: (fn: (prev: UploadDraft) => UploadDraft) => void;
+}) {
+  return (
+    <div className="space-y-4">
+      <div className="mb-2">
+        <h3 className="text-lg font-bold text-primary">Dokumen Legalitas</h3>
+        <p className="text-sm text-secondary">Upload dokumen resmi lembaga untuk proses verifikasi.</p>
+      </div>
+      <FileUpload
+        name="aktaYayasanUrl"
+        label="Akta Yayasan"
+        accept="image/png, image/jpeg, application/pdf"
+        folder="lembaga/documents"
+        disabled={isPending}
+        initialUrl={uploads.aktaYayasan.url}
+        initialPublicId={uploads.aktaYayasan.publicId}
+        onUpload={(p) => setUploads(prev => ({ ...prev, aktaYayasan: p }))}
+        onRemove={() => setUploads(prev => ({ ...prev, aktaYayasan: EMPTY_UPLOAD }))}
+      />
+      <FileUpload
+        name="skKemenkumhamUrl"
+        label="SK Kemenkumham / Legalitas"
+        accept="image/png, image/jpeg, application/pdf"
+        folder="lembaga/documents"
+        disabled={isPending}
+        initialUrl={uploads.skKemenkumham.url}
+        initialPublicId={uploads.skKemenkumham.publicId}
+        onUpload={(p) => setUploads(prev => ({ ...prev, skKemenkumham: p }))}
+        onRemove={() => setUploads(prev => ({ ...prev, skKemenkumham: EMPTY_UPLOAD }))}
+      />
+      <FileUpload
+        name="npwpUrl"
+        label="NPWP (Opsional)"
+        accept="image/png, image/jpeg, application/pdf"
+        folder="lembaga/documents"
+        disabled={isPending}
+        initialUrl={uploads.npwp.url}
+        initialPublicId={uploads.npwp.publicId}
+        onUpload={(p) => setUploads(prev => ({ ...prev, npwp: p }))}
+        onRemove={() => setUploads(prev => ({ ...prev, npwp: EMPTY_UPLOAD }))}
+      />
+      <FileUpload
+        name="otherDocumentUrl"
+        label="Dokumen Pendukung Lainnya (Opsional)"
+        accept="image/png, image/jpeg, application/pdf"
+        folder="lembaga/documents"
+        disabled={isPending}
+        initialUrl={uploads.otherDocument.url}
+        initialPublicId={uploads.otherDocument.publicId}
+        onUpload={(p) => setUploads(prev => ({ ...prev, otherDocument: p }))}
+        onRemove={() => setUploads(prev => ({ ...prev, otherDocument: EMPTY_UPLOAD }))}
+      />
+    </div>
+  );
+}
+
+function Step3({ isPending }: { isPending: boolean }) {
+  return (
+    <div className="space-y-4">
+      <div className="mb-2">
+        <h3 className="text-lg font-bold text-primary">Akun Admin Lembaga</h3>
+        <p className="text-sm text-secondary">Buat akun untuk mengelola dashboard lembaga Anda.</p>
+      </div>
+      <FormField name="adminName" label="Nama Lengkap" type="input" disabled={isPending} />
+      <FormField name="adminEmail" label="Email" type="input" inputType="email" disabled={isPending} />
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <FormField name="adminPassword" label="Password" type="input" inputType="password" disabled={isPending} />
+        <FormField name="confirmPassword" label="Konfirmasi Password" type="input" inputType="password" disabled={isPending} />
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Inner navigation buttons — uses form context
+// ---------------------------------------------------------------------------
+function StepNav({
+  currentStep,
+  totalSteps,
+  isPending,
+  onNext,
+  onBack,
+}: {
+  currentStep: number;
+  totalSteps: number;
+  isPending: boolean;
+  onNext: () => Promise<void>;
+  onBack: () => void;
+}) {
+  const isLast = currentStep === totalSteps - 1;
+  return (
+    <div className={`flex gap-3 pt-4 ${currentStep > 0 ? "justify-between" : "justify-end"}`}>
+      {currentStep > 0 && (
+        <Button
+          type="button"
+          intent="outline"
+          onClick={onBack}
+          disabled={isPending}
+          className="px-6"
+        >
+          ← Kembali
+        </Button>
+      )}
+      {isLast ? (
+        <Button type="submit" isLoading={isPending} className="flex-1 sm:flex-none px-8 text-sm font-semibold">
+          Kirim Pendaftaran
+        </Button>
+      ) : (
+        <Button
+          type="button"
+          onClick={onNext}
+          disabled={isPending}
+          className="flex-1 sm:flex-none px-8 text-sm font-semibold"
+        >
+          Lanjut →
+        </Button>
+      )}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Main component
+// ---------------------------------------------------------------------------
 export function LembagaRegistrationForm() {
   const navigate = useNavigate();
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState(false);
 
-  const [logo, setLogo] = useState<UploadState>(EMPTY_UPLOAD);
-  const [officePhoto, setOfficePhoto] = useState<UploadState>(EMPTY_UPLOAD);
-  const [aktaYayasan, setAktaYayasan] = useState<UploadState>(EMPTY_UPLOAD);
-  const [skKemenkumham, setSkKemenkumham] = useState<UploadState>(EMPTY_UPLOAD);
-  const [npwp, setNpwp] = useState<UploadState>(EMPTY_UPLOAD);
-  const [otherDocument, setOtherDocument] = useState<UploadState>(EMPTY_UPLOAD);
+  // Load saved step & draft on first mount
+  const savedDraft = useRef(loadDraft());
+  const savedUploads = useRef(loadUploadDraft());
+  const [currentStep, setCurrentStep] = useState(() => loadStep());
+  const [uploads, setUploads] = useState<UploadDraft>(() => savedUploads.current);
+
+  const defaultValues: LembagaRegistrationInput = {
+    name: "",
+    picName: "",
+    picPhone: "",
+    address: "",
+    description: "",
+    website: "",
+    izinYayasanNumber: "",
+    logoUrl: "",
+    logoPublicId: "",
+    officePhotoUrl: "",
+    officePhotoPublicId: "",
+    aktaYayasanUrl: "",
+    aktaYayasanPublicId: "",
+    skKemenkumhamUrl: "",
+    skKemenkumhamPublicId: "",
+    npwpUrl: "",
+    npwpPublicId: "",
+    otherDocumentUrl: "",
+    otherDocumentPublicId: "",
+    adminName: "",
+    adminEmail: "",
+    adminPassword: "",
+    confirmPassword: "",
+    ...savedDraft.current,
+  };
+
+  const form = useForm<LembagaRegistrationInput>({
+    resolver: zodResolver(lembagaRegistrationSchema) as any,
+    defaultValues,
+    mode: "onTouched",
+  });
+
+  const { handleSubmit, trigger, watch, getValues } = form;
+
+  // Auto-save draft whenever form values change
+  useEffect(() => {
+    const subscription = watch((values) => {
+      saveDraft(values as Partial<LembagaRegistrationInput>);
+    });
+    return () => subscription.unsubscribe();
+  }, [watch]);
+
+  // Persist uploads state
+  useEffect(() => {
+    saveUploadDraft(uploads);
+  }, [uploads]);
+
+  // Persist current step
+  useEffect(() => {
+    saveStep(currentStep);
+  }, [currentStep]);
+
+  const handleSetUploads = useCallback(
+    (fn: (prev: UploadDraft) => UploadDraft) => setUploads(fn),
+    []
+  );
+
+  const handleNext = async () => {
+    const fields = STEP_FIELDS[currentStep];
+    const valid = fields.length === 0 ? true : await trigger(fields);
+    if (valid) {
+      setCurrentStep((s) => Math.min(STEPS.length - 1, s + 1));
+      setError(null);
+    }
+  };
+
+  const handleBack = () => {
+    setCurrentStep((s) => Math.max(0, s - 1));
+    setError(null);
+  };
 
   const onSubmit = (data: LembagaRegistrationInput) => {
+    // Guard: only submit on the last step.
+    // Prevents accidental submission when user presses Enter on a text field in earlier steps.
+    if (currentStep !== STEPS.length - 1) {
+      handleNext();
+      return;
+    }
     setError(null);
     startTransition(async () => {
       try {
         await api.post("/lembaga/register", {
           ...data,
-          logoUrl: logo.url || undefined,
-          logoPublicId: logo.publicId || undefined,
-          officePhotoUrl: officePhoto.url || undefined,
-          officePhotoPublicId: officePhoto.publicId || undefined,
-          aktaYayasanUrl: aktaYayasan.url || undefined,
-          aktaYayasanPublicId: aktaYayasan.publicId || undefined,
-          skKemenkumhamUrl: skKemenkumham.url || undefined,
-          skKemenkumhamPublicId: skKemenkumham.publicId || undefined,
-          npwpUrl: npwp.url || undefined,
-          npwpPublicId: npwp.publicId || undefined,
-          otherDocumentUrl: otherDocument.url || undefined,
-          otherDocumentPublicId: otherDocument.publicId || undefined,
+          logoUrl: uploads.logo.url || undefined,
+          logoPublicId: uploads.logo.publicId || undefined,
+          officePhotoUrl: uploads.officePhoto.url || undefined,
+          officePhotoPublicId: uploads.officePhoto.publicId || undefined,
+          aktaYayasanUrl: uploads.aktaYayasan.url || undefined,
+          aktaYayasanPublicId: uploads.aktaYayasan.publicId || undefined,
+          skKemenkumhamUrl: uploads.skKemenkumham.url || undefined,
+          skKemenkumhamPublicId: uploads.skKemenkumham.publicId || undefined,
+          npwpUrl: uploads.npwp.url || undefined,
+          npwpPublicId: uploads.npwp.publicId || undefined,
+          otherDocumentUrl: uploads.otherDocument.url || undefined,
+          otherDocumentPublicId: uploads.otherDocument.publicId || undefined,
         });
+        clearDraft();
         setSubmitted(true);
         toast.success("Pendaftaran lembaga berhasil dikirim!");
       } catch (err: any) {
-        setError(err?.message ?? "Pendaftaran gagal");
+        setError(err?.message ?? "Pendaftaran gagal. Silakan coba lagi.");
       }
     });
   };
 
+  // ── Success screen ──────────────────────────────────────────────────────
   if (submitted) {
     return (
       <div className="text-center py-10 space-y-4">
+        <div className="w-16 h-16 bg-success/10 rounded-full flex items-center justify-center mx-auto mb-4">
+          <svg className="w-8 h-8 text-success" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+          </svg>
+        </div>
         <h2 className="text-xl font-bold text-primary">Pendaftaran Terkirim!</h2>
-        <p className="text-secondary max-w-md mx-auto">
-          Pendaftaran lembaga Anda sedang menunggu persetujuan Super Admin. Anda akan dapat login
-          setelah pendaftaran disetujui.
+        <p className="text-secondary max-w-md mx-auto text-sm leading-relaxed">
+          Pendaftaran lembaga Anda sedang menunggu persetujuan Super Admin. Anda
+          akan dapat login setelah pendaftaran disetujui.
         </p>
-        <Button onClick={() => navigate("/login")}>Kembali ke Halaman Masuk</Button>
+        <Button onClick={() => navigate("/login")} className="mt-2">
+          Kembali ke Halaman Masuk
+        </Button>
       </div>
     );
   }
 
+  // ── Multi-step form ─────────────────────────────────────────────────────
   return (
     <div className="space-y-6">
-      <FormWrapper
-        schema={lembagaRegistrationSchema}
-        onSubmit={onSubmit}
-        defaultValues={{
-          name: "",
-          picName: "",
-          picPhone: "",
-          address: "",
-          description: "",
-          website: "",
-          izinYayasanNumber: "",
-          adminName: "",
-          adminEmail: "",
-          adminPassword: "",
-          confirmPassword: "",
-        }}
-        error={error}
-      >
-        <h3 className="text-lg font-bold text-primary">Data Lembaga</h3>
-        <FormField
-          name="name"
-          label="Nama Lembaga"
-          type="input"
-          placeholder="Yayasan Peduli Umat"
-          disabled={isPending}
-          description="URL profil publik lembaga akan dibuat otomatis dari nama ini."
-        />
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <FormField name="picName" label="Nama Penanggung Jawab" type="input" disabled={isPending} />
-          <FormField name="picPhone" label="No. Telepon PIC (Opsional)" type="input" inputType="tel" disabled={isPending} />
-        </div>
-        <FormField name="address" label="Alamat Lengkap" type="textarea" rows={2} disabled={isPending} />
-        <FormField name="description" label="Deskripsi Lembaga (Opsional)" type="textarea" rows={3} disabled={isPending} />
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <FormField name="website" label="Website (Opsional)" type="input" placeholder="https://" disabled={isPending} />
-          <FormField name="izinYayasanNumber" label="Nomor Izin Yayasan (Opsional)" type="input" disabled={isPending} />
-        </div>
+      <StepIndicator steps={STEPS} currentStep={currentStep} />
 
-        <FileUpload
-          name="logoUrl"
-          label="Logo Lembaga (Opsional)"
-          folder="lembaga/logo"
-          disabled={isPending}
-          onUpload={setLogo}
-          onRemove={() => setLogo(EMPTY_UPLOAD)}
-        />
-        <FileUpload
-          name="officePhotoUrl"
-          label="Foto Kantor (Opsional)"
-          folder="lembaga/office-photo"
-          disabled={isPending}
-          onUpload={setOfficePhoto}
-          onRemove={() => setOfficePhoto(EMPTY_UPLOAD)}
-        />
+      <FormProvider {...form}>
+        <form
+          onSubmit={handleSubmit(onSubmit)}
+          className="space-y-4"
+        >
+          <fieldset disabled={isPending} className="space-y-4 w-full border-none p-0 m-0">
+            {/* Animate step transitions */}
+            <div
+              key={currentStep}
+              className="animate-[fadeSlideIn_0.25s_ease-out_forwards]"
+              style={{ animationFillMode: "both" }}
+            >
+              {currentStep === 0 && (
+                <Step1 isPending={isPending} uploads={uploads} setUploads={handleSetUploads} />
+              )}
+              {currentStep === 1 && (
+                <Step2 isPending={isPending} uploads={uploads} setUploads={handleSetUploads} />
+              )}
+              {currentStep === 2 && <Step3 isPending={isPending} />}
+            </div>
 
-        <hr className="border-border my-2" />
-        <h3 className="text-lg font-bold text-primary">Dokumen Legalitas</h3>
-        <FileUpload
-          name="aktaYayasanUrl"
-          label="Akta Yayasan"
-          accept="image/png, image/jpeg, application/pdf"
-          folder="lembaga/documents"
-          disabled={isPending}
-          onUpload={setAktaYayasan}
-          onRemove={() => setAktaYayasan(EMPTY_UPLOAD)}
-        />
-        <FileUpload
-          name="skKemenkumhamUrl"
-          label="SK Kemenkumham / Legalitas"
-          accept="image/png, image/jpeg, application/pdf"
-          folder="lembaga/documents"
-          disabled={isPending}
-          onUpload={setSkKemenkumham}
-          onRemove={() => setSkKemenkumham(EMPTY_UPLOAD)}
-        />
-        <FileUpload
-          name="npwpUrl"
-          label="NPWP (Opsional)"
-          accept="image/png, image/jpeg, application/pdf"
-          folder="lembaga/documents"
-          disabled={isPending}
-          onUpload={setNpwp}
-          onRemove={() => setNpwp(EMPTY_UPLOAD)}
-        />
-        <FileUpload
-          name="otherDocumentUrl"
-          label="Dokumen Pendukung Lainnya (Opsional)"
-          accept="image/png, image/jpeg, application/pdf"
-          folder="lembaga/documents"
-          disabled={isPending}
-          onUpload={setOtherDocument}
-          onRemove={() => setOtherDocument(EMPTY_UPLOAD)}
-        />
+            {error && (
+              <Alert intent="error" className="mt-2 w-full">
+                {error}
+              </Alert>
+            )}
 
-        <hr className="border-border my-2" />
-        <h3 className="text-lg font-bold text-primary">Akun Admin Lembaga</h3>
-        <FormField name="adminName" label="Nama Lengkap" type="input" disabled={isPending} />
-        <FormField name="adminEmail" label="Email" type="input" inputType="email" disabled={isPending} />
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <FormField name="adminPassword" label="Password" type="input" inputType="password" disabled={isPending} />
-          <FormField name="confirmPassword" label="Konfirmasi Password" type="input" inputType="password" disabled={isPending} />
-        </div>
-
-        <Button type="submit" isLoading={isPending} className="w-full text-sm font-semibold">
-          Kirim Pendaftaran
-        </Button>
-      </FormWrapper>
+            <StepNav
+              currentStep={currentStep}
+              totalSteps={STEPS.length}
+              isPending={isPending}
+              onNext={handleNext}
+              onBack={handleBack}
+            />
+          </fieldset>
+        </form>
+      </FormProvider>
 
       <p className="text-center text-sm text-secondary">
         Sudah punya akun lembaga?{" "}

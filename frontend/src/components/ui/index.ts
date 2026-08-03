@@ -25,6 +25,7 @@ export { ActionDropdown } from "./ActionDropdown";
 export { PageHeader } from "./PageHeader";
 export { TableSkeleton } from "./TableSkeleton";
 export { DateRangeFilter } from "./DateRangeFilter";
+export { StepIndicator } from "./StepIndicator";
 export * from "./form";
 
 
