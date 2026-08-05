@@ -1,16 +1,22 @@
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useSearchParams } from "react-router-dom";
 import { api } from "@/lib/api-client";
 import { useAuth } from "@/auth/AuthProvider";
+import { usePermission } from "@/hooks/usePermission";
+import { PERMISSIONS } from "@shared/constants/permissions";
 import { DistributionTable } from "@/features/distributions/components/DistributionTable";
-import { PageHeader, TableSkeleton } from "@/components/ui";
+import { SelectProgramForDistributionModal } from "@/features/distributions/components/SelectProgramForDistributionModal";
+import { PageHeader, Button, TableSkeleton } from "@/components/ui";
 import { DataTableToolbar } from "@/components/ui/data-table";
 import { UserLembagaFilter } from "@/features/users/components/UserLembagaFilter";
 
 export function DistributionsListPage() {
   const { user } = useAuth();
+  const { can } = usePermission();
   const [searchParams] = useSearchParams();
   const isSuperAdmin = user?.roleName === "SUPER_ADMIN";
+  const [isSelectProgramModalOpen, setIsSelectProgramModalOpen] = useState(false);
 
   const page = Number(searchParams.get("page") ?? 1);
   const limit = Number(searchParams.get("limit") ?? 10);
@@ -37,6 +43,16 @@ export function DistributionsListPage() {
       <PageHeader
         title="Manajemen Penyaluran Dana"
         description="Daftar pengajuan penyaluran dana dari berbagai program kampanye."
+        action={
+          can(PERMISSIONS.DISTRIBUTIONS_MANAGE) && !isSuperAdmin ? (
+            <Button
+              intent="primary"
+              onClick={() => setIsSelectProgramModalOpen(true)}
+            >
+              Tambah Penyaluran Dana
+            </Button>
+          ) : undefined
+        }
       />
 
       <DataTableToolbar
@@ -58,6 +74,11 @@ export function DistributionsListPage() {
       ) : (
         <DistributionTable distributions={result?.data ?? []} pagination={pagination} />
       )}
+
+      <SelectProgramForDistributionModal
+        isOpen={isSelectProgramModalOpen}
+        onClose={() => setIsSelectProgramModalOpen(false)}
+      />
     </div>
   );
 }
