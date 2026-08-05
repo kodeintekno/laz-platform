@@ -4,6 +4,7 @@ import { api } from "@/lib/api-client";
 import { DistributionForm } from "@/features/distributions/components/DistributionForm";
 import { PageHeader } from "@/components/ui";
 import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
+import { ProgramBalanceBadge } from "@/components/ui/ProgramBalanceBadge";
 
 export function NewDistributionForProgramPage() {
   const { slug } = useParams<{ slug: string }>();
@@ -27,7 +28,12 @@ export function NewDistributionForProgramPage() {
     <div className="space-y-6 w-full">
       <PageHeader
         title="Catat Penyaluran Dana"
-        description={`Program: ${program.title} (Saldo: Rp ${availableBalance.toLocaleString("id-ID")})`}
+        description={
+          <ProgramBalanceBadge
+            programTitle={program.title}
+            availableBalance={availableBalance}
+          />
+        }
       />
       <DistributionForm programId={program.id} availableBalance={availableBalance} />
     </div>
