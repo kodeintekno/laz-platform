@@ -3,6 +3,7 @@ import { useNavigate, Link } from "react-router-dom";
 import {
   useForm,
   FormProvider,
+  useFormContext,
   type FieldPath,
 } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -106,7 +107,7 @@ const STEPS: StepConfig[] = [
 
 // Fields per step for targeted validation
 const STEP_FIELDS: FieldPath<LembagaRegistrationInput>[][] = [
-  ["name", "picName", "picPhone", "address", "description", "website", "izinYayasanNumber"],
+  ["name", "picName", "picPhone", "address", "description", "website", "izinYayasanNumber", "logoUrl"],
   [], // uploads only — no required text fields in step 2
   ["adminName", "adminEmail", "adminPassword", "confirmPassword"],
 ];
@@ -119,6 +120,7 @@ function Step1({ isPending, uploads, setUploads }: {
   uploads: UploadDraft;
   setUploads: (fn: (prev: UploadDraft) => UploadDraft) => void;
 }) {
+  const { setValue, trigger } = useFormContext<LembagaRegistrationInput>();
   return (
     <div className="space-y-4">
       <div className="mb-2">
@@ -135,23 +137,29 @@ function Step1({ isPending, uploads, setUploads }: {
       />
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <FormField name="picName" label="Nama Penanggung Jawab" type="input" disabled={isPending} />
-        <FormField name="picPhone" label="No. Telepon PIC (Opsional)" type="input" inputType="tel" disabled={isPending} />
+        <FormField name="picPhone" label="No. Telepon PIC" type="input" inputType="tel" disabled={isPending} />
       </div>
       <FormField name="address" label="Alamat Lengkap" type="textarea" rows={2} disabled={isPending} />
-      <FormField name="description" label="Deskripsi Lembaga (Opsional)" type="textarea" rows={3} disabled={isPending} />
+      <FormField name="description" label="Deskripsi Lembaga" type="textarea" rows={3} disabled={isPending} />
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <FormField name="website" label="Website (Opsional)" type="input" placeholder="https://" disabled={isPending} />
-        <FormField name="izinYayasanNumber" label="Nomor Izin Yayasan (Opsional)" type="input" disabled={isPending} />
+        <FormField name="izinYayasanNumber" label="Nomor Izin Yayasan" type="input" disabled={isPending} />
       </div>
       <FileUpload
         name="logoUrl"
-        label="Logo Lembaga (Opsional)"
+        label="Logo Lembaga"
         folder="lembaga/logo"
         disabled={isPending}
         initialUrl={uploads.logo.url}
         initialPublicId={uploads.logo.publicId}
-        onUpload={(p) => setUploads(prev => ({ ...prev, logo: p }))}
-        onRemove={() => setUploads(prev => ({ ...prev, logo: EMPTY_UPLOAD }))}
+        onUpload={(p) => {
+          setUploads(prev => ({ ...prev, logo: p }));
+          setValue("logoUrl", p.url, { shouldValidate: true });
+        }}
+        onRemove={() => {
+          setUploads(prev => ({ ...prev, logo: EMPTY_UPLOAD }));
+          setValue("logoUrl", "", { shouldValidate: true });
+        }}
       />
       <FileUpload
         name="officePhotoUrl"
