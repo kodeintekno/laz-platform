@@ -6,12 +6,13 @@ export function AuthLayout() {
       <div className="w-full max-w-md">
         <div className="text-center mb-8 flex justify-center">
           <a href="/" className="inline-block">
-            <div className="flex flex-col items-center gap-2">
-              <div className="w-12 h-12 bg-emerald-600 rounded-2xl flex items-center justify-center text-white shadow-lg">
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path></svg>
-              </div>
-              <div>
-                <span className="text-xl font-black text-emerald-950 tracking-tight">Ruang<span className="text-emerald-500">Berbagi</span></span>
+            <div className="flex items-center gap-3">
+              <img src="/logo.png" alt="Ruang Berbagi" className="h-12 w-auto object-contain drop-shadow-sm" />
+              <div className="text-left">
+                <p className="text-xl font-black text-emerald-950 tracking-tight leading-tight">
+                  ruang <span className="text-emerald-600">berbagi</span>
+                </p>
+                <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-emerald-900/50">Amanah &amp; Transparan</p>
               </div>
             </div>
           </a>

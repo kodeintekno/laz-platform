@@ -91,33 +91,22 @@ export function HomePage() {
       </div>
 
       <div id="programs" className="scroll-mt-32 space-y-12 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-8">
-          <div className="space-y-4 lg:w-1/2">
-            <motion.div
-              initial={{ opacity: 0, x: -20 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true }}
-              className="inline-flex items-center gap-2 px-3 py-1 bg-emerald-50 text-emerald-600 rounded-lg text-[10px] font-black uppercase tracking-widest border border-emerald-100"
-            >
-              <TrendingUp className="w-3 h-3" />
-              Langkah Kebaikan
-            </motion.div>
-            <h2 className="text-4xl font-black text-gray-900 tracking-tight">
-              Program <span className="text-emerald-600">Utama</span>
-            </h2>
-            <p className="text-gray-500 max-w-lg font-medium text-sm leading-relaxed">
-              Pilih program yang sesuai dengan niat Anda dan mari bantu sesama dengan cara yang paling bermakna.
-            </p>
-          </div>
-
-          <button
-            type="button"
-            onClick={() => navigate('/programs')}
-            className="group inline-flex items-center gap-2 self-start lg:self-center bg-white border border-gray-100 rounded-2xl px-6 py-4 text-xs font-black uppercase tracking-widest text-emerald-600 shadow-sm hover:shadow-xl hover:shadow-emerald-900/5 hover:bg-emerald-600 hover:text-white transition-all"
+        <div className="space-y-4">
+          <motion.div
+            initial={{ opacity: 0, x: -20 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true }}
+            className="inline-flex items-center gap-2 px-3 py-1 bg-emerald-50 text-emerald-600 rounded-lg text-[10px] font-black uppercase tracking-widest border border-emerald-100"
           >
-            Lihat Semua Program
-            <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
-          </button>
+            <TrendingUp className="w-3 h-3" />
+            Langkah Kebaikan
+          </motion.div>
+          <h2 className="text-4xl font-black text-gray-900 tracking-tight">
+            Program <span className="text-emerald-600">Utama</span>
+          </h2>
+          <p className="text-gray-500 max-w-lg font-medium text-sm leading-relaxed">
+            Pilih program yang sesuai dengan niat Anda dan mari bantu sesama dengan cara yang paling bermakna.
+          </p>
         </div>
 
         {mappedCampaigns.length > 0 ? (
@@ -134,6 +123,17 @@ export function HomePage() {
             <p className="text-gray-400 font-bold uppercase tracking-widest text-xs">Belum ada program utama saat ini</p>
           </div>
         )}
+
+        <div className="flex justify-center pt-4">
+          <button
+            type="button"
+            onClick={() => navigate('/programs')}
+            className="group inline-flex items-center gap-2 bg-white border border-gray-200 rounded-2xl px-8 py-4 text-xs font-black uppercase tracking-widest text-emerald-600 shadow-sm hover:shadow-xl hover:shadow-emerald-900/5 hover:bg-emerald-600 hover:text-white transition-all"
+          >
+            Lihat Semua Program
+            <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
+          </button>
+        </div>
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
