@@ -24,7 +24,7 @@ export function PublicFooter() {
               <div className="w-8 h-8 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
                 <MapPin className="w-4 h-4" />
               </div>
-              <span className="mt-1">Jl. Jenderal Sudirman No. 123, Jakarta Selatan, DKI Jakarta 12190</span>
+              <span className="mt-1">Jl. Pahlawan No.55, Cileungsi, Kec. Cileungsi, Kabupaten Bogor, Jawa Barat 16820</span>
             </li>
             <li className="flex items-center gap-3">
               <div className="w-8 h-8 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
@@ -58,7 +58,7 @@ export function PublicFooter() {
 
       {/* Copyright */}
       <div className="text-center flex flex-col md:flex-row justify-between items-center max-w-7xl mx-auto text-xs text-gray-400 font-bold tracking-wide">
-        <p>&copy; {new Date().getFullYear()} Ruang Berbagi. Seluruh Hak Cipta Dilindungi.</p>
+        <p>&copy; 2026 Yayasan Ruang Berbagi Indonesia. Seluruh hak cipta dilindungi undang-undang.</p>
         <p className="mt-2 md:mt-0">Amanah & Transparan</p>
       </div>
     </footer>

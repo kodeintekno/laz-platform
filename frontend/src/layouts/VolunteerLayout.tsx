@@ -40,9 +40,12 @@ export function VolunteerLayout() {
         aria-label="Navigasi relawan"
       >
         <div className="p-6 border-b border-border/40 flex items-center justify-between">
-          <div>
-            <p className="font-black text-lg text-emerald-700">Ruang<span className="text-emerald-500">Berbagi</span></p>
-            <p className="text-xs text-secondary mt-1">Portal Relawan</p>
+          <div className="flex items-center gap-2.5">
+            <img src="/logo.png" alt="Ruang Berbagi" className="h-8 w-auto object-contain" />
+            <div>
+              <p className="font-black text-lg text-emerald-950">ruang <span className="text-emerald-600">berbagi</span></p>
+              <p className="text-xs text-secondary mt-0.5">Portal Relawan</p>
+            </div>
           </div>
           <button
             onClick={() => setIsNavOpen(false)}
@@ -95,7 +98,7 @@ export function VolunteerLayout() {
           >
             <Menu className="w-5 h-5" />
           </button>
-          <p className="ml-3 font-black text-emerald-700">Ruang<span className="text-emerald-500">Berbagi</span></p>
+          <img src="/logo.png" alt="Ruang Berbagi" className="ml-3 h-7 w-auto object-contain" />
         </header>
         <main className="flex-1 overflow-y-auto p-4 sm:p-6">
           <Outlet />

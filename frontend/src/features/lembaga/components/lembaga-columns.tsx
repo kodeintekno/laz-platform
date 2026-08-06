@@ -78,8 +78,13 @@ export function getLembagaColumns({
       cell: (lembaga) => (
         <ActionDropdown
           items={[
-            ...(lembaga.status === "PENDING" && onView
-              ? [{ label: "Lihat Detail & Verifikasi", icon: Eye, onClick: () => onView(lembaga), intent: "info" as const }]
+            ...(onView
+              ? [{
+                  label: lembaga.status === "PENDING" ? "Lihat Detail & Verifikasi" : "Lihat Detail",
+                  icon: Eye,
+                  onClick: () => onView(lembaga),
+                  intent: "info" as const,
+                }]
               : []),
             ...(lembaga.status === "PENDING" && onApprove
               ? [{ label: "Setujui", icon: CheckCircle2, onClick: () => onApprove(lembaga), intent: "success" as const }]

@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api-client";
 import { ProgramForm } from "@/features/programs/components/ProgramForm";
 import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
+import { updateProgramAction } from "@/features/programs/actions/programs.actions";
 
 export function EditProgramPage() {
   const { slug } = useParams<{ slug: string }>();
@@ -33,7 +34,11 @@ export function EditProgramPage() {
         <h1 className="text-2xl font-bold tracking-tight text-primary">Edit Program</h1>
         <p className="text-sm text-secondary">Perbarui informasi program dan kampanye.</p>
       </div>
-      <ProgramForm initialData={serialized} />
+      <ProgramForm
+        initialData={serialized}
+        action={(_prevState: any, formData: FormData) => updateProgramAction(program.id, formData)}
+      />
     </div>
   );
 }
+

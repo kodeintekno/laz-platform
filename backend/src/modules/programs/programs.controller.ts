@@ -17,7 +17,11 @@ import { resolveLembagaScope } from "../../common/utils/lembaga-scope";
 import { PERMISSIONS } from "../../../../shared/constants/permissions";
 import {
   programSchema,
+  programRejectSchema,
+  programFeatureSchema,
   type ProgramInput,
+  type ProgramRejectInput,
+  type ProgramFeatureInput,
 } from "../../../../shared/validations/programs.schema";
 import type { RBACSessionUser } from "../../../../shared/types/rbac";
 
@@ -33,12 +37,14 @@ export class ProgramsController {
     @Query("limit") limit?: string,
     @Query("search") search?: string,
     @Query("lembagaId") lembagaId?: string,
+    @Query("status") status?: string,
   ) {
     const { items, metadata } = await this.programsService.getDashboardPrograms(
       Number(page) || 1,
       Number(limit) || 10,
       search || undefined,
       resolveLembagaScope(user, lembagaId),
+      status || undefined,
     );
     return { data: items, meta: metadata };
   }
@@ -57,7 +63,7 @@ export class ProgramsController {
     @Body(new ZodValidationPipe(programSchema)) body: ProgramInput,
     @CurrentUser() user: RBACSessionUser,
   ) {
-    return this.programsService.createProgram(body, user.id);
+    return this.programsService.createProgram(body, user);
   }
 
   @Patch(":id")
@@ -67,7 +73,33 @@ export class ProgramsController {
     @Body(new ZodValidationPipe(programSchema)) body: ProgramInput,
     @CurrentUser() user: RBACSessionUser,
   ) {
-    return this.programsService.updateProgram(id, body, user.id);
+    return this.programsService.updateProgram(id, body, user);
+  }
+
+  @Patch(":id/approve")
+  @RequirePermission(PERMISSIONS.PROGRAMS_APPROVE)
+  async approve(@Param("id") id: string, @CurrentUser() user: RBACSessionUser) {
+    return this.programsService.approveProgram(id, user.id);
+  }
+
+  @Patch(":id/reject")
+  @RequirePermission(PERMISSIONS.PROGRAMS_APPROVE)
+  async reject(
+    @Param("id") id: string,
+    @Body(new ZodValidationPipe(programRejectSchema)) body: ProgramRejectInput,
+    @CurrentUser() user: RBACSessionUser,
+  ) {
+    return this.programsService.rejectProgram(id, body.reason, user.id);
+  }
+
+  @Patch(":id/feature")
+  @RequirePermission(PERMISSIONS.PROGRAMS_APPROVE)
+  async setFeatured(
+    @Param("id") id: string,
+    @Body(new ZodValidationPipe(programFeatureSchema)) body: ProgramFeatureInput,
+    @CurrentUser() user: RBACSessionUser,
+  ) {
+    return this.programsService.setFeaturedProgram(id, body.isFeatured, user);
   }
 
   @Delete(":id")

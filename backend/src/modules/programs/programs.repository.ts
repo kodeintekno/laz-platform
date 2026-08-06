@@ -9,7 +9,7 @@ export class ProgramsRepository {
   /**
    * Fetch all programs for the admin dashboard (paginated).
    */
-  async findMany(page = 1, limit = 10, search?: string, lembagaId?: string) {
+  async findMany(page = 1, limit = 10, search?: string, lembagaId?: string, status?: string) {
     const skip = (page - 1) * limit;
 
     const where: Prisma.ProgramWhereInput = {};
@@ -25,6 +25,10 @@ export class ProgramsRepository {
       where.lembagaId = lembagaId;
     }
 
+    if (status) {
+      where.status = status as any;
+    }
+
     const [items, total] = await Promise.all([
       this.prisma.program.findMany({
         where,
@@ -33,6 +37,7 @@ export class ProgramsRepository {
         orderBy: { createdAt: "desc" },
         include: {
           createdBy: { select: { name: true } },
+          lembaga: { select: { name: true, slug: true } },
         },
       }),
       this.prisma.program.count({ where }),
@@ -112,6 +117,42 @@ export class ProgramsRepository {
   }
 
   /**
+   * Find a specific program by its id.
+   */
+  async findById(id: string) {
+    return this.prisma.program.findUnique({ where: { id } });
+  }
+
+  /**
+   * Published programs curated by SUPER_ADMIN to appear on the homepage.
+   */
+  async findFeatured(limit: number) {
+    return this.prisma.program.findMany({
+      where: { status: "PUBLISHED", isFeatured: true },
+      orderBy: { updatedAt: "desc" },
+      take: limit,
+      include: {
+        lembaga: { select: { name: true, slug: true, logoUrl: true } },
+      },
+    });
+  }
+
+  /** Count currently featured programs, optionally excluding one program (for re-toggling itself). */
+  async countFeatured(excludeId?: string) {
+    return this.prisma.program.count({
+      where: { isFeatured: true, ...(excludeId ? { id: { not: excludeId } } : {}) },
+    });
+  }
+
+  /** Mark/unmark a program as featured on the homepage. */
+  async setFeatured(id: string, isFeatured: boolean) {
+    return this.prisma.program.update({
+      where: { id },
+      data: { isFeatured },
+    });
+  }
+
+  /**
    * Find a specific program by its slug.
    */
   async getProgramBySlug(slug: string) {
@@ -163,6 +204,36 @@ export class ProgramsRepository {
   async delete(id: string) {
     return this.prisma.program.delete({
       where: { id },
+    });
+  }
+
+  /**
+   * Approve a program pending review — publishes it.
+   */
+  async approve(id: string, approvedById: string) {
+    return this.prisma.program.update({
+      where: { id },
+      data: {
+        status: "PUBLISHED",
+        approvedAt: new Date(),
+        approvedById,
+        rejectionReason: null,
+      },
+    });
+  }
+
+  /**
+   * Reject a program pending review.
+   */
+  async reject(id: string, reason: string, approvedById: string) {
+    return this.prisma.program.update({
+      where: { id },
+      data: {
+        status: "REJECTED",
+        rejectionReason: reason,
+        approvedById,
+        approvedAt: null,
+      },
     });
   }
 }

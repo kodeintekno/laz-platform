@@ -1,7 +1,7 @@
 import { useState, useTransition } from "react";
 import { DataTable } from "@/components/ui/data-table";
 import type { Lembaga } from "@prisma/client";
-import { useRouter } from "next/navigation";
+import { useNavigate } from "react-router-dom";
 import { getLembagaColumns } from "./lembaga-columns";
 import { logger } from "@/lib/logger";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
@@ -22,7 +22,7 @@ interface LembagaTableProps {
 
 export function LembagaTable({ lembagas, search, pagination }: LembagaTableProps) {
   logger.debug({ lembagasCount: lembagas.length, search, pagination }, "LembagaTable render props");
-  const router = useRouter();
+  const navigate = useNavigate();
   const [isPending, startTransition] = useTransition();
   const [confirmState, setConfirmState] = useState<{ isOpen: boolean; lembaga: Lembaga | null }>({
     isOpen: false,
@@ -50,14 +50,14 @@ export function LembagaTable({ lembagas, search, pagination }: LembagaTableProps
         toast.error(result.error);
       } else {
         toast.success(`Berhasil menghapus data lembaga "${name}"`);
-        router.refresh();
+        window.location.reload();
       }
       setConfirmState({ isOpen: false, lembaga: null });
     });
   };
 
   const handleEdit = (lembaga: Lembaga) => {
-    router.push(`/dashboard/lembaga/${lembaga.id}/edit`);
+    navigate(`/dashboard/lembaga/${lembaga.id}/edit`);
   };
 
   const handleApprove = (lembaga: Lembaga) => {
@@ -67,7 +67,7 @@ export function LembagaTable({ lembagas, search, pagination }: LembagaTableProps
         toast.error(result.error);
       } else {
         toast.success(`Lembaga "${lembaga.name}" telah disetujui`);
-        router.refresh();
+        window.location.reload();
       }
     });
   };
@@ -85,7 +85,7 @@ export function LembagaTable({ lembagas, search, pagination }: LembagaTableProps
         toast.error(result.error);
       } else {
         toast.success(`Lembaga "${lembaga.name}" telah ditolak`);
-        router.refresh();
+        window.location.reload();
       }
       setRejectState({ isOpen: false, lembaga: null, reason: "" });
     });

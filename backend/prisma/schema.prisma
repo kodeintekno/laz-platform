@@ -28,6 +28,7 @@ model User {
   distributionsApproved             Distribution[]         @relation("DistributionApprover")
   distributionsCreated              Distribution[]         @relation("DistributionCreator")
   programs                          Program[]
+  programApprovals                  Program[]              @relation("ProgramApprover")
   lembaga                           Lembaga?               @relation(fields: [lembagaId], references: [id], onDelete: Cascade)
   role                              Role                   @relation(fields: [roleId], references: [id])
   lembagaApprovals                  Lembaga[]              @relation("LembagaApprover")
@@ -162,14 +163,19 @@ model Program {
   distributedAmount   Decimal             @default(0) @db.Decimal(12, 2)
   category            ProgramCategory
   status              ProgramStatus       @default(DRAFT)
+  rejectionReason     String?
+  approvedAt          DateTime?
+  approvedById        String?
   imageUrl            String?
   startDate           DateTime?
   endDate             DateTime?
+  isFeatured          Boolean             @default(false)
   createdAt           DateTime            @default(now())
   updatedAt           DateTime            @updatedAt
   distributions       Distribution[]
   donations           Donation[]
   createdBy           User                @relation(fields: [createdById], references: [id])
+  approvedBy          User?               @relation("ProgramApprover", fields: [approvedById], references: [id], onDelete: SetNull)
   lembaga             Lembaga             @relation(fields: [lembagaId], references: [id], onDelete: Cascade)
   volunteerActivities VolunteerActivity[]
 
@@ -374,6 +380,8 @@ enum AuditAction {
   DISTRIBUTION_UPDATE
   LEMBAGA_APPROVE
   LEMBAGA_REJECT
+  PROGRAM_APPROVE
+  PROGRAM_REJECT
   VOLUNTEER_APPLICATION_REVIEW
   VOLUNTEER_REPORT_SUBMIT
   VOLUNTEER_REPORT_VERIFY
@@ -388,7 +396,9 @@ enum ProgramCategory {
 
 enum ProgramStatus {
   DRAFT
+  PENDING_REVIEW
   PUBLISHED
+  REJECTED
   COMPLETED
   CANCELLED
 }

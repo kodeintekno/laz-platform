@@ -1,7 +1,10 @@
 import { z } from "zod";
 // Local program enums – avoid importing @prisma/client in client‑side code
 export const PROGRAM_CATEGORIES = ["ZAKAT","INFAK","SEDEKAH","WAKAF"] as const;
-export const PROGRAM_STATUSES = ["DRAFT","PUBLISHED"] as const;
+export const PROGRAM_STATUSES = ["DRAFT","PENDING_REVIEW","PUBLISHED","REJECTED","COMPLETED","CANCELLED"] as const;
+
+/** Statuses a LEMBAGA_ADMIN may set directly via create/update — publishing/rejecting requires SUPER_ADMIN approval. */
+export const PROGRAM_SELF_SERVICE_STATUSES = ["DRAFT", "PENDING_REVIEW"] as const;
 
 export const programSchema = z.object({
   title: z.string().min(5, "Judul minimal 5 karakter").max(100, "Judul maksimal 100 karakter"),
@@ -15,3 +18,18 @@ export const programSchema = z.object({
 });
 
 export type ProgramInput = z.infer<typeof programSchema>;
+
+export const programRejectSchema = z.object({
+  reason: z.string().min(5, "Alasan penolakan minimal 5 karakter").max(500),
+});
+
+export type ProgramRejectInput = z.infer<typeof programRejectSchema>;
+
+/** Maximum number of programs that may be marked as featured (shown on the homepage) at once. */
+export const MAX_FEATURED_PROGRAMS = 3;
+
+export const programFeatureSchema = z.object({
+  isFeatured: z.boolean(),
+});
+
+export type ProgramFeatureInput = z.infer<typeof programFeatureSchema>;

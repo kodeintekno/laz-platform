@@ -42,6 +42,7 @@ const PERMISSION_DEFINITIONS = [
   { key: "programs.update", description: "Mengubah detail informasi program bantuan" },
   { key: "programs.delete", description: "Menghapus program bantuan dari sistem" },
   { key: "programs.publish", description: "Mempublikasikan program agar bisa menerima donasi" },
+  { key: "programs.approve", description: "Menyetujui atau menolak program yang diajukan lembaga" },
   // Donations
   { key: "donations.read", description: "Melihat riwayat transaksi donasi masuk" },
   { key: "donations.create", description: "Mencatat transaksi donasi secara manual" },

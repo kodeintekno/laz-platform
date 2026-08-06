@@ -99,6 +99,15 @@
   animation: scaleIn 0.15s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
+@keyframes fadeSlideIn {
+  0% { opacity: 0; transform: translateX(14px); }
+  100% { opacity: 1; transform: translateX(0); }
+}
+
+.animate-fade-slide-in {
+  animation: fadeSlideIn 0.25s ease-out forwards;
+}
+
 /* Data table row softening */
 /* Add subtle bottom border to each row */
 table.min-w-full > tbody > tr {
