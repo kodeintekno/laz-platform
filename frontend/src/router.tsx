@@ -61,6 +61,11 @@ import { RbacPage } from "@/pages/dashboard/rbac/RbacPage";
 import { ReportsPage } from "@/pages/dashboard/reports/ReportsPage";
 import { SettingsPage } from "@/pages/dashboard/settings/SettingsPage";
 import { AuditPage } from "@/pages/dashboard/audit/AuditPage";
+import { AccountingDashboardPage } from "@/pages/dashboard/accounting/AccountingDashboardPage";
+import { CoaPage } from "@/pages/dashboard/coa/CoaPage";
+import { JournalListPage } from "@/pages/dashboard/journal/JournalListPage";
+import { NewJournalPage } from "@/pages/dashboard/journal/NewJournalPage";
+import { JournalDetailPage } from "@/pages/dashboard/journal/JournalDetailPage";
 
 export const router = createBrowserRouter([
   {
@@ -292,6 +297,49 @@ export const router = createBrowserRouter([
             element: (
               <RequirePermission permission={PERMISSIONS.AUDIT_READ}>
                 <AuditPage />
+              </RequirePermission>
+            ),
+          },
+          // Akuntansi
+          {
+            path: "accounting",
+            element: (
+              <RequirePermission permission={PERMISSIONS.JOURNAL_READ}>
+                <AccountingDashboardPage />
+              </RequirePermission>
+            ),
+          },
+          // Chart of Accounts (COA)
+          {
+            path: "coa",
+            element: (
+              <RequirePermission permission={PERMISSIONS.COA_READ}>
+                <CoaPage />
+              </RequirePermission>
+            ),
+          },
+          // Jurnal Umum
+          {
+            path: "journal",
+            element: (
+              <RequirePermission permission={PERMISSIONS.JOURNAL_READ}>
+                <JournalListPage />
+              </RequirePermission>
+            ),
+          },
+          {
+            path: "journal/new",
+            element: (
+              <RequirePermission permission={PERMISSIONS.JOURNAL_CREATE}>
+                <NewJournalPage />
+              </RequirePermission>
+            ),
+          },
+          {
+            path: "journal/:id",
+            element: (
+              <RequirePermission permission={PERMISSIONS.JOURNAL_READ}>
+                <JournalDetailPage />
               </RequirePermission>
             ),
           },

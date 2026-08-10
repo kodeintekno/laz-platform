@@ -5,6 +5,7 @@ import { PrismaService } from "../../prisma/prisma.service";
 import { AuditService } from "../audit/audit.service";
 import { AuditAction } from "../audit/audit.types";
 import { AppError } from "../../common/errors/app.error";
+import { CoaService } from "../coa/coa.service";
 import type { LembagaAdminInput, LembagaProfileInput } from "../../../../shared/validations/lembaga.schema";
 import type { LembagaDocumentType, LembagaStatus } from "@prisma/client";
 
@@ -32,6 +33,7 @@ export class LembagaService {
     private readonly lembagaRepository: LembagaRepository,
     private readonly auditService: AuditService,
     private readonly prisma: PrismaService,
+    private readonly coaService: CoaService,
   ) {}
 
   async getLembagas(page?: number, pageSize?: number, search?: string, status?: LembagaStatus) {
@@ -136,6 +138,9 @@ export class LembagaService {
     }
 
     const updated = await this.lembagaRepository.approve(id, approverId);
+
+    // Seed COA template otomatis untuk lembaga yang baru di-approve
+    await this.coaService.seedCoaForLembaga(id);
 
     await this.auditService.log({
       userId: approverId,

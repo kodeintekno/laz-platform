@@ -35,6 +35,8 @@ model User {
   volunteerApplicationReviews       VolunteerApplication[] @relation("VolunteerApplicationReviewer")
   volunteerApplicationVerifications VolunteerApplication[] @relation("VolunteerApplicationVerifier")
   volunteerActivitiesCreated        VolunteerActivity[]    @relation("VolunteerActivityCreator")
+  journalsCreated                   Journal[]              @relation("JournalCreator")
+  journalsPosted                    Journal[]              @relation("JournalPoster")
 
   @@map("users")
 }
@@ -60,12 +62,14 @@ model Lembaga {
   createdAt             DateTime               @default(now())
   updatedAt             DateTime               @updatedAt
   auditLogs             AuditLog[]
+  chartOfAccounts       ChartOfAccount[]
   distributions         Distribution[]
   donations             Donation[]
   payments              Payment[]
   programs              Program[]
   users                 User[]
   documents             LembagaDocument[]
+  journals              Journal[]
   volunteerApplications VolunteerApplication[]
   volunteerActivities   VolunteerActivity[]
   approvedBy            User?                  @relation("LembagaApprover", fields: [approvedById], references: [id], onDelete: SetNull)
@@ -174,6 +178,7 @@ model Program {
   updatedAt           DateTime            @updatedAt
   distributions       Distribution[]
   donations           Donation[]
+  journals            Journal[]
   createdBy           User                @relation(fields: [createdById], references: [id])
   approvedBy          User?               @relation("ProgramApprover", fields: [approvedById], references: [id], onDelete: SetNull)
   lembaga             Lembaga             @relation(fields: [lembagaId], references: [id], onDelete: Cascade)
@@ -408,4 +413,115 @@ enum DistributionStatus {
   APPROVED
   REJECTED
   COMPLETED
+}
+
+// ─── Accounting ───────────────────────────────────────────────────────────────
+
+/// Chart of Accounts — sistem COA multi-tenant.
+/// Setiap lembaga memiliki salinan template COA yang sama (sistem seed otomatis
+/// saat lembaga disetujui). Lembaga tidak dapat menambah/mengedit/menghapus
+/// akun sistem (isSystem=true, isEditable=false, isDeletable=false).
+model ChartOfAccount {
+  id            String        @id @default(cuid())
+  lembagaId     String
+  code          String
+  name          String
+  accountType   AccountType
+  normalBalance NormalBalance
+  /// true = akun ini hanya header/grouping, tidak boleh digunakan di jurnal
+  isHeader      Boolean       @default(false)
+  /// Kode akun induk (mis. "1100" untuk akun 1101)
+  parentCode    String?
+  /// Level hirarki: 1=root, 2=group, 3=detail
+  level         Int           @default(1)
+  isSystem      Boolean       @default(true)
+  isEditable    Boolean       @default(false)
+  isDeletable   Boolean       @default(false)
+  isActive      Boolean       @default(true)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  lembaga       Lembaga       @relation(fields: [lembagaId], references: [id], onDelete: Cascade)
+  journalDetails JournalDetail[]
+
+  @@unique([lembagaId, code])
+  @@index([lembagaId])
+  @@map("chart_of_accounts")
+}
+
+enum AccountType {
+  ASSET
+  LIABILITY
+  FUND
+  REVENUE
+  EXPENSE
+}
+
+enum NormalBalance {
+  DEBIT
+  CREDIT
+}
+
+// ─── Journal (Jurnal Umum) ────────────────────────────────────────────────────
+
+/// Header jurnal — setiap transaksi akuntansi double-entry.
+/// Nomor jurnal unik per lembaga: JU-YYYYMM-XXXXXX.
+model Journal {
+  id          String            @id @default(cuid())
+  lembagaId   String
+  journalNo   String
+  journalDate DateTime          @db.Date
+  description String
+  sourceType  JournalSourceType @default(MANUAL)
+  sourceId    String?
+  programId   String?
+  status      JournalStatus     @default(DRAFT)
+  createdById String?
+  postedById  String?
+  postedAt    DateTime?
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  lembaga     Lembaga           @relation(fields: [lembagaId], references: [id], onDelete: Cascade)
+  program     Program?          @relation(fields: [programId], references: [id], onDelete: SetNull)
+  createdBy   User?             @relation("JournalCreator", fields: [createdById], references: [id])
+  postedBy    User?             @relation("JournalPoster", fields: [postedById], references: [id], onDelete: SetNull)
+  details     JournalDetail[]
+
+  @@unique([lembagaId, journalNo])
+  @@unique([sourceType, sourceId])
+  @@index([lembagaId])
+  @@index([lembagaId, status])
+  @@map("journals")
+}
+
+/// Baris jurnal — satu baris debit ATAU kredit (tidak boleh keduanya).
+model JournalDetail {
+  id          String         @id @default(cuid())
+  journalId   String
+  accountId   String
+  debit       Decimal        @default(0) @db.Decimal(15, 2)
+  credit      Decimal        @default(0) @db.Decimal(15, 2)
+  description String?
+  createdAt   DateTime       @default(now())
+
+  journal     Journal        @relation(fields: [journalId], references: [id], onDelete: Cascade)
+  account     ChartOfAccount @relation(fields: [accountId], references: [id])
+
+  @@index([journalId])
+  @@map("journal_details")
+}
+
+enum JournalStatus {
+  DRAFT
+  POSTED
+  VOID
+}
+
+enum JournalSourceType {
+  MANUAL
+  DONATION
+  DISTRIBUTION
+  REFUND
+  EXPENSE
+  ASSET_PURCHASE
 }

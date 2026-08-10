@@ -104,6 +104,32 @@ export const NAV_ITEMS: NavItem[] = [
     permission: PERMISSIONS.AUDIT_READ,
   },
   {
+    label: "Akuntansi",
+    href: "/dashboard/accounting",
+    icon: "Calculator",
+    requiresLembaga: true,
+    children: [
+      {
+        label: "Dashboard",
+        href: "/dashboard/accounting",
+        icon: "LayoutDashboard",
+        permission: PERMISSIONS.JOURNAL_READ, // Or a separate permission, but JOURNAL_READ is safe
+      },
+      {
+        label: "Chart of Accounts",
+        href: "/dashboard/coa",
+        icon: "BookMarked",
+        permission: PERMISSIONS.COA_READ,
+      },
+      {
+        label: "Jurnal Umum",
+        href: "/dashboard/journal",
+        icon: "ClipboardList",
+        permission: PERMISSIONS.JOURNAL_READ,
+      },
+    ],
+  },
+  {
     label: "Settings",
     href: "/dashboard/settings",
     icon: "Settings",

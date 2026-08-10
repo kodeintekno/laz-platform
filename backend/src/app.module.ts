@@ -26,6 +26,8 @@ import { ReportsModule } from "./modules/reports/reports.module";
 import { SettingsModule } from "./modules/settings/settings.module";
 import { UploadsModule } from "./modules/uploads/uploads.module";
 import { WebhooksModule } from "./modules/webhooks/webhooks.module";
+import { CoaModule } from "./modules/coa/coa.module";
+import { JournalModule } from "./modules/journal/journal.module";
 
 const isDev = process.env.NODE_ENV !== "production";
 
@@ -83,6 +85,8 @@ const isDev = process.env.NODE_ENV !== "production";
     SettingsModule,
     UploadsModule,
     WebhooksModule,
+    CoaModule,
+    JournalModule,
   ],
   controllers: [HealthController],
   providers: [
