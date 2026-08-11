@@ -8,11 +8,12 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 export function formatCurrency(amount: number) {
-  return new Intl.NumberFormat('id-ID', {
-    style: 'currency',
-    currency: 'IDR',
-    minimumFractionDigits: 0,
-  }).format(amount);
+  const isNegative = amount < 0;
+  const absAmount = Math.abs(amount);
+  const formattedNumber = new Intl.NumberFormat('id-ID', {
+    maximumFractionDigits: 0,
+  }).format(absAmount);
+  return `${isNegative ? '-' : ''}Rp ${formattedNumber}`;
 }
 
 /** Strips every non-digit character and parses what remains as an integer. Empty/no digits → 0. */

@@ -19,7 +19,7 @@ export function JournalBalanceSummary({ totalDebit, totalCredit }: JournalBalanc
         <div className="flex-1">
           <p className="text-xs text-secondary font-medium uppercase tracking-wider mb-1">Total Debit</p>
           <p className="text-2xl font-bold font-mono text-primary">
-            Rp {formatCurrency(totalDebit)}
+            {formatCurrency(totalDebit)}
           </p>
         </div>
 
@@ -29,7 +29,7 @@ export function JournalBalanceSummary({ totalDebit, totalCredit }: JournalBalanc
         <div className="flex-1 md:pl-6">
           <p className="text-xs text-secondary font-medium uppercase tracking-wider mb-1">Total Kredit</p>
           <p className="text-2xl font-bold font-mono text-primary">
-            Rp {formatCurrency(totalCredit)}
+            {formatCurrency(totalCredit)}
           </p>
         </div>
 
@@ -53,7 +53,7 @@ export function JournalBalanceSummary({ totalDebit, totalCredit }: JournalBalanc
               <div>
                 <p className="font-bold">TIDAK SEIMBANG</p>
                 <p className="text-xs opacity-80">
-                  Selisih: Rp {formatCurrency(difference)}
+                  Selisih: {formatCurrency(difference)}
                 </p>
               </div>
             </div>

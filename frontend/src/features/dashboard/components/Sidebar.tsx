@@ -31,6 +31,7 @@ import {
   BookMarked,
   ClipboardList,
   Calculator,
+  Book,
   ChevronDown,
 } from "lucide-react";
 
@@ -51,6 +52,7 @@ const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   BookMarked,
   ClipboardList,
   Calculator,
+  Book,
 };
 
 /**

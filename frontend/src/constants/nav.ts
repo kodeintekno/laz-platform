@@ -121,6 +121,12 @@ export const NAV_ITEMS: NavItem[] = [
         icon: "ClipboardList",
         permission: PERMISSIONS.JOURNAL_READ,
       },
+      {
+        label: "Buku Besar",
+        href: "/dashboard/ledger",
+        icon: "Book",
+        permission: PERMISSIONS.JOURNAL_READ,
+      },
     ],
   },
   {

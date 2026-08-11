@@ -10,6 +10,7 @@ import {
   Tooltip,
   ResponsiveContainer
 } from "recharts";
+import { formatCurrency } from "@/lib/utils";
 
 interface TrendData {
   date: string;
@@ -39,7 +40,7 @@ export function DonationTrendChart({ data }: { data: TrendData[] }) {
         <h3 className="text-lg font-bold text-primary">Tren Donasi (30 Hari Terakhir)</h3>
         <p className="text-sm text-secondary">
           Total donasi terkumpul dalam 30 hari: <span className="font-semibold text-brand-primary">
-            Rp {new Intl.NumberFormat("id-ID").format(totalAmount)}
+            {formatCurrency(totalAmount)}
           </span>
         </p>
       </div>

@@ -65,10 +65,10 @@ export function JournalDetailLines({ details }: JournalDetailLinesProps) {
                 Total
               </td>
               <td className="px-4 py-3 text-right font-mono text-base">
-                Rp {formatCurrency(totalDebit)}
+                {formatCurrency(totalDebit)}
               </td>
               <td className="px-4 py-3 text-right font-mono text-base">
-                Rp {formatCurrency(totalCredit)}
+                {formatCurrency(totalCredit)}
               </td>
             </tr>
           </tfoot>

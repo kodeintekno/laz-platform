@@ -65,6 +65,7 @@ import { CoaPage } from "@/pages/dashboard/coa/CoaPage";
 import { JournalListPage } from "@/pages/dashboard/journal/JournalListPage";
 import { NewJournalPage } from "@/pages/dashboard/journal/NewJournalPage";
 import { JournalDetailPage } from "@/pages/dashboard/journal/JournalDetailPage";
+import { LedgerPage } from "@/pages/dashboard/ledger/LedgerPage";
 
 export const router = createBrowserRouter([
   {
@@ -330,6 +331,14 @@ export const router = createBrowserRouter([
             element: (
               <RequirePermission permission={PERMISSIONS.JOURNAL_READ}>
                 <JournalDetailPage />
+              </RequirePermission>
+            ),
+          },
+          {
+            path: "ledger",
+            element: (
+              <RequirePermission permission={PERMISSIONS.JOURNAL_READ}>
+                <LedgerPage />
               </RequirePermission>
             ),
           },
