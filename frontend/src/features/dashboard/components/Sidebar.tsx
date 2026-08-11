@@ -191,7 +191,7 @@ export function Sidebar({ initialItems, user }: { initialItems?: NavItem[], user
                             if (isSidebarCollapsed) toggleSidebarCollapsed();
                             toggleMenu(item.label);
                           }}
-                          className={`w-full relative group flex items-center justify-between px-3 py-2.5 text-sm rounded-xl transition-all duration-200 ${
+                          className={`w-full cursor-pointer relative group flex items-center justify-between px-3 py-2.5 text-sm rounded-xl transition-all duration-200 ${
                             isActive
                               ? "bg-surface-soft text-brand-primary font-semibold"
                               : "text-secondary hover:bg-surface-muted hover:text-primary"

@@ -105,16 +105,10 @@ export const NAV_ITEMS: NavItem[] = [
   },
   {
     label: "Akuntansi",
-    href: "/dashboard/accounting",
+    href: "/dashboard/journal",
     icon: "Calculator",
     requiresLembaga: true,
     children: [
-      {
-        label: "Dashboard",
-        href: "/dashboard/accounting",
-        icon: "LayoutDashboard",
-        permission: PERMISSIONS.JOURNAL_READ, // Or a separate permission, but JOURNAL_READ is safe
-      },
       {
         label: "Chart of Accounts",
         href: "/dashboard/coa",
