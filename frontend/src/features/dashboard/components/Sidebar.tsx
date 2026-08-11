@@ -33,6 +33,7 @@ import {
   Calculator,
   Book,
   ChevronDown,
+  Briefcase,
 } from "lucide-react";
 
 const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
@@ -53,6 +54,7 @@ const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   ClipboardList,
   Calculator,
   Book,
+  Briefcase,
 };
 
 /**
@@ -79,6 +81,17 @@ export function Sidebar({ initialItems, user }: { initialItems?: NavItem[], user
       // null — item yang hanya relevan untuk staff satu lembaga (mis. profil
       // lembaga sendiri) harus tetap difilter berdasarkan lembagaId asli.
       if (item.requiresLembaga && !authUser?.lembagaId) return false;
+      
+      // Hide parent group if all its children are inaccessible
+      if (item.children && item.children.length > 0) {
+        const hasVisibleChild = item.children.some(child => {
+          if (child.permission && !can(child.permission)) return false;
+          if (child.requiresLembaga && !authUser?.lembagaId) return false;
+          return true;
+        });
+        if (!hasVisibleChild) return false;
+      }
+      
       return true;
     });
   const { data: session } = useSession();
