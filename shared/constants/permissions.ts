@@ -58,6 +58,15 @@ export const PERMISSIONS = {
 
   // ── Volunteer Management ─────────────────────────────────────────
   VOLUNTEERS_MANAGE: "volunteers.manage",
+
+  // ── Accounting (COA) ─────────────────────────────────────────────────
+  COA_READ: "coa.read",
+
+  // ── Journal ────────────────────────────────────────────────────────
+  JOURNAL_READ: "journal.read",
+  JOURNAL_CREATE: "journal.create",
+  JOURNAL_POST: "journal.post",
+  JOURNAL_VOID: "journal.void",
 } as const;
 
 export type PermissionKey = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];

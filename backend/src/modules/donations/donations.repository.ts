@@ -2,10 +2,14 @@ import { Injectable } from "@nestjs/common";
 import { PrismaService } from "../../prisma/prisma.service";
 import type { DonationStatus, Prisma } from "@prisma/client";
 import { AppError } from "../../common/errors/app.error";
+import { AutoJournalService } from "../journal/auto-journal.service";
 
 @Injectable()
 export class DonationsRepository {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly autoJournalService: AutoJournalService
+  ) {}
 
   /**
    * Fetch all donations for the admin dashboard.
@@ -167,7 +171,7 @@ export class DonationsRepository {
     return this.prisma.$transaction(async (tx) => {
       const program = await tx.program.findUnique({
         where: { id: data.programId },
-        select: { lembagaId: true, status: true },
+        select: { lembagaId: true, status: true, category: true },
       });
       if (!program) throw new AppError("PROGRAM_NOT_FOUND", "Program tidak ditemukan", 404);
       if (program.status === "PENDING_REVIEW") {
@@ -208,6 +212,16 @@ export class DonationsRepository {
           where: { id: donation.programId },
           data: { currentAmount: { increment: data.amount } },
         });
+
+        // Buat Auto Journal untuk Donasi
+        await this.autoJournalService.createDonationJournal(
+          tx,
+          donation.id,
+          data.amount,
+          donation.programId,
+          program.lembagaId,
+          program.category
+        );
       }
 
       return donation;

@@ -1,5 +1,6 @@
 import { Injectable } from "@nestjs/common";
 import { PrismaService } from "../../prisma/prisma.service";
+import { AutoJournalService } from "../journal/auto-journal.service";
 import type { DonationStatus, PaymentStatus } from "@prisma/client";
 
 /**
@@ -7,7 +8,10 @@ import type { DonationStatus, PaymentStatus } from "@prisma/client";
  */
 @Injectable()
 export class PaymentsRepository {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly autoJournalService: AutoJournalService,
+  ) {}
 
   /**
    * Find a unique payment by its gateway reference key,
@@ -53,7 +57,7 @@ export class PaymentsRepository {
 
       // 3. Atomically increment program current amount if the donation is paid
       if (params.newDonationStatus === "PAID") {
-        await tx.program.update({
+        const program = await tx.program.update({
           where: { id: params.programId },
           data: {
             currentAmount: {
@@ -61,6 +65,16 @@ export class PaymentsRepository {
             },
           },
         });
+
+        // 4. Buat Auto Journal untuk Donasi
+        await this.autoJournalService.createDonationJournal(
+          tx,
+          params.donationId,
+          params.amount,
+          params.programId,
+          program.lembagaId,
+          program.category
+        );
       }
     });
   }

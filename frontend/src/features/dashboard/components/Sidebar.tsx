@@ -28,6 +28,12 @@ import {
   Building2,
   HeartHandshake,
   ClipboardCheck,
+  BookMarked,
+  ClipboardList,
+  Calculator,
+  Book,
+  ChevronDown,
+  Briefcase,
 } from "lucide-react";
 
 const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
@@ -44,6 +50,11 @@ const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   Building2,
   HeartHandshake,
   ClipboardCheck,
+  BookMarked,
+  ClipboardList,
+  Calculator,
+  Book,
+  Briefcase,
 };
 
 /**
@@ -70,11 +81,27 @@ export function Sidebar({ initialItems, user }: { initialItems?: NavItem[], user
       // null — item yang hanya relevan untuk staff satu lembaga (mis. profil
       // lembaga sendiri) harus tetap difilter berdasarkan lembagaId asli.
       if (item.requiresLembaga && !authUser?.lembagaId) return false;
+      
+      // Hide parent group if all its children are inaccessible
+      if (item.children && item.children.length > 0) {
+        const hasVisibleChild = item.children.some(child => {
+          if (child.permission && !can(child.permission)) return false;
+          if (child.requiresLembaga && !authUser?.lembagaId) return false;
+          return true;
+        });
+        if (!hasVisibleChild) return false;
+      }
+      
       return true;
     });
   const { data: session } = useSession();
   const activeUser = user || session?.user;
   const [isLogoutConfirmOpen, setIsLogoutConfirmOpen] = useState(false);
+  const [openMenus, setOpenMenus] = useState<Record<string, boolean>>({});
+
+  const toggleMenu = (label: string) => {
+    setOpenMenus((prev) => ({ ...prev, [label]: !prev[label] }));
+  };
 
   // Initialize collapse state only on desktop
   const [mounted, setMounted] = useState(false);
@@ -164,8 +191,76 @@ export function Sidebar({ initialItems, user }: { initialItems?: NavItem[], user
                 {visibleItems.map((item) => {
                   const isActive =
                     pathname === item.href ||
-                    (item.href !== "/dashboard" && pathname.startsWith(item.href));
+                    (item.href !== "/dashboard" && pathname.startsWith(item.href)) ||
+                    (item.children?.some(child => pathname.startsWith(child.href)) ?? false);
                   const IconComponent = iconMap[item.icon] || HelpCircle;
+
+                  if (item.children && item.children.length > 0) {
+                    const isOpen = openMenus[item.label] ?? isActive;
+                    return (
+                      <li key={item.label} className="flex flex-col">
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            if (isSidebarCollapsed) toggleSidebarCollapsed();
+                            toggleMenu(item.label);
+                          }}
+                          className={`w-full cursor-pointer relative group flex items-center justify-between px-3 py-2.5 text-sm rounded-xl transition-all duration-200 ${
+                            isActive
+                              ? "bg-surface-soft text-brand-primary font-semibold"
+                              : "text-secondary hover:bg-surface-muted hover:text-primary"
+                          }`}
+                        >
+                          <div className="flex items-center">
+                            <IconComponent
+                              className={`w-5 h-5 flex-shrink-0 transition-colors duration-200 ${
+                                isActive ? "text-brand-primary" : "text-secondary group-hover:text-primary"
+                              }`}
+                            />
+                            <span className={`transition-all duration-300 ease-in-out truncate ${isSidebarCollapsed ? "opacity-0 max-w-0 ml-0 pointer-events-none" : "opacity-100 max-w-[150px] ml-3"}`}>
+                              {item.label}
+                            </span>
+                          </div>
+                          {!isSidebarCollapsed && (
+                            <ChevronDown className={`w-4 h-4 text-secondary transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`} />
+                          )}
+                          
+                          {/* Tooltip on Collapsed Hover */}
+                          {isSidebarCollapsed && (
+                            <div className="absolute left-full ml-3 px-2 py-1 bg-text-primary text-white text-[11px] font-medium rounded-lg shadow-soft pointer-events-none opacity-0 translate-x-[-4px] group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-150 whitespace-nowrap z-50">
+                              {item.label}
+                            </div>
+                          )}
+                        </button>
+                        
+                        {!isSidebarCollapsed && isOpen && (
+                          <ul className="mt-1 space-y-1 ml-5 pl-4 border-l border-surface-border">
+                            {item.children.map(child => {
+                              if (child.permission && !can(child.permission)) return null;
+                              const isChildActive = pathname === child.href || (child.href !== "/dashboard" && pathname.startsWith(child.href));
+                              const ChildIcon = iconMap[child.icon] || HelpCircle;
+                              return (
+                                <li key={child.href}>
+                                  <Link
+                                    href={child.href}
+                                    className={`flex items-center px-3 py-2 text-sm rounded-xl transition-all duration-200 ${
+                                      isChildActive
+                                        ? "bg-surface-soft text-brand-primary font-semibold"
+                                        : "text-secondary hover:bg-surface-muted hover:text-primary"
+                                    }`}
+                                  >
+                                    <ChildIcon className={`w-4 h-4 mr-3 flex-shrink-0 ${isChildActive ? "text-brand-primary" : "text-secondary"}`} />
+                                    <span className="truncate">{child.label}</span>
+                                  </Link>
+                                </li>
+                              );
+                            })}
+                          </ul>
+                        )}
+                      </li>
+                    );
+                  }
 
                   return (
                     <li key={item.href}>

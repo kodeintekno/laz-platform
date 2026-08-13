@@ -1,12 +1,16 @@
 import { Injectable } from "@nestjs/common";
 import { PrismaService } from "../../prisma/prisma.service";
+import { AutoJournalService } from "../journal/auto-journal.service";
 import type { Prisma } from "@prisma/client";
 import { AppError } from "../../common/errors/app.error";
 import type { DistributionInput } from "../../../../shared/validations/distributions.schema";
 
 @Injectable()
 export class DistributionsRepository {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly autoJournalService: AutoJournalService,
+  ) {}
 
   /**
    * List all distributions (admin/dashboard).
@@ -64,7 +68,7 @@ export class DistributionsRepository {
     return this.prisma.$transaction(async (tx) => {
       const program = await tx.program.findUnique({
         where: { id: data.programId },
-        select: { lembagaId: true },
+        select: { lembagaId: true, category: true },
       });
       if (!program) {
         throw new AppError("PROGRAM_NOT_FOUND", "Program tidak ditemukan", 404);
@@ -85,7 +89,7 @@ export class DistributionsRepository {
         );
       }
 
-      return tx.distribution.create({
+      const distribution = await tx.distribution.create({
         data: {
           amount: data.amount,
           title: data.title,
@@ -97,6 +101,18 @@ export class DistributionsRepository {
           lembagaId: program.lembagaId,
         },
       });
+
+      await this.autoJournalService.createDistributionJournal(
+        tx,
+        distribution.id,
+        Number(data.amount),
+        data.programId,
+        program.lembagaId,
+        program.category,
+        userId
+      );
+
+      return distribution;
     });
   }
 
