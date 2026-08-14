@@ -26,15 +26,19 @@ export function ReportsPage() {
     queryFn: () => api.get<any>("/reports/summary", { lembagaId }),
   });
 
-  const { data: trendResult } = useQuery({
-    queryKey: ["reports", "trend", lembagaId],
-    queryFn: () => api.get<any>("/reports/donation-trend", { lembagaId }),
+  const { data: programsResult } = useQuery({
+    queryKey: ["programs", "options", lembagaId],
+    queryFn: () =>
+      api.get<any>("/programs", { lembagaId, limit: 100, page: 1 }),
   });
 
   const { data: topResult } = useQuery({
     queryKey: ["reports", "top-programs", lembagaId],
     queryFn: () => api.get<any>("/reports/top-programs", { lembagaId, limit: 5 }),
   });
+
+  const programOptions: { id: string; title: string }[] =
+    (programsResult?.data ?? []).map((p: any) => ({ id: p.id, title: p.title }));
 
   return (
     <div className="space-y-6">
@@ -56,7 +60,7 @@ export function ReportsPage() {
         <div className="space-y-6">
           <ReportSummaryCards stats={statsResult?.data ?? {}} />
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <DonationTrendChart data={trendResult?.data ?? []} />
+            <DonationTrendChart lembagaId={lembagaId} programs={programOptions} />
             <ProgramPerformanceList programs={topResult?.data ?? []} />
           </div>
         </div>
