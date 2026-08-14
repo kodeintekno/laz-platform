@@ -18,8 +18,17 @@ export class ReportsController {
 
   @Get("donation-trend")
   @RequirePermission(PERMISSIONS.REPORTS_READ)
-  async donationTrend(@CurrentUser() user: RBACSessionUser, @Query("lembagaId") lembagaId?: string) {
-    return this.reportsService.getDonationTrend(resolveLembagaScope(user, lembagaId));
+  async donationTrend(
+    @CurrentUser() user: RBACSessionUser,
+    @Query("lembagaId") lembagaId?: string,
+    @Query("period") period?: "monthly" | "yearly",
+    @Query("programId") programId?: string,
+  ) {
+    return this.reportsService.getDonationTrend(
+      resolveLembagaScope(user, lembagaId),
+      period ?? "monthly",
+      programId,
+    );
   }
 
   @Get("top-programs")

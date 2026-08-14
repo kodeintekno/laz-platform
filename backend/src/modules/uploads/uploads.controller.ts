@@ -9,19 +9,23 @@ import {
   UseInterceptors,
 } from "@nestjs/common";
 import { FileInterceptor } from "@nestjs/platform-express";
+import { Public } from "../../common/decorators/public.decorator";
 import { CloudinaryProvider } from "../../lib/upload/cloudinary.provider";
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB — images & PDF documents
 
 /**
  * Upload Cloudinary — pengganti src/app/api/upload/route.ts.
- * Auth-only (guard global) + CSRF (mutasi). Multer memory storage,
- * 10MB, gambar atau PDF (dokumen legalitas/KTP/CV).
+ * POST bersifat @Public() agar form registrasi (Lembaga/Relawan) dapat
+ * mengupload file sebelum login. Throttler global tetap aktif sebagai
+ * proteksi rate-limit. DELETE tetap memerlukan autentikasi.
+ * Multer memory storage, 10MB, gambar atau PDF (dokumen legalitas/KTP/CV).
  */
 @Controller("api/upload")
 export class UploadsController {
   constructor(private readonly cloudinaryProvider: CloudinaryProvider) {}
 
+  @Public()
   @Post()
   @UseInterceptors(
     FileInterceptor("file", {

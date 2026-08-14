@@ -48,21 +48,46 @@ export class ReportsService {
   }
 
   /**
-   * Retrieves the trend of PAID donations over the last 30 days.
+   * Retrieves the donation trend aggregated by period (monthly or yearly),
+   * optionally filtered by programId.
+   *
+   * - monthly: last 12 months, grouped by YYYY-MM
+   * - yearly:  last 6 years, grouped by YYYY
    */
-  async getDonationTrend(lembagaId?: string) {
-    const thirtyDaysAgo = new Date();
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+  async getDonationTrend(
+    lembagaId?: string,
+    period: "monthly" | "yearly" = "monthly",
+    programId?: string,
+  ) {
+    const whereClause: Record<string, unknown> = {
+      status: "PAID",
+    };
 
-    const whereClause = lembagaId ? { lembagaId } : {};
+    if (lembagaId) {
+      whereClause.lembagaId = lembagaId;
+    }
+
+    if (programId) {
+      whereClause.programId = programId;
+    }
+
+    // Determine date range based on period
+    const now = new Date();
+    let startDate: Date;
+
+    if (period === "yearly") {
+      // Go back 6 years from start of current year
+      startDate = new Date(now.getFullYear() - 5, 0, 1);
+    } else {
+      // Go back 12 months from start of current month
+      startDate = new Date(now.getFullYear(), now.getMonth() - 11, 1);
+    }
+
+    whereClause.createdAt = { gte: startDate };
 
     // Fetch the data and aggregate it in memory (assuming volume is manageable).
     const donations = await this.prisma.donation.findMany({
-      where: {
-        ...whereClause,
-        status: "PAID",
-        createdAt: { gte: thirtyDaysAgo },
-      },
+      where: whereClause as any,
       select: {
         amount: true,
         createdAt: true,
@@ -72,34 +97,54 @@ export class ReportsService {
       },
     });
 
-    const dailyData: Record<string, number> = {};
+    if (period === "yearly") {
+      // Group by year
+      const yearlyData: Record<string, number> = {};
 
-    donations.forEach((d) => {
-      // Format as YYYY-MM-DD
-      const dateStr = d.createdAt.toISOString().split("T")[0];
-      if (!dailyData[dateStr]) {
-        dailyData[dateStr] = 0;
-      }
-      dailyData[dateStr] += Number(d.amount);
-    });
-
-    // Create an array for the last 30 days including empty days
-    const result = [];
-    for (let i = 29; i >= 0; i--) {
-      const d = new Date();
-      d.setDate(d.getDate() - i);
-      const dateStr = d.toISOString().split("T")[0];
-      // Format date for display: "12 Okt"
-      const displayDate = d.toLocaleDateString("id-ID", { day: "numeric", month: "short" });
-
-      result.push({
-        date: dateStr,
-        displayDate,
-        amount: dailyData[dateStr] || 0,
+      donations.forEach((d) => {
+        const year = d.createdAt.getFullYear().toString();
+        yearlyData[year] = (yearlyData[year] ?? 0) + Number(d.amount);
       });
-    }
 
-    return result;
+      // Build result for last 6 years
+      const result = [];
+      for (let i = 5; i >= 0; i--) {
+        const year = (now.getFullYear() - i).toString();
+        result.push({
+          date: year,
+          displayDate: year,
+          amount: yearlyData[year] ?? 0,
+        });
+      }
+
+      return result;
+    } else {
+      // Group by month (YYYY-MM)
+      const monthlyData: Record<string, number> = {};
+
+      donations.forEach((d) => {
+        const month = `${d.createdAt.getFullYear()}-${String(d.createdAt.getMonth() + 1).padStart(2, "0")}`;
+        monthlyData[month] = (monthlyData[month] ?? 0) + Number(d.amount);
+      });
+
+      // Build result for last 12 months
+      const result = [];
+      for (let i = 11; i >= 0; i--) {
+        const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+        const monthKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+        const displayDate = d.toLocaleDateString("id-ID", {
+          month: "short",
+          year: "2-digit",
+        });
+        result.push({
+          date: monthKey,
+          displayDate,
+          amount: monthlyData[monthKey] ?? 0,
+        });
+      }
+
+      return result;
+    }
   }
 
   /**
