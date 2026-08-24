@@ -108,6 +108,75 @@
   animation: fadeSlideIn 0.25s ease-out forwards;
 }
 
+@keyframes checkmarkPop {
+  0% { transform: scale(0.5); opacity: 0; }
+  50% { transform: scale(1.1); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.animate-checkmark-pop {
+  animation: checkmarkPop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+@keyframes drawCheck {
+  0% { stroke-dasharray: 48; stroke-dashoffset: 48; }
+  100% { stroke-dasharray: 48; stroke-dashoffset: 0; }
+}
+
+.animate-draw-check {
+  animation: drawCheck 0.6s ease-out 0.2s forwards;
+}
+
+@keyframes bounceFadeIn {
+  0% { opacity: 0; transform: translateY(10px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+.animate-bounce-fade-in {
+  animation: bounceFadeIn 0.5s ease-out forwards;
+}
+
+/* Premium SVG Checkmark Animation */
+.anim-checkmark {
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  display: block;
+  stroke-width: 3.5;
+  stroke: #fff;
+  stroke-miterlimit: 10;
+  box-shadow: inset 0px 0px 0px #16a34a;
+  animation: checkmark-fill 0.4s ease-in-out 0.4s forwards, checkmark-scale 0.3s ease-in-out 0.9s both;
+}
+
+.anim-checkmark__circle {
+  stroke-dasharray: 166;
+  stroke-dashoffset: 166;
+  stroke-width: 3.5;
+  stroke-miterlimit: 10;
+  stroke: #16a34a;
+  fill: none;
+  animation: checkmark-stroke 0.6s cubic-bezier(0.65, 0, 0.45, 1) forwards;
+}
+
+.anim-checkmark__check {
+  transform-origin: 50% 50%;
+  stroke-dasharray: 48;
+  stroke-dashoffset: 48;
+  animation: checkmark-stroke 0.3s cubic-bezier(0.65, 0, 0.45, 1) 0.8s forwards;
+}
+
+@keyframes checkmark-stroke {
+  100% { stroke-dashoffset: 0; }
+}
+@keyframes checkmark-scale {
+  0%, 100% { transform: none; }
+  50% { transform: scale3d(1.15, 1.15, 1); }
+}
+@keyframes checkmark-fill {
+  100% { box-shadow: inset 0px 0px 0px 60px #16a34a; }
+}
+
 /* Data table row softening */
 /* Add subtle bottom border to each row */
 table.min-w-full > tbody > tr {

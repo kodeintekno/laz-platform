@@ -49,7 +49,7 @@ export class UploadsController {
       { buffer: file.buffer, mimetype: file.mimetype },
       { folder: folder || undefined },
     );
-    return { url: result.url, publicId: result.publicId };
+    return { url: result.url, publicId: result.publicId, resourceType: result.resourceType };
   }
 
   @Delete()

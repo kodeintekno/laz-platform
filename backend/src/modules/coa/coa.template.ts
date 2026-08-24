@@ -32,6 +32,7 @@ export const COA_TEMPLATE: CoaTemplateRow[] = [
   { code: "1101", name: "Kas", accountType: "ASSET", normalBalance: "DEBIT", isHeader: false, parentCode: "1100", level: 3 },
   { code: "1102", name: "Kas Kecil", accountType: "ASSET", normalBalance: "DEBIT", isHeader: false, parentCode: "1100", level: 3 },
   { code: "1103", name: "Bank", accountType: "ASSET", normalBalance: "DEBIT", isHeader: false, parentCode: "1100", level: 3 },
+  { code: "1104", name: "Kas Dalam Perjalanan", accountType: "ASSET", normalBalance: "DEBIT", isHeader: false, parentCode: "1100", level: 3 },
   { code: "1110", name: "Piutang", accountType: "ASSET", normalBalance: "DEBIT", isHeader: true, parentCode: "1000", level: 2 },
   { code: "1111", name: "Piutang Lain-lain", accountType: "ASSET", normalBalance: "DEBIT", isHeader: false, parentCode: "1110", level: 3 },
   { code: "1120", name: "Persediaan", accountType: "ASSET", normalBalance: "DEBIT", isHeader: true, parentCode: "1000", level: 2 },
@@ -98,4 +99,5 @@ export const COA_TEMPLATE: CoaTemplateRow[] = [
   { code: "6111", name: "Beban Penyusutan Kendaraan", accountType: "EXPENSE", normalBalance: "DEBIT", isHeader: false, parentCode: "6100", level: 3 },
   { code: "6112", name: "Beban Penyusutan Gedung", accountType: "EXPENSE", normalBalance: "DEBIT", isHeader: false, parentCode: "6100", level: 3 },
   { code: "6113", name: "Beban Operasional Lainnya", accountType: "EXPENSE", normalBalance: "DEBIT", isHeader: false, parentCode: "6100", level: 3 },
+  { code: "6114", name: "Beban Platform", accountType: "EXPENSE", normalBalance: "DEBIT", isHeader: false, parentCode: "6100", level: 3 },
 ];

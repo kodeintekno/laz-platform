@@ -18,6 +18,7 @@
     "laz-platform": "file:..",
     "lucide-react": "^1.16.0",
     "motion": "^12.41.0",
+    "qrcode.react": "^4.2.0",
     "react": "19.2.4",
     "react-dom": "19.2.4",
     "react-hook-form": "^7.76.0",

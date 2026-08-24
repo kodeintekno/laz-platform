@@ -1,13 +1,8 @@
 "use client";
 
-import { useState, useTransition } from "react";
 import type { Prisma } from "@prisma/client";
-import { generateMockWebhookPayloadAction } from "@/features/donations/actions/donations.actions";
-import { Button, Badge, ActionDropdown } from "@/components/ui";
+import { Badge } from "@/components/ui";
 import { DataTable, type ColumnDef } from "@/components/ui/data-table";
-import { toast } from "@/stores/toast.store";
-import { useRouter } from "next/navigation";
-import { RefreshCw } from "lucide-react";
 
 type DonationWithRelations = Prisma.DonationGetPayload<{
   include: {
@@ -16,10 +11,10 @@ type DonationWithRelations = Prisma.DonationGetPayload<{
   };
 }>;
 
-export function DonationTable({ 
+export function DonationTable({
   donations,
-  pagination 
-}: { 
+  pagination,
+}: {
   donations: DonationWithRelations[];
   pagination?: {
     currentPage: number;
@@ -28,10 +23,6 @@ export function DonationTable({
     pageSize: number;
   };
 }) {
-  const router = useRouter();
-  const [isPending, startTransition] = useTransition();
-  const [simulatingId, setSimulatingId] = useState<string | null>(null);
-
   const formatRupiah = (amount: number | string) => {
     return new Intl.NumberFormat("id-ID", {
       style: "currency",
@@ -47,44 +38,6 @@ export function DonationTable({
     }).format(new Date(date));
   };
 
-  const simulateWebhook = async (donationId: string) => {
-    setSimulatingId(donationId);
-    startTransition(async () => {
-      // 1. Get the signed mock payload from the server action
-      const result = await generateMockWebhookPayloadAction(donationId);
-      
-      if (result?.error) {
-        toast.error("Gagal memuat payload: " + result.error);
-        setSimulatingId(null);
-        return;
-      }
-
-      if (result?.payload) {
-        // 2. Actually POST it to our Webhook endpoint, exactly like Midtrans would
-        try {
-          const response = await fetch("/api/webhooks/midtrans", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify(result.payload),
-          });
-
-          const data = await response.json();
-          if (data.success) {
-            toast.success("Webhook berhasil diproses!");
-            router.refresh();
-          } else {
-            toast.error("Webhook gagal diproses: " + data.message);
-          }
-        } catch (error) {
-          toast.error("Gagal mengirim webhook: " + String(error));
-        }
-      }
-      setSimulatingId(null);
-    });
-  };
-
   const columns: ColumnDef<DonationWithRelations>[] = [
     {
       header: "Donatur",
@@ -93,10 +46,14 @@ export function DonationTable({
           <div className="font-semibold text-primary">
             {donation.isAnonymous ? "Hamba Allah" : donation.donorName || "Hamba Allah"}
             {donation.isAnonymous && donation.donorName && (
-              <span className="ml-2 text-xs text-muted font-normal">(Asli: {donation.donorName})</span>
+              <span className="ml-2 text-xs text-muted font-normal">
+                (Asli: {donation.donorName})
+              </span>
             )}
           </div>
-          {donation.donorPhone && <div className="text-secondary text-xs mt-0.5">{donation.donorPhone}</div>}
+          {donation.donorPhone && (
+            <div className="text-secondary text-xs mt-0.5">{donation.donorPhone}</div>
+          )}
         </div>
       ),
     },
@@ -114,7 +71,7 @@ export function DonationTable({
           </div>
           {donation.payment?.paymentMethod && (
             <div className="text-xs text-secondary font-normal mt-0.5">
-              {donation.payment.paymentMethod.replace("_", " ")}
+              {donation.payment.paymentMethod.replace(/_/g, " ")}
             </div>
           )}
         </div>
@@ -141,24 +98,6 @@ export function DonationTable({
       header: "Tanggal",
       cell: (donation) => formatDate(donation.createdAt),
     },
-    {
-      header: "Aksi",
-      align: "right",
-      cell: (donation) => (
-        donation.status === "PENDING" ? (
-          <ActionDropdown
-            items={[
-              {
-                label: "Simulate Webhook",
-                icon: RefreshCw,
-                onClick: () => simulateWebhook(donation.id),
-                intent: "warning" as const,
-              },
-            ]}
-          />
-        ) : null
-      ),
-    },
   ];
 
   return (
@@ -171,4 +110,3 @@ export function DonationTable({
     />
   );
 }
-

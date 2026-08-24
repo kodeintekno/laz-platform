@@ -70,6 +70,10 @@ const PERMISSION_DEFINITIONS = [
   { key: "lembaga.manage", description: "Mengelola data lembaga (tenant) di seluruh platform" },
   // Volunteers
   { key: "volunteers.manage", description: "Mengelola pendaftaran relawan pada program lembaga" },
+  // Withdrawals
+  { key: "withdrawals.read", description: "Melihat daftar pencairan dana" },
+  { key: "withdrawals.create", description: "Membuat request pencairan dana (Lembaga)" },
+  { key: "withdrawals.manage", description: "Menyetujui/menolak pencairan dana (Super Admin)" },
   // Accounting
   { key: "coa.read", description: "Melihat daftar Chart of Accounts lembaga" },
   { key: "journal.read", description: "Melihat daftar Jurnal Umum" },
@@ -100,6 +104,8 @@ const ROLE_PERMISSIONS: Record<string, string[]> = {
     "users.read",
     "lembaga.read",
     "volunteers.manage",
+    "withdrawals.read",
+    "withdrawals.create",
     "coa.read",
     "journal.read",
     "journal.create",
@@ -370,11 +376,18 @@ async function main() {
       await prisma.distribution.deleteMany({ where: { programId: createdProgram.id } });
 
       for (const d of prog.donations) {
+        // Hitung split 12.5% / 87.5% untuk donasi yang sudah PAID
+        const isPaid = d.status === "PAID";
+        const platformFee = isPaid ? Math.floor(d.amount * 0.125) : 0;
+        const institutionAmount = isPaid ? d.amount - platformFee : 0;
+
         await prisma.donation.create({
           data: {
             lembagaId: approvedLembaga.id,
             programId: createdProgram.id,
             amount: d.amount,
+            platformFee,
+            institutionAmount,
             status: d.status as any,
             isAnonymous: d.anon,
             donorName: d.anon ? "Hamba Allah" : d.name,
@@ -408,6 +421,19 @@ async function main() {
         }
       }
     }
+
+    // Hitung total institutionAmount (87.5%) dari semua donasi PAID & update InstitutionBalance
+    const balanceAgg = await prisma.donation.aggregate({
+      where: { lembagaId: approvedLembaga.id, status: "PAID" },
+      _sum: { institutionAmount: true },
+    });
+    const totalInstitutionAmount = Number(balanceAgg._sum.institutionAmount || 0);
+    await prisma.institutionBalance.upsert({
+      where: { lembagaId: approvedLembaga.id },
+      update: { balance: totalInstitutionAmount },
+      create: { lembagaId: approvedLembaga.id, balance: totalInstitutionAmount, reservedBalance: 0 },
+    });
+    console.log(` ✓ InstitutionBalance seeded: Rp ${totalInstitutionAmount.toLocaleString("id-ID")}`);
     console.log(" ✓ Dummy programs, donations, and distributions seeded");
 
     // 7. A second APPROVED Lembaga + its LEMBAGA_ADMIN (for multi-tenant demo) ─
@@ -654,6 +680,7 @@ const COA_TEMPLATE: CsvCoaRow[] = [
   { code: "1101", name: "Kas", accountType: "ASSET", normalBalance: "DEBIT", isHeader: false, parentCode: "1100", level: 3 },
   { code: "1102", name: "Kas Kecil", accountType: "ASSET", normalBalance: "DEBIT", isHeader: false, parentCode: "1100", level: 3 },
   { code: "1103", name: "Bank", accountType: "ASSET", normalBalance: "DEBIT", isHeader: false, parentCode: "1100", level: 3 },
+  { code: "1104", name: "Kas Dalam Perjalanan", accountType: "ASSET", normalBalance: "DEBIT", isHeader: false, parentCode: "1100", level: 3 },
   { code: "1110", name: "Piutang", accountType: "ASSET", normalBalance: "DEBIT", isHeader: true, parentCode: "1000", level: 2 },
   { code: "1111", name: "Piutang Lain-lain", accountType: "ASSET", normalBalance: "DEBIT", isHeader: false, parentCode: "1110", level: 3 },
   { code: "1120", name: "Persediaan", accountType: "ASSET", normalBalance: "DEBIT", isHeader: true, parentCode: "1000", level: 2 },
@@ -715,6 +742,7 @@ const COA_TEMPLATE: CsvCoaRow[] = [
   { code: "6111", name: "Beban Penyusutan Kendaraan", accountType: "EXPENSE", normalBalance: "DEBIT", isHeader: false, parentCode: "6100", level: 3 },
   { code: "6112", name: "Beban Penyusutan Gedung", accountType: "EXPENSE", normalBalance: "DEBIT", isHeader: false, parentCode: "6100", level: 3 },
   { code: "6113", name: "Beban Operasional Lainnya", accountType: "EXPENSE", normalBalance: "DEBIT", isHeader: false, parentCode: "6100", level: 3 },
+  { code: "6114", name: "Beban Platform", accountType: "EXPENSE", normalBalance: "DEBIT", isHeader: false, parentCode: "6100", level: 3 },
 ];
 
 /**

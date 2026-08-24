@@ -70,7 +70,7 @@ export class LembagaRepository {
   async findById(id: string) {
     return this.prisma.lembaga.findUnique({
       where: { id },
-      include: { documents: true },
+      include: { documents: true, balance: true },
     });
   }
 

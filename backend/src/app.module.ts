@@ -29,6 +29,8 @@ import { WebhooksModule } from "./modules/webhooks/webhooks.module";
 import { CoaModule } from "./modules/coa/coa.module";
 import { JournalModule } from "./modules/journal/journal.module";
 import { LedgerModule } from "./modules/ledger/ledger.module";
+import { XenditModule } from "./lib/xendit/xendit.module";
+import { WithdrawalsModule } from "./modules/withdrawals/withdrawals.module";
 
 const isDev = process.env.NODE_ENV !== "production";
 
@@ -89,6 +91,8 @@ const isDev = process.env.NODE_ENV !== "production";
     CoaModule,
     JournalModule,
     LedgerModule,
+    XenditModule,
+    WithdrawalsModule,
   ],
   controllers: [HealthController],
   providers: [

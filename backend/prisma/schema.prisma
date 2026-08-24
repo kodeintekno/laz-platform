@@ -37,6 +37,8 @@ model User {
   volunteerActivitiesCreated        VolunteerActivity[]    @relation("VolunteerActivityCreator")
   journalsCreated                   Journal[]              @relation("JournalCreator")
   journalsPosted                    Journal[]              @relation("JournalPoster")
+  withdrawalsRequested              Withdrawal[]           @relation("WithdrawalRequester")
+  withdrawalsApproved               Withdrawal[]           @relation("WithdrawalApprover")
 
   @@map("users")
 }
@@ -59,6 +61,9 @@ model Lembaga {
   officePhotoPublicId   String?
   website               String?
   izinYayasanNumber     String?
+  bankCode              String?
+  accountNumber         String?
+  accountHolder         String?
   createdAt             DateTime               @default(now())
   updatedAt             DateTime               @updatedAt
   auditLogs             AuditLog[]
@@ -72,6 +77,8 @@ model Lembaga {
   journals              Journal[]
   volunteerApplications VolunteerApplication[]
   volunteerActivities   VolunteerActivity[]
+  balance               InstitutionBalance?
+  withdrawals           Withdrawal[]
   approvedBy            User?                  @relation("LembagaApprover", fields: [approvedById], references: [id], onDelete: SetNull)
 
   @@map("lembagas")
@@ -189,39 +196,44 @@ model Program {
 }
 
 model Donation {
-  id          String         @id @default(cuid())
-  lembagaId   String
-  programId   String
-  donorName   String?
-  donorEmail  String?
-  donorPhone  String?
-  amount      Decimal        @db.Decimal(12, 2)
-  message     String?
-  isAnonymous Boolean        @default(false)
-  status      DonationStatus @default(PENDING)
-  createdAt   DateTime       @default(now())
-  updatedAt   DateTime       @updatedAt
-  lembaga     Lembaga        @relation(fields: [lembagaId], references: [id], onDelete: Cascade)
-  program     Program        @relation(fields: [programId], references: [id])
-  payment     Payment?
+  id                String         @id @default(cuid())
+  lembagaId         String
+  programId         String
+  donorName         String?
+  donorEmail        String?
+  donorPhone        String?
+  amount            Decimal        @db.Decimal(12, 2)
+  platformFee       Decimal        @default(0) @db.Decimal(12, 2)
+  institutionAmount Decimal        @default(0) @db.Decimal(12, 2)
+  message           String?
+  isAnonymous       Boolean        @default(false)
+  status            DonationStatus @default(PENDING)
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+  lembaga           Lembaga        @relation(fields: [lembagaId], references: [id], onDelete: Cascade)
+  program           Program        @relation(fields: [programId], references: [id])
+  payment           Payment?
 
   @@index([donorPhone])
   @@map("donations")
 }
 
 model Payment {
-  id            String        @id @default(cuid())
-  lembagaId     String
-  donationId    String        @unique
-  gatewayRef    String?       @unique
-  amount        Decimal       @db.Decimal(12, 2)
-  paymentMethod String?
-  status        PaymentStatus @default(PENDING)
-  metadata      Json?
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
-  donation      Donation      @relation(fields: [donationId], references: [id], onDelete: Cascade)
-  lembaga       Lembaga       @relation(fields: [lembagaId], references: [id], onDelete: Cascade)
+  id                     String        @id @default(cuid())
+  lembagaId              String
+  donationId             String        @unique
+  gatewayRef             String?       @unique
+  xenditPaymentRequestId String?       @unique
+  amount                 Decimal       @db.Decimal(12, 2)
+  paymentMethod          String?
+  status                 PaymentStatus @default(PENDING)
+  expiresAt              DateTime?
+  paidAt                 DateTime?
+  metadata               Json?
+  createdAt              DateTime      @default(now())
+  updatedAt              DateTime      @updatedAt
+  donation               Donation      @relation(fields: [donationId], references: [id], onDelete: Cascade)
+  lembaga                Lembaga       @relation(fields: [lembagaId], references: [id], onDelete: Cascade)
 
   @@map("payments")
 }
@@ -390,6 +402,9 @@ enum AuditAction {
   VOLUNTEER_APPLICATION_REVIEW
   VOLUNTEER_REPORT_SUBMIT
   VOLUNTEER_REPORT_VERIFY
+  WITHDRAWAL_REQUEST
+  WITHDRAWAL_APPROVE
+  WITHDRAWAL_REJECT
 }
 
 enum ProgramCategory {
@@ -422,25 +437,25 @@ enum DistributionStatus {
 /// saat lembaga disetujui). Lembaga tidak dapat menambah/mengedit/menghapus
 /// akun sistem (isSystem=true, isEditable=false, isDeletable=false).
 model ChartOfAccount {
-  id            String        @id @default(cuid())
-  lembagaId     String
-  code          String
-  name          String
-  accountType   AccountType
-  normalBalance NormalBalance
+  id             String          @id @default(cuid())
+  lembagaId      String
+  code           String
+  name           String
+  accountType    AccountType
+  normalBalance  NormalBalance
   /// true = akun ini hanya header/grouping, tidak boleh digunakan di jurnal
-  isHeader      Boolean       @default(false)
+  isHeader       Boolean         @default(false)
   /// Kode akun induk (mis. "1100" untuk akun 1101)
-  parentCode    String?
+  parentCode     String?
   /// Level hirarki: 1=root, 2=group, 3=detail
-  level         Int           @default(1)
-  isSystem      Boolean       @default(true)
-  isEditable    Boolean       @default(false)
-  isDeletable   Boolean       @default(false)
-  isActive      Boolean       @default(true)
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
-  lembaga       Lembaga       @relation(fields: [lembagaId], references: [id], onDelete: Cascade)
+  level          Int             @default(1)
+  isSystem       Boolean         @default(true)
+  isEditable     Boolean         @default(false)
+  isDeletable    Boolean         @default(false)
+  isActive       Boolean         @default(true)
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  lembaga        Lembaga         @relation(fields: [lembagaId], references: [id], onDelete: Cascade)
   journalDetails JournalDetail[]
 
   @@unique([lembagaId, code])
@@ -481,11 +496,11 @@ model Journal {
   createdAt   DateTime          @default(now())
   updatedAt   DateTime          @updatedAt
 
-  lembaga     Lembaga           @relation(fields: [lembagaId], references: [id], onDelete: Cascade)
-  program     Program?          @relation(fields: [programId], references: [id], onDelete: SetNull)
-  createdBy   User?             @relation("JournalCreator", fields: [createdById], references: [id])
-  postedBy    User?             @relation("JournalPoster", fields: [postedById], references: [id], onDelete: SetNull)
-  details     JournalDetail[]
+  lembaga   Lembaga         @relation(fields: [lembagaId], references: [id], onDelete: Cascade)
+  program   Program?        @relation(fields: [programId], references: [id], onDelete: SetNull)
+  createdBy User?           @relation("JournalCreator", fields: [createdById], references: [id])
+  postedBy  User?           @relation("JournalPoster", fields: [postedById], references: [id], onDelete: SetNull)
+  details   JournalDetail[]
 
   @@unique([lembagaId, journalNo])
   @@unique([sourceType, sourceId])
@@ -496,16 +511,16 @@ model Journal {
 
 /// Baris jurnal — satu baris debit ATAU kredit (tidak boleh keduanya).
 model JournalDetail {
-  id          String         @id @default(cuid())
+  id          String   @id @default(cuid())
   journalId   String
   accountId   String
-  debit       Decimal        @default(0) @db.Decimal(15, 2)
-  credit      Decimal        @default(0) @db.Decimal(15, 2)
+  debit       Decimal  @default(0) @db.Decimal(15, 2)
+  credit      Decimal  @default(0) @db.Decimal(15, 2)
   description String?
-  createdAt   DateTime       @default(now())
+  createdAt   DateTime @default(now())
 
-  journal     Journal        @relation(fields: [journalId], references: [id], onDelete: Cascade)
-  account     ChartOfAccount @relation(fields: [accountId], references: [id])
+  journal Journal        @relation(fields: [journalId], references: [id], onDelete: Cascade)
+  account ChartOfAccount @relation(fields: [accountId], references: [id])
 
   @@index([journalId])
   @@map("journal_details")
@@ -524,4 +539,86 @@ enum JournalSourceType {
   REFUND
   EXPENSE
   ASSET_PURCHASE
+  WITHDRAWAL
+}
+
+// ─── Balance ──────────────────────────────────────────────────────────────────
+
+/// Saldo lembaga (cached running balance dari jurnal)
+model InstitutionBalance {
+  id              String   @id @default(cuid())
+  lembagaId       String   @unique
+  balance         Decimal  @default(0) @db.Decimal(15, 2)
+  reservedBalance Decimal  @default(0) @db.Decimal(15, 2)
+  updatedAt       DateTime @updatedAt
+
+  lembaga Lembaga @relation(fields: [lembagaId], references: [id], onDelete: Cascade)
+
+  @@map("institution_balances")
+}
+
+// ─── Withdrawal ───────────────────────────────────────────────────────────────
+
+model Withdrawal {
+  id              String           @id @default(cuid())
+  lembagaId       String
+  amount          Decimal          @db.Decimal(15, 2)
+  status          WithdrawalStatus @default(PENDING)
+  bankCode        String
+  accountNumber   String
+  accountHolder   String
+  rejectionReason String?
+  requestedById   String
+  approvedById    String?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  lembaga     Lembaga @relation(fields: [lembagaId], references: [id], onDelete: Cascade)
+  requestedBy User    @relation("WithdrawalRequester", fields: [requestedById], references: [id])
+  approvedBy  User?   @relation("WithdrawalApprover", fields: [approvedById], references: [id])
+  payout      Payout?
+
+  @@map("withdrawals")
+}
+
+enum WithdrawalStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  PROCESSING
+  COMPLETED
+  FAILED
+  REVERSED
+}
+
+model Payout {
+  id             String       @id @default(cuid())
+  withdrawalId   String       @unique
+  xenditPayoutId String?      @unique
+  referenceId    String       @unique
+  idempotencyKey String       @unique
+  amount         Decimal      @db.Decimal(15, 2)
+  channelCode    String
+  accountNumber  String
+  accountHolder  String
+  status         PayoutStatus @default(REQUESTED)
+  failureCode    String?
+  metadata       Json?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  withdrawal Withdrawal @relation(fields: [withdrawalId], references: [id], onDelete: Cascade)
+
+  @@map("payouts")
+}
+
+enum PayoutStatus {
+  REQUESTED
+  ACCEPTED
+  PROCESSING
+  SUCCEEDED
+  FAILED
+  LOCKED
+  CANCELLED
+  REVERSED
 }
