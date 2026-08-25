@@ -90,8 +90,10 @@ export class AutoJournalService {
     const debitCoaId = await this.getCoaId(tx, lembagaId, "1101");
     const creditCoaId = await this.getCoaId(tx, lembagaId, this.getDonationCreditCode(programCategory));
     const amilCreditCoaId = await this.getCoaId(tx, lembagaId, "4105");
+    const amilPlatformDebitCoaId = await this.getCoaId(tx, lembagaId, "6114"); // Beban Platform
 
     const netAmountToInstitution = netAmount + amilInstitutionAmount;
+    const totalAmilRevenue = amilInstitutionAmount + amilPlatformAmount;
 
     await tx.journal.create({
       data: {
@@ -107,8 +109,9 @@ export class AutoJournalService {
         details: {
           create: [
             { accountId: debitCoaId, debit: netAmountToInstitution, credit: 0, description: "Penerimaan Kas Bersih (Nett)" },
+            ...(amilPlatformAmount > 0 ? [{ accountId: amilPlatformDebitCoaId, debit: amilPlatformAmount, credit: 0, description: "Beban Platform" }] : []),
             { accountId: creditCoaId, debit: 0, credit: netAmount, description: "Penerimaan Donasi (Dana Wajib)" },
-            ...(amilInstitutionAmount > 0 ? [{ accountId: amilCreditCoaId, debit: 0, credit: amilInstitutionAmount, description: "Hak Amil Lembaga" }] : []),
+            ...(totalAmilRevenue > 0 ? [{ accountId: amilCreditCoaId, debit: 0, credit: totalAmilRevenue, description: "Hak Amil (Lembaga & Beban Platform)" }] : []),
           ]
         }
       }
