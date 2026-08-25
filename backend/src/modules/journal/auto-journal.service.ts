@@ -48,6 +48,8 @@ export class AutoJournalService {
       case "INFAK": return "4102";
       case "SEDEKAH": return "4103";
       case "WAKAF": return "4104";
+      case "CSR": return "4108";
+      case "DSKL": return "4109";
       default: return "4102";
     }
   }
@@ -58,6 +60,8 @@ export class AutoJournalService {
       case "INFAK": return "5102";
       case "SEDEKAH": return "5103";
       case "WAKAF": return "5104";
+      case "CSR": return "5105";
+      case "DSKL": return "5106";
       default: return "5102";
     }
   }

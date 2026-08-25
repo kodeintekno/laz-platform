@@ -412,6 +412,8 @@ enum ProgramCategory {
   INFAK
   SEDEKAH
   WAKAF
+  CSR
+  DSKL
 }
 
 enum ProgramStatus {

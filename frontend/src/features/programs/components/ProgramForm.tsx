@@ -74,7 +74,7 @@ export function ProgramForm({
     router.back();
   };
 
-  const PROGRAM_CATEGORIES = ["ZAKAT", "INFAK", "SEDEKAH", "WAKAF"] as const;
+  const PROGRAM_CATEGORIES = ["ZAKAT", "INFAK", "SEDEKAH", "WAKAF", "CSR", "DSKL"] as const;
   const ALL_STATUS_LABELS: Record<string, string> = {
     DRAFT: "Draft (Sembunyikan)",
     PENDING_REVIEW: "Ajukan untuk Direview",
