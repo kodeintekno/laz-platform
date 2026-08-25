@@ -31,6 +31,7 @@ import { JournalModule } from "./modules/journal/journal.module";
 import { LedgerModule } from "./modules/ledger/ledger.module";
 import { XenditModule } from "./lib/xendit/xendit.module";
 import { WithdrawalsModule } from "./modules/withdrawals/withdrawals.module";
+import { AmilModule } from "./modules/amil/amil.module";
 
 const isDev = process.env.NODE_ENV !== "production";
 
@@ -93,6 +94,7 @@ const isDev = process.env.NODE_ENV !== "production";
     LedgerModule,
     XenditModule,
     WithdrawalsModule,
+    AmilModule,
   ],
   controllers: [HealthController],
   providers: [

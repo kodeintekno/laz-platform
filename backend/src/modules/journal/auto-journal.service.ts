@@ -70,8 +70,9 @@ export class AutoJournalService {
     tx: Prisma.TransactionClient,
     donationId: string,
     amount: number,
-    platformFee: number,
-    institutionAmount: number,
+    amilPlatformAmount: number,
+    amilInstitutionAmount: number,
+    netAmount: number,
     programId: string,
     lembagaId: string,
     programCategory: string
@@ -87,8 +88,10 @@ export class AutoJournalService {
 
     const journalNo = await this.generateJournalNo(tx, lembagaId, new Date());
     const debitCoaId = await this.getCoaId(tx, lembagaId, "1101");
-    const platformFeeCoaId = await this.getCoaId(tx, lembagaId, "6114");
     const creditCoaId = await this.getCoaId(tx, lembagaId, this.getDonationCreditCode(programCategory));
+    const amilCreditCoaId = await this.getCoaId(tx, lembagaId, "4105");
+
+    const netAmountToInstitution = netAmount + amilInstitutionAmount;
 
     await tx.journal.create({
       data: {
@@ -103,9 +106,9 @@ export class AutoJournalService {
         postedAt: new Date(),
         details: {
           create: [
-            { accountId: debitCoaId, debit: institutionAmount, credit: 0, description: "Penerimaan Kas Bersih" },
-            { accountId: platformFeeCoaId, debit: platformFee, credit: 0, description: "Biaya Platform (12.5%)" },
-            { accountId: creditCoaId, debit: 0, credit: amount, description: "Penerimaan Donasi" },
+            { accountId: debitCoaId, debit: netAmountToInstitution, credit: 0, description: "Penerimaan Kas Bersih (Nett)" },
+            { accountId: creditCoaId, debit: 0, credit: netAmount, description: "Penerimaan Donasi (Dana Wajib)" },
+            ...(amilInstitutionAmount > 0 ? [{ accountId: amilCreditCoaId, debit: 0, credit: amilInstitutionAmount, description: "Hak Amil Lembaga" }] : []),
           ]
         }
       }

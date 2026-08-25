@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api-client";
 import { useAuth } from "@/auth/AuthProvider";
 import { useSearchParams } from "react-router-dom";
@@ -6,7 +6,10 @@ import { CoaTree, type CoaAccount } from "@/features/coa/components/CoaTree";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { UserLembagaFilter } from "@/features/users/components/UserLembagaFilter";
-import { Info, BookMarked } from "lucide-react";
+import { Info, BookMarked, RefreshCw } from "lucide-react";
+import { provisionCoaAction } from "@/features/coa/actions/coa.actions";
+import { toast } from "@/stores/toast.store";
+import { Button } from "@/components/ui/Button";
 
 function CoaSkeletonRow({ indent = 0 }: { indent?: number }) {
   return (
@@ -108,18 +111,25 @@ export function CoaPage() {
         </div>
       )}
 
-      {/* Stats */}
+      {/* Stats & Actions */}
       {!isLoading && accounts.length > 0 && (
-        <div className="flex items-center gap-6 text-sm text-secondary">
-          <span>
-            <strong className="text-primary">{accounts.length}</strong> total akun
-          </span>
-          <span>
-            <strong className="text-primary">{totalDetail}</strong> akun detail
-          </span>
-          <span>
-            <strong className="text-primary">{totalHeader}</strong> header group
-          </span>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-6 text-sm text-secondary">
+            <span>
+              <strong className="text-primary">{accounts.length}</strong> total akun
+            </span>
+            <span>
+              <strong className="text-primary">{totalDetail}</strong> akun detail
+            </span>
+            <span>
+              <strong className="text-primary">{totalHeader}</strong> header group
+            </span>
+          </div>
+          
+          {/* If accounts are less than the template (~60-70), show a sync button */}
+          {accounts.length < 60 && (
+            <SyncCoaButton lembagaId={lembagaId} />
+          )}
         </div>
       )}
 
@@ -128,5 +138,34 @@ export function CoaPage() {
         isLoading ? <CoaSkeleton /> : <CoaTree accounts={accounts} />
       )}
     </div>
+  );
+}
+
+function SyncCoaButton({ lembagaId }: { lembagaId?: string }) {
+  const queryClient = useQueryClient();
+  const { mutate: provision, isPending } = useMutation({
+    mutationFn: () => provisionCoaAction(lembagaId),
+    onSuccess: (res) => {
+      if (res.success) {
+        toast.success("Chart of Accounts berhasil disinkronisasi");
+        queryClient.invalidateQueries({ queryKey: ["coa"] });
+      } else {
+        toast.error(res.error || "Gagal sinkronisasi Chart of Accounts");
+      }
+    },
+    onError: () => toast.error("Terjadi kesalahan sistem"),
+  });
+
+  return (
+    <Button 
+      intent="outline" 
+      size="sm" 
+      onClick={() => provision()} 
+      isLoading={isPending}
+      className="flex items-center gap-2"
+    >
+      <RefreshCw className="w-4 h-4" />
+      Sync COA yang Kurang
+    </Button>
   );
 }

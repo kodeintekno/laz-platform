@@ -139,6 +139,32 @@ async function main() {
   }
   console.log(` ✓ ${PERMISSION_DEFINITIONS.length} permissions\n`);
 
+  console.log("\n⚙️ Seeding Amil Global Settings...");
+  const globalSettings = [
+    { category: "ZAKAT", maxTotalPercentage: 12.5, defaultPlatformPercentage: 5 },
+    { category: "INFAK", maxTotalPercentage: 20, defaultPlatformPercentage: 5 },
+    { category: "SEDEKAH", maxTotalPercentage: 20, defaultPlatformPercentage: 5 },
+    { category: "WAKAF", maxTotalPercentage: 10, defaultPlatformPercentage: 5 },
+    { category: "CSR", maxTotalPercentage: 20, defaultPlatformPercentage: 5 },
+    { category: "DSKL", maxTotalPercentage: 20, defaultPlatformPercentage: 5 },
+  ];
+
+  for (const setting of globalSettings) {
+    await prisma.amilGlobalSetting.upsert({
+      where: { category: setting.category as any },
+      update: {
+        maxTotalPercentage: setting.maxTotalPercentage,
+        defaultPlatformPercentage: setting.defaultPlatformPercentage,
+      },
+      create: {
+        category: setting.category as any,
+        maxTotalPercentage: setting.maxTotalPercentage,
+        defaultPlatformPercentage: setting.defaultPlatformPercentage,
+      },
+    });
+  }
+  console.log(" ✓ Amil Global Settings seeded\n");
+
   // 2. Upsert final role set
   console.log("🔐 Seeding roles...");
   const roleMap: Record<string, string> = {};
@@ -376,10 +402,27 @@ async function main() {
       await prisma.distribution.deleteMany({ where: { programId: createdProgram.id } });
 
       for (const d of prog.donations) {
-        // Hitung split 12.5% / 87.5% untuk donasi yang sudah PAID
+        // Hitung split amil berdasarkan global setting
         const isPaid = d.status === "PAID";
-        const platformFee = isPaid ? Math.floor(d.amount * 0.125) : 0;
-        const institutionAmount = isPaid ? d.amount - platformFee : 0;
+        let platformPercentage = 0;
+        let institutionPercentage = 0;
+        let amilPlatformAmount = 0;
+        let amilInstitutionAmount = 0;
+        let netAmount = d.amount;
+
+        if (isPaid) {
+          const setting = globalSettings.find(s => s.category === prog.category);
+          platformPercentage = setting ? setting.defaultPlatformPercentage : 5;
+          institutionPercentage = setting ? setting.maxTotalPercentage - platformPercentage : 7.5;
+          
+          amilPlatformAmount = Math.floor(d.amount * (platformPercentage / 100));
+          amilInstitutionAmount = Math.floor(d.amount * (institutionPercentage / 100));
+          netAmount = d.amount - amilPlatformAmount - amilInstitutionAmount;
+        }
+
+        // Legacy fields
+        const platformFee = amilPlatformAmount;
+        const institutionAmount = amilInstitutionAmount + netAmount;
 
         await prisma.donation.create({
           data: {
@@ -388,6 +431,11 @@ async function main() {
             amount: d.amount,
             platformFee,
             institutionAmount,
+            platformPercentage,
+            institutionPercentage,
+            amilPlatformAmount,
+            amilInstitutionAmount,
+            netAmount,
             status: d.status as any,
             isAnonymous: d.anon,
             donorName: d.anon ? "Hamba Allah" : d.name,

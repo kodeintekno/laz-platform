@@ -109,7 +109,7 @@ export function AdminWithdrawalPage() {
     <>
       <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold text-surface-stronger">Antrean Pencairan Dana</h1>
+        <h1 className="text-2xl font-bold text-surface-stronger">Antrean Pengajuan Penarikan</h1>
       </div>
 
       <div className="flex gap-2">
@@ -129,7 +129,7 @@ export function AdminWithdrawalPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Daftar Pengajuan Pencairan</CardTitle>
+          <CardTitle>Daftar Pengajuan Penarikan</CardTitle>
         </CardHeader>
         <CardContent>
           {isLoading ? (
@@ -215,7 +215,7 @@ export function AdminWithdrawalPage() {
                                 onClick={() => openRetryConfirm(w.id)}
                                 disabled={approveWithdrawal.isPending || rejectWithdrawal.isPending || retryPayout.isPending}
                               >
-                                Coba Ulang Payout
+                                Coba Ulang Transfer
                               </Button>
                             )}
                           </div>
@@ -316,7 +316,7 @@ export function AdminWithdrawalPage() {
         onClose={() => setIsRetryConfirmOpen(false)}
         onConfirm={confirmRetryPayout}
         title="Konfirmasi Coba Ulang"
-        message="Pencairan ini tertahan. Apakah Anda yakin ingin mencoba ulang proses payout ke gateway?"
+        message="Pencairan ini tertahan. Apakah Anda yakin ingin mencoba ulang proses transfer ke bank?"
         confirmText={retryPayout.isPending ? "Memproses..." : "Coba Ulang"}
         cancelText="Batal"
         intent="primary"

@@ -47,8 +47,8 @@ export function PayoutsListPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Manajemen Payouts (Xendit)"
-        description="Daftar transaksi payout yang dikirim ke bank melalui gateway. Status diperbarui secara otomatis via Webhook."
+        title="Riwayat Penarikan"
+        description="Daftar riwayat penarikan dana ke rekening bank. Status transaksi akan diperbarui secara otomatis."
       />
 
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -77,10 +77,9 @@ export function PayoutsListPage() {
           })}
         </div>
       </div>
-
       {isLoading ? (
         <TableSkeleton
-          headers={["Payout ID / Ref", "Lembaga", "Nominal", "Bank Tujuan", "Status", "Dibuat Pada", "Selesai Pada"]}
+          headers={["ID Referensi", "Lembaga", "Nominal", "Bank Tujuan", "Status", "Dibuat Pada", "Selesai Pada"]}
           rowCount={limit}
           columnTypes={["text", "text", "text", "text", "text", "text", "text"]}
         />
@@ -90,7 +89,7 @@ export function PayoutsListPage() {
             <table className="w-full text-sm text-left">
               <thead className="text-xs text-surface-strong uppercase bg-surface-soft border-b border-border/40">
                 <tr>
-                  <th className="px-6 py-4 font-semibold">Payout ID / Ref</th>
+                  <th className="px-6 py-4 font-semibold">ID Referensi</th>
                   <th className="px-6 py-4 font-semibold">Lembaga</th>
                   <th className="px-6 py-4 font-semibold">Nominal</th>
                   <th className="px-6 py-4 font-semibold">Bank Tujuan</th>
@@ -103,7 +102,7 @@ export function PayoutsListPage() {
                 {payouts.length === 0 ? (
                   <tr>
                     <td colSpan={7} className="px-6 py-12 text-center text-secondary">
-                      Tidak ada data payout yang ditemukan.
+                      Tidak ada riwayat penarikan yang ditemukan.
                     </td>
                   </tr>
                 ) : (
@@ -111,7 +110,6 @@ export function PayoutsListPage() {
                     <tr key={payout.id} className="hover:bg-surface-soft/50 transition">
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="font-semibold text-primary">{payout.referenceId}</div>
-                        <div className="text-xs text-secondary mt-0.5">XND: {payout.xenditPayoutId || "-"}</div>
                       </td>
                       <td className="px-6 py-4">
                         <div className="font-medium text-primary">
@@ -144,7 +142,7 @@ export function PayoutsListPage() {
           {meta && meta.totalPages > 1 && (
             <div className="p-4 border-t border-border/40 flex justify-between items-center bg-surface-soft/30">
               <span className="text-sm text-secondary">
-                Halaman {meta.page} dari {meta.totalPages} (Total: {meta.total} Payouts)
+                Halaman {meta.page} dari {meta.totalPages} (Total: {meta.total} Transaksi)
               </span>
               <div className="flex gap-2">
                 <button

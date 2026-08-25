@@ -1,6 +1,7 @@
 import { Injectable } from "@nestjs/common";
 import { PrismaService } from "../../prisma/prisma.service";
 import { AutoJournalService } from "../journal/auto-journal.service";
+import { AmilService } from "../amil/amil.service";
 import type { DonationStatus, PaymentStatus } from "@prisma/client";
 
 /**
@@ -11,6 +12,7 @@ export class PaymentsRepository {
   constructor(
     private readonly prisma: PrismaService,
     private readonly autoJournalService: AutoJournalService,
+    private readonly amilService: AmilService,
   ) { }
 
   /**
@@ -58,13 +60,31 @@ export class PaymentsRepository {
         return { success: false, reason: "ALREADY_PROCESSED" };
       }
 
+      // We need program category and lembagaId for Amil split
+      const program = await tx.program.findUniqueOrThrow({
+        where: { id: params.programId },
+        select: { id: true, lembagaId: true, category: true }
+      });
+
       // 2. Hitung Revenue Split lebih dulu jika PAID (diperlukan untuk update donation)
-      let platformFee = 0;
-      let institutionAmount = 0;
+      let platformPercentage = 0;
+      let institutionPercentage = 0;
+      let amilPlatformAmount = 0;
+      let amilInstitutionAmount = 0;
+      let netAmount = 0;
+      let platformFee = 0; // Legacy
+      let institutionAmount = 0; // Legacy
+
       if (params.newDonationStatus === "PAID") {
-        // Gunakan integer arithmetic untuk menghindari floating point issues
-        platformFee = Math.floor(Number(params.amount) * 0.125);
-        institutionAmount = Number(params.amount) - platformFee;
+        const split = await this.amilService.calculateSplit(Number(params.amount), program.category, program.lembagaId, tx);
+        platformPercentage = split.platformPercentage;
+        institutionPercentage = split.institutionPercentage;
+        amilPlatformAmount = split.amilPlatformAmount;
+        amilInstitutionAmount = split.amilInstitutionAmount;
+        netAmount = split.netAmount;
+        
+        platformFee = amilPlatformAmount;
+        institutionAmount = amilInstitutionAmount + netAmount;
       }
 
       // 3. Update Donation Status + simpan platformFee & institutionAmount
@@ -75,13 +95,18 @@ export class PaymentsRepository {
           ...(params.newDonationStatus === "PAID" && {
             platformFee,
             institutionAmount,
+            platformPercentage,
+            institutionPercentage,
+            amilPlatformAmount,
+            amilInstitutionAmount,
+            netAmount,
           }),
         },
       });
 
       // 4. Atomically increment program current amount if the donation is paid
       if (params.newDonationStatus === "PAID") {
-        const program = await tx.program.update({
+        await tx.program.update({
           where: { id: params.programId },
           data: {
             currentAmount: {
@@ -95,8 +120,9 @@ export class PaymentsRepository {
           tx,
           params.donationId,
           Number(params.amount),
-          platformFee,
-          institutionAmount,
+          amilPlatformAmount,
+          amilInstitutionAmount,
+          netAmount,
           params.programId,
           program.lembagaId,
           program.category

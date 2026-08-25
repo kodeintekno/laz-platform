@@ -67,16 +67,22 @@ export const NAV_ITEMS: NavItem[] = [
     icon: "Landmark",
     children: [
       {
-        label: "Withdrawals",
+        label: "Pengajuan Penarikan",
         href: "/dashboard/withdrawals",
         icon: "Banknote",
         permission: PERMISSIONS.WITHDRAWALS_MANAGE as any,
       },
       {
-        label: "Payouts",
+        label: "Riwayat Penarikan",
         href: "/dashboard/payouts",
         icon: "Receipt",
         permission: PERMISSIONS.WITHDRAWALS_MANAGE as any,
+      },
+      {
+        label: "Persentase",
+        href: "/dashboard/amil-global",
+        icon: "Coins",
+        permission: PERMISSIONS.SETTINGS_MANAGE,
       },
     ],
   },
@@ -104,6 +110,13 @@ export const NAV_ITEMS: NavItem[] = [
         label: "Bank Account",
         href: "/dashboard/lembaga/finance/bank-account",
         icon: "CreditCard",
+        permission: PERMISSIONS.LEMBAGA_READ,
+        requiresLembaga: true,
+      },
+      {
+        label: "Persentase",
+        href: "/dashboard/lembaga/finance/amil",
+        icon: "Coins",
         permission: PERMISSIONS.LEMBAGA_READ,
         requiresLembaga: true,
       },

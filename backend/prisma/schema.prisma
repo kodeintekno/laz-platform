@@ -79,6 +79,7 @@ model Lembaga {
   volunteerActivities   VolunteerActivity[]
   balance               InstitutionBalance?
   withdrawals           Withdrawal[]
+  amilInstitutionSettings AmilInstitutionSetting[]
   approvedBy            User?                  @relation("LembagaApprover", fields: [approvedById], references: [id], onDelete: SetNull)
 
   @@map("lembagas")
@@ -196,23 +197,28 @@ model Program {
 }
 
 model Donation {
-  id                String         @id @default(cuid())
-  lembagaId         String
-  programId         String
-  donorName         String?
-  donorEmail        String?
-  donorPhone        String?
-  amount            Decimal        @db.Decimal(12, 2)
-  platformFee       Decimal        @default(0) @db.Decimal(12, 2)
-  institutionAmount Decimal        @default(0) @db.Decimal(12, 2)
-  message           String?
-  isAnonymous       Boolean        @default(false)
-  status            DonationStatus @default(PENDING)
-  createdAt         DateTime       @default(now())
-  updatedAt         DateTime       @updatedAt
-  lembaga           Lembaga        @relation(fields: [lembagaId], references: [id], onDelete: Cascade)
-  program           Program        @relation(fields: [programId], references: [id])
-  payment           Payment?
+  id                    String         @id @default(cuid())
+  lembagaId             String
+  programId             String
+  donorName             String?
+  donorEmail            String?
+  donorPhone            String?
+  amount                Decimal        @db.Decimal(12, 2)
+  platformFee           Decimal        @default(0) @db.Decimal(12, 2)
+  institutionAmount     Decimal        @default(0) @db.Decimal(12, 2)
+  platformPercentage    Decimal        @default(0) @db.Decimal(5, 2)
+  institutionPercentage Decimal        @default(0) @db.Decimal(5, 2)
+  amilPlatformAmount    Decimal        @default(0) @db.Decimal(12, 2)
+  amilInstitutionAmount Decimal        @default(0) @db.Decimal(12, 2)
+  netAmount             Decimal        @default(0) @db.Decimal(12, 2)
+  message               String?
+  isAnonymous           Boolean        @default(false)
+  status                DonationStatus @default(PENDING)
+  createdAt             DateTime       @default(now())
+  updatedAt             DateTime       @updatedAt
+  lembaga               Lembaga        @relation(fields: [lembagaId], references: [id], onDelete: Cascade)
+  program               Program        @relation(fields: [programId], references: [id])
+  payment               Payment?
 
   @@index([donorPhone])
   @@map("donations")
@@ -430,6 +436,34 @@ enum DistributionStatus {
   APPROVED
   REJECTED
   COMPLETED
+}
+
+// ─── Amil Configuration ───────────────────────────────────────────────────────
+
+model AmilGlobalSetting {
+  id                        String          @id @default(cuid())
+  category                  ProgramCategory @unique
+  maxTotalPercentage        Decimal         @db.Decimal(5, 2)
+  defaultPlatformPercentage Decimal         @db.Decimal(5, 2)
+  createdAt                 DateTime        @default(now())
+  updatedAt                 DateTime        @updatedAt
+
+  @@map("amil_global_settings")
+}
+
+model AmilInstitutionSetting {
+  id                    String          @id @default(cuid())
+  lembagaId             String
+  category              ProgramCategory
+  institutionPercentage Decimal         @db.Decimal(5, 2)
+  platformPercentage    Decimal         @db.Decimal(5, 2)
+  createdAt             DateTime        @default(now())
+  updatedAt             DateTime        @updatedAt
+
+  lembaga Lembaga @relation(fields: [lembagaId], references: [id], onDelete: Cascade)
+
+  @@unique([lembagaId, category])
+  @@map("amil_institution_settings")
 }
 
 // ─── Accounting ───────────────────────────────────────────────────────────────

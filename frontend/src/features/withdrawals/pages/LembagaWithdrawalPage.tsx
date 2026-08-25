@@ -81,7 +81,7 @@ export function LembagaWithdrawalPage() {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold text-surface-stronger">Pencairan Dana (Withdrawal)</h1>
+        <h1 className="text-2xl font-bold text-surface-stronger">Pengajuan Penarikan</h1>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

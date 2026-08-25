@@ -3,12 +3,14 @@ import { PrismaService } from "../../prisma/prisma.service";
 import type { DonationStatus, Prisma } from "@prisma/client";
 import { AppError } from "../../common/errors/app.error";
 import { AutoJournalService } from "../journal/auto-journal.service";
+import { AmilService } from "../amil/amil.service";
 
 @Injectable()
 export class DonationsRepository {
   constructor(
     private readonly prisma: PrismaService,
-    private readonly autoJournalService: AutoJournalService
+    private readonly autoJournalService: AutoJournalService,
+    private readonly amilService: AmilService
   ) {}
 
   /**
@@ -251,8 +253,25 @@ export class DonationsRepository {
       }
 
       // Hitung Revenue Split jika PAID sebelum membuat donation record
-      const platformFee = data.status === "PAID" ? Math.floor(data.amount * 0.125) : 0;
-      const institutionAmount = data.status === "PAID" ? data.amount - platformFee : 0;
+      let platformPercentage = 0;
+      let institutionPercentage = 0;
+      let amilPlatformAmount = 0;
+      let amilInstitutionAmount = 0;
+      let netAmount = 0;
+      let platformFee = 0;
+      let institutionAmount = 0;
+
+      if (data.status === "PAID") {
+        const split = await this.amilService.calculateSplit(data.amount, program.category, program.lembagaId, tx);
+        platformPercentage = split.platformPercentage;
+        institutionPercentage = split.institutionPercentage;
+        amilPlatformAmount = split.amilPlatformAmount;
+        amilInstitutionAmount = split.amilInstitutionAmount;
+        netAmount = split.netAmount;
+        
+        platformFee = amilPlatformAmount;
+        institutionAmount = amilInstitutionAmount + netAmount;
+      }
 
       const donation = await tx.donation.create({
         data: {
@@ -265,6 +284,11 @@ export class DonationsRepository {
           status: data.status,
           platformFee,
           institutionAmount,
+          platformPercentage,
+          institutionPercentage,
+          amilPlatformAmount,
+          amilInstitutionAmount,
+          netAmount,
         },
       });
 
@@ -292,8 +316,9 @@ export class DonationsRepository {
           tx,
           donation.id,
           data.amount,
-          platformFee,
-          institutionAmount,
+          amilPlatformAmount,
+          amilInstitutionAmount,
+          netAmount,
           donation.programId,
           program.lembagaId,
           program.category

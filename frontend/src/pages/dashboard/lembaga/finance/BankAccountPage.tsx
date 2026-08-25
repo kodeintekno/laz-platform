@@ -52,7 +52,7 @@ function BankCardPreview({
 
   return (
     <div
-      className="relative rounded-3xl overflow-hidden p-7 select-none w-full"
+      className="relative rounded-3xl overflow-hidden p-7 select-none w-full max-w-md mx-auto shadow-xl"
       style={{
         background: "linear-gradient(135deg,#1e293b 0%,#0f172a 100%)",
         minHeight: 200,
@@ -215,9 +215,6 @@ export function BankAccountPage() {
         <div className="space-y-6">
           {/* ── Bank Card Preview ── */}
           <div className="space-y-3">
-            <p className="text-xs font-semibold uppercase tracking-widest text-secondary">
-              Pratinjau Kartu
-            </p>
             <BankCardPreview
               bank={previewBank}
               accountNumber={previewNumber}
