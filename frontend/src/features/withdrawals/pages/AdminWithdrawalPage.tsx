@@ -319,7 +319,7 @@ export function AdminWithdrawalPage() {
         message="Pencairan ini tertahan. Apakah Anda yakin ingin mencoba ulang proses payout ke gateway?"
         confirmText={retryPayout.isPending ? "Memproses..." : "Coba Ulang"}
         cancelText="Batal"
-        intent="warning"
+        intent="primary"
       />
 
       <Dialog
