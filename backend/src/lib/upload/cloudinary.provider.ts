@@ -46,15 +46,28 @@ export class CloudinaryProvider implements IUploadProvider {
     const transformation = options?.transformation;
 
     const dataUri = `data:${file.mimetype};base64,${file.buffer.toString("base64")}`;
+    // Use resource_type 'auto' so Cloudinary correctly handles both images and
+    // PDFs/raw files. Without this, PDF uploads silently fail or get corrupted
+    // because the default resource_type is 'image'.
     const uploadResult = await cloudinary.uploader.upload(dataUri, {
       folder,
       transformation,
+      resource_type: "auto",
     });
-    return { url: uploadResult.secure_url, publicId: uploadResult.public_id };
+    return {
+      url: uploadResult.secure_url,
+      publicId: uploadResult.public_id,
+      resourceType: uploadResult.resource_type as string,
+    };
   }
 
   async delete(publicId: string): Promise<void> {
     this.ensureConfigured();
-    await cloudinary.uploader.destroy(publicId);
+    // Try deleting as 'auto' (covers image, video, raw/PDF).
+    // Cloudinary destroy requires the correct resource_type; using 'image'
+    // (the default) would silently fail for PDFs stored as 'raw'.
+    await cloudinary.uploader.destroy(publicId, { resource_type: "raw" }).catch(() =>
+      cloudinary.uploader.destroy(publicId, { resource_type: "image" }),
+    );
   }
 }

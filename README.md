@@ -54,7 +54,7 @@ The platform supports multiple organizations (multi-tenant architecture), role-b
 | Responsive UI | ✅ Complete |
 | File Uploads (Cloudinary) | ✅ Complete |
 | Multi-Tenant Foundation | ✅ Complete |
-| Payment Gateway (Midtrans) | ⚠️ Partial (webhook wired, sandbox) |
+| Payment Gateway (Xendit) | ⚠️ Partial (webhook wired, sandbox) |
 | Notifications (Email/WA) | ⚠️ Planned |
 | PDF/CSV Export | ⚠️ Planned |
 
@@ -74,7 +74,7 @@ The platform supports multiple organizations (multi-tenant architecture), role-b
 - `helmet` (security headers)
 - `bcryptjs` (password hashing)
 - `cloudinary` (file/image storage)
-- Midtrans (payment gateway, webhook-verified)
+- Xendit (payment gateway, webhook-verified)
 - `zod` (validation)
 - `vitest` (testing)
 
@@ -121,8 +121,9 @@ CSRF_SECRET="<RANDOM_64_CHARS>"
 # CORS allowlist (comma-separated origins) — Vite dev server by default
 CORS_ORIGIN="http://localhost:5173"
 
-# Midtrans webhook signature key
-MIDTRANS_SERVER_KEY="SB-Mid-server-laz-platform-dev"
+# Xendit payment gateway credentials
+XENDIT_SECRET_KEY="xnd_development_<YOUR_SECRET_KEY>"
+XENDIT_WEBHOOK_TOKEN="<YOUR_WEBHOOK_VERIFICATION_TOKEN>"
 
 # Cloudinary credentials
 CLOUDINARY_CLOUD_NAME="<YOUR_CLOUD_NAME>"
@@ -281,7 +282,7 @@ laz-platform/
 
 ## Planned
 
-- Production Midtrans payment gateway hardening
+- Production Xendit payment gateway hardening
 - Email notifications
 - WhatsApp notifications
 - PDF export
@@ -294,7 +295,7 @@ laz-platform/
 
 ## Payment Gateway
 
-Midtrans webhook signature verification is implemented (`backend/src/modules/payments/webhook.service.ts`), but production payment integration runs against the sandbox key by default.
+Xendit webhook signature verification is implemented (`backend/src/modules/payments/webhook.service.ts`), but production payment integration runs against the sandbox key by default.
 
 ## Notifications
 
@@ -314,6 +315,6 @@ Before deploying to production:
 - Generate strong, unique `SESSION_SECRET` and `CSRF_SECRET` values
 - Set `CORS_ORIGIN` to the deployed frontend origin
 - Configure Cloudinary credentials
-- Configure production `MIDTRANS_SERVER_KEY`
+- Configure production `XENDIT_SECRET_KEY` and `XENDIT_WEBHOOK_TOKEN`
 - Run `npm run build`, then start the backend with `node dist/backend/src/main.js`
 - Run `npm run db:migrate` (Prisma `migrate deploy`) and `npm run db:seed`

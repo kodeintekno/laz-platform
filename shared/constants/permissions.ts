@@ -59,6 +59,11 @@ export const PERMISSIONS = {
   // ── Volunteer Management ─────────────────────────────────────────
   VOLUNTEERS_MANAGE: "volunteers.manage",
 
+  // ── Withdrawal Management ──────────────────────────────────────────
+  WITHDRAWALS_READ: "withdrawals.read",
+  WITHDRAWALS_CREATE: "withdrawals.create",
+  WITHDRAWALS_MANAGE: "withdrawals.manage",
+
   // ── Accounting (COA) ─────────────────────────────────────────────────
   COA_READ: "coa.read",
 

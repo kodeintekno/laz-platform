@@ -32,17 +32,36 @@ const DOCUMENT_LABELS: Record<string, { label: string; icon: typeof FileText }> 
 type Tab = "info" | "dokumen";
 
 // ---------------------------------------------------------------------------
-// Helper: detect if URL is an image
 // ---------------------------------------------------------------------------
+// Helper: detect if URL points to a PDF file
+// ---------------------------------------------------------------------------
+function isPdfUrl(url: string): boolean {
+  // Cloudinary PDFs (resource_type auto/image) have .pdf in the URL path
+  // e.g. https://res.cloudinary.com/cloud/image/upload/folder/file.pdf
+  // Also covers /raw/upload/ just in case
+  return /\.pdf($|\?)/i.test(url) || url.includes("/raw/upload/");
+}
+
 function isImageUrl(url: string): boolean {
+  if (isPdfUrl(url)) return false;
   return /\.(jpg|jpeg|png|webp|gif|svg)(\?.*)?$/i.test(url);
 }
 
 // ---------------------------------------------------------------------------
-// Helper: force download URL (Cloudinary)
+// Helper: force download URL (Cloudinary) — works for both image and raw/PDF
 // ---------------------------------------------------------------------------
 function getDownloadUrl(url: string): string {
-  if (url.includes("res.cloudinary.com") && url.includes("/upload/")) {
+  if (!url.includes("res.cloudinary.com")) return url;
+  // PDFs stored as raw resource type
+  if (url.includes("/raw/upload/")) {
+    return url.replace("/raw/upload/", "/raw/upload/fl_attachment/");
+  }
+  // Images and PDFs stored as image resource type
+  if (url.includes("/image/upload/")) {
+    return url.replace("/image/upload/", "/image/upload/fl_attachment/");
+  }
+  // Fallback generic /upload/ replacement
+  if (url.includes("/upload/")) {
     return url.replace("/upload/", "/upload/fl_attachment/");
   }
   return url;
@@ -54,6 +73,7 @@ function getDownloadUrl(url: string): string {
 function DocCard({ doc }: { doc: { id: string; type: string; fileUrl: string } }) {
   const meta = DOCUMENT_LABELS[doc.type] ?? { label: doc.type, icon: FileText };
   const isImage = isImageUrl(doc.fileUrl);
+  const isPdf = isPdfUrl(doc.fileUrl);
   const Icon = meta.icon;
 
   return (
@@ -67,31 +87,48 @@ function DocCard({ doc }: { doc: { id: string; type: string; fileUrl: string } }
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
           />
         ) : (
-          <div className="flex flex-col items-center gap-2 text-muted">
-            <FileText className="w-12 h-12 opacity-40" strokeWidth={1.2} />
-            <p className="text-xs font-medium">PDF / Dokumen</p>
+          /* PDF / Document placeholder with always-visible open button */
+          <div className="flex flex-col items-center gap-3 text-muted px-4 text-center">
+            <div className="w-14 h-14 bg-red-50 rounded-2xl flex items-center justify-center">
+              <FileText className="w-8 h-8 text-red-400" strokeWidth={1.2} />
+            </div>
+            <p className="text-xs font-semibold text-primary">
+              {isPdf ? "File PDF" : "Dokumen"}
+            </p>
+            {/* Always-visible open link for PDF — not buried in hover overlay */}
+            <a
+              href={doc.fileUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-brand-primary text-white text-xs font-semibold hover:bg-brand-primary/90 transition shadow-sm"
+            >
+              <ExternalLink className="w-3.5 h-3.5" />
+              Buka PDF
+            </a>
           </div>
         )}
-        {/* Action overlay */}
-        <div className="absolute inset-0 flex items-center justify-center gap-3 bg-black/0 hover:bg-black/50 transition-all duration-200 opacity-0 group-hover:opacity-100">
-          <a
-            href={doc.fileUrl}
-            target="_blank"
-            rel="noreferrer"
-            className="p-2 bg-white/20 hover:bg-white/40 rounded-full transition"
-            title="Buka di tab baru"
-          >
-            <ExternalLink className="w-5 h-5 text-white drop-shadow-md" />
-          </a>
-          <a
-            href={getDownloadUrl(doc.fileUrl)}
-            download
-            className="p-2 bg-white/20 hover:bg-white/40 rounded-full transition"
-            title="Download"
-          >
-            <Download className="w-5 h-5 text-white drop-shadow-md" />
-          </a>
-        </div>
+        {/* Action overlay — for images only */}
+        {isImage && (
+          <div className="absolute inset-0 flex items-center justify-center gap-3 bg-black/0 hover:bg-black/50 transition-all duration-200 opacity-0 group-hover:opacity-100">
+            <a
+              href={doc.fileUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="p-2 bg-white/20 hover:bg-white/40 rounded-full transition"
+              title="Buka di tab baru"
+            >
+              <ExternalLink className="w-5 h-5 text-white drop-shadow-md" />
+            </a>
+            <a
+              href={getDownloadUrl(doc.fileUrl)}
+              download
+              className="p-2 bg-white/20 hover:bg-white/40 rounded-full transition"
+              title="Download"
+            >
+              <Download className="w-5 h-5 text-white drop-shadow-md" />
+            </a>
+          </div>
+        )}
       </div>
       {/* Label */}
       <div className="px-3 py-2.5 flex items-center justify-between gap-2">

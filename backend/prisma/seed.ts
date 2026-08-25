@@ -70,6 +70,10 @@ const PERMISSION_DEFINITIONS = [
   { key: "lembaga.manage", description: "Mengelola data lembaga (tenant) di seluruh platform" },
   // Volunteers
   { key: "volunteers.manage", description: "Mengelola pendaftaran relawan pada program lembaga" },
+  // Withdrawals
+  { key: "withdrawals.read", description: "Melihat daftar pencairan dana" },
+  { key: "withdrawals.create", description: "Membuat request pencairan dana (Lembaga)" },
+  { key: "withdrawals.manage", description: "Menyetujui/menolak pencairan dana (Super Admin)" },
   // Accounting
   { key: "coa.read", description: "Melihat daftar Chart of Accounts lembaga" },
   { key: "journal.read", description: "Melihat daftar Jurnal Umum" },
@@ -100,6 +104,8 @@ const ROLE_PERMISSIONS: Record<string, string[]> = {
     "users.read",
     "lembaga.read",
     "volunteers.manage",
+    "withdrawals.read",
+    "withdrawals.create",
     "coa.read",
     "journal.read",
     "journal.create",
@@ -132,6 +138,32 @@ async function main() {
     process.stdout.write(".");
   }
   console.log(` ✓ ${PERMISSION_DEFINITIONS.length} permissions\n`);
+
+  console.log("\n⚙️ Seeding Amil Global Settings...");
+  const globalSettings = [
+    { category: "ZAKAT", maxTotalPercentage: 12.5, defaultPlatformPercentage: 5 },
+    { category: "INFAK", maxTotalPercentage: 20, defaultPlatformPercentage: 5 },
+    { category: "SEDEKAH", maxTotalPercentage: 20, defaultPlatformPercentage: 5 },
+    { category: "WAKAF", maxTotalPercentage: 10, defaultPlatformPercentage: 5 },
+    { category: "CSR", maxTotalPercentage: 20, defaultPlatformPercentage: 5 },
+    { category: "DSKL", maxTotalPercentage: 20, defaultPlatformPercentage: 5 },
+  ];
+
+  for (const setting of globalSettings) {
+    await prisma.amilGlobalSetting.upsert({
+      where: { category: setting.category as any },
+      update: {
+        maxTotalPercentage: setting.maxTotalPercentage,
+        defaultPlatformPercentage: setting.defaultPlatformPercentage,
+      },
+      create: {
+        category: setting.category as any,
+        maxTotalPercentage: setting.maxTotalPercentage,
+        defaultPlatformPercentage: setting.defaultPlatformPercentage,
+      },
+    });
+  }
+  console.log(" ✓ Amil Global Settings seeded\n");
 
   // 2. Upsert final role set
   console.log("🔐 Seeding roles...");
@@ -370,11 +402,40 @@ async function main() {
       await prisma.distribution.deleteMany({ where: { programId: createdProgram.id } });
 
       for (const d of prog.donations) {
+        // Hitung split amil berdasarkan global setting
+        const isPaid = d.status === "PAID";
+        let platformPercentage = 0;
+        let institutionPercentage = 0;
+        let amilPlatformAmount = 0;
+        let amilInstitutionAmount = 0;
+        let netAmount = d.amount;
+
+        if (isPaid) {
+          const setting = globalSettings.find(s => s.category === prog.category);
+          platformPercentage = setting ? setting.defaultPlatformPercentage : 5;
+          institutionPercentage = setting ? setting.maxTotalPercentage - platformPercentage : 7.5;
+          
+          amilPlatformAmount = Math.floor(d.amount * (platformPercentage / 100));
+          amilInstitutionAmount = Math.floor(d.amount * (institutionPercentage / 100));
+          netAmount = d.amount - amilPlatformAmount - amilInstitutionAmount;
+        }
+
+        // Legacy fields
+        const platformFee = amilPlatformAmount;
+        const institutionAmount = amilInstitutionAmount + netAmount;
+
         await prisma.donation.create({
           data: {
             lembagaId: approvedLembaga.id,
             programId: createdProgram.id,
             amount: d.amount,
+            platformFee,
+            institutionAmount,
+            platformPercentage,
+            institutionPercentage,
+            amilPlatformAmount,
+            amilInstitutionAmount,
+            netAmount,
             status: d.status as any,
             isAnonymous: d.anon,
             donorName: d.anon ? "Hamba Allah" : d.name,
@@ -408,6 +469,19 @@ async function main() {
         }
       }
     }
+
+    // Hitung total institutionAmount (87.5%) dari semua donasi PAID & update InstitutionBalance
+    const balanceAgg = await prisma.donation.aggregate({
+      where: { lembagaId: approvedLembaga.id, status: "PAID" },
+      _sum: { institutionAmount: true },
+    });
+    const totalInstitutionAmount = Number(balanceAgg._sum.institutionAmount || 0);
+    await prisma.institutionBalance.upsert({
+      where: { lembagaId: approvedLembaga.id },
+      update: { balance: totalInstitutionAmount },
+      create: { lembagaId: approvedLembaga.id, balance: totalInstitutionAmount, reservedBalance: 0 },
+    });
+    console.log(` ✓ InstitutionBalance seeded: Rp ${totalInstitutionAmount.toLocaleString("id-ID")}`);
     console.log(" ✓ Dummy programs, donations, and distributions seeded");
 
     // 7. A second APPROVED Lembaga + its LEMBAGA_ADMIN (for multi-tenant demo) ─
@@ -654,6 +728,7 @@ const COA_TEMPLATE: CsvCoaRow[] = [
   { code: "1101", name: "Kas", accountType: "ASSET", normalBalance: "DEBIT", isHeader: false, parentCode: "1100", level: 3 },
   { code: "1102", name: "Kas Kecil", accountType: "ASSET", normalBalance: "DEBIT", isHeader: false, parentCode: "1100", level: 3 },
   { code: "1103", name: "Bank", accountType: "ASSET", normalBalance: "DEBIT", isHeader: false, parentCode: "1100", level: 3 },
+  { code: "1104", name: "Kas Dalam Perjalanan", accountType: "ASSET", normalBalance: "DEBIT", isHeader: false, parentCode: "1100", level: 3 },
   { code: "1110", name: "Piutang", accountType: "ASSET", normalBalance: "DEBIT", isHeader: true, parentCode: "1000", level: 2 },
   { code: "1111", name: "Piutang Lain-lain", accountType: "ASSET", normalBalance: "DEBIT", isHeader: false, parentCode: "1110", level: 3 },
   { code: "1120", name: "Persediaan", accountType: "ASSET", normalBalance: "DEBIT", isHeader: true, parentCode: "1000", level: 2 },
@@ -715,6 +790,7 @@ const COA_TEMPLATE: CsvCoaRow[] = [
   { code: "6111", name: "Beban Penyusutan Kendaraan", accountType: "EXPENSE", normalBalance: "DEBIT", isHeader: false, parentCode: "6100", level: 3 },
   { code: "6112", name: "Beban Penyusutan Gedung", accountType: "EXPENSE", normalBalance: "DEBIT", isHeader: false, parentCode: "6100", level: 3 },
   { code: "6113", name: "Beban Operasional Lainnya", accountType: "EXPENSE", normalBalance: "DEBIT", isHeader: false, parentCode: "6100", level: 3 },
+  { code: "6114", name: "Beban Platform", accountType: "EXPENSE", normalBalance: "DEBIT", isHeader: false, parentCode: "6100", level: 3 },
 ];
 
 /**

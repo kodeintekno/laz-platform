@@ -14,47 +14,75 @@ import { Skeleton } from "@/components/ui/Skeleton";
 import { logger } from "@/lib/logger";
 import {
   LayoutDashboard,
-  BookOpen,
+  PieChart,
+  Briefcase,
+  Layers,
   Heart,
-  CreditCard,
   Truck,
-  BarChart2,
+  Wallet,
+  TrendingUp,
+  HandCoins,
+  CreditCard,
+  Banknote,
+  Receipt,
+  Landmark,
+  Activity,
+  Coins,
+  ArrowDownToLine,
+  PiggyBank,
+  UsersRound,
+  CalendarDays,
+  UserPlus,
+  BookA,
+  Network,
+  BookCopy,
+  Library,
+  Building2,
+  Building,
+  Contact,
   Users,
-  Shield,
+  ShieldCheck,
+  Key,
   ScrollText,
   Settings,
   LogOut,
   HelpCircle,
-  Building2,
-  HeartHandshake,
-  ClipboardCheck,
-  BookMarked,
-  ClipboardList,
-  Calculator,
-  Book,
   ChevronDown,
-  Briefcase,
 } from "lucide-react";
 
 const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   LayoutDashboard,
-  BookOpen,
+  PieChart,
+  Briefcase,
+  Layers,
   Heart,
-  CreditCard,
   Truck,
-  BarChart2,
+  Wallet,
+  TrendingUp,
+  HandCoins,
+  CreditCard,
+  Banknote,
+  Receipt,
+  Landmark,
+  Activity,
+  Coins,
+  ArrowDownToLine,
+  PiggyBank,
+  UsersRound,
+  CalendarDays,
+  UserPlus,
+  BookA,
+  Network,
+  BookCopy,
+  Library,
+  Building2,
+  Building,
+  Contact,
   Users,
-  Shield,
+  ShieldCheck,
+  Key,
   ScrollText,
   Settings,
-  Building2,
-  HeartHandshake,
-  ClipboardCheck,
-  BookMarked,
-  ClipboardList,
-  Calculator,
-  Book,
-  Briefcase,
 };
 
 /**
@@ -108,8 +136,15 @@ export function Sidebar({ initialItems, user }: { initialItems?: NavItem[], user
 
   const userInitial = (activeUser?.name || session?.user?.name || "?").charAt(0).toUpperCase();
 
-  // Filter nav items the current user has permission to see
-  // removed original visibleItems calculation – now handled above
+  // Find the most specific active href to avoid partial matching bugs (e.g. /dashboard/lembaga/finance matching /dashboard/lembaga)
+  const allHrefs = visibleItems.flatMap(item => [
+    item.href,
+    ...(item.children?.map(c => c.href) || [])
+  ]).filter(href => !href.startsWith("#"));
+
+  const activeHref = allHrefs
+    .filter(href => pathname === href || (href !== "/dashboard" && pathname.startsWith(href + "/")))
+    .sort((a, b) => b.length - a.length)[0] || (pathname === "/dashboard" ? "/dashboard" : "");
 
   useEffect(() => {
     logger.info(
@@ -190,9 +225,8 @@ export function Sidebar({ initialItems, user }: { initialItems?: NavItem[], user
               <ul className="space-y-1" role="list">
                 {visibleItems.map((item) => {
                   const isActive =
-                    pathname === item.href ||
-                    (item.href !== "/dashboard" && pathname.startsWith(item.href)) ||
-                    (item.children?.some(child => pathname.startsWith(child.href)) ?? false);
+                    item.href === activeHref ||
+                    (item.children?.some(child => child.href === activeHref) ?? false);
                   const IconComponent = iconMap[item.icon] || HelpCircle;
 
                   if (item.children && item.children.length > 0) {
@@ -238,7 +272,8 @@ export function Sidebar({ initialItems, user }: { initialItems?: NavItem[], user
                           <ul className="mt-1 space-y-1 ml-5 pl-4 border-l border-surface-border">
                             {item.children.map(child => {
                               if (child.permission && !can(child.permission)) return null;
-                              const isChildActive = pathname === child.href || (child.href !== "/dashboard" && pathname.startsWith(child.href));
+                              if (child.requiresLembaga && !authUser?.lembagaId) return null;
+                              const isChildActive = child.href === activeHref;
                               const ChildIcon = iconMap[child.icon] || HelpCircle;
                               return (
                                 <li key={child.href}>

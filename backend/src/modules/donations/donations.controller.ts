@@ -1,5 +1,4 @@
 import {
-  BadRequestException,
   Body,
   Controller,
   Get,
@@ -31,15 +30,43 @@ export class DonationsController {
   constructor(private readonly donationsService: DonationsService) {}
 
   /**
-   * Donasi publik — selalu guest (tanpa akun donatur). Identitas donatur
-   * adalah donorName/donorPhone/donorEmail langsung pada body request.
+   * Public donation creation — creates a Xendit payment request.
+   * Returns payment instructions (QRIS string or VA number) to the frontend.
+   *
+   * Security:
+   * - Amount validated by Zod schema (min 10000, integer)
+   * - programId validated, lembagaId derived from DB
+   * - institutionId/platformFee/institutionAmount NOT in response
+   * - Xendit API called exclusively on backend
    */
   @Post("public")
   @Public()
   @Throttle({ default: { limit: 10, ttl: 60_000 } })
   async createPublic(@Body(new ZodValidationPipe(donationSchema)) body: DonationInput) {
-    const { donation } = await this.donationsService.createDonation(body);
-    return { donationId: donation.id };
+    const result = await this.donationsService.createDonation(body);
+    return {
+      donationId: result.donationId,
+      paymentMethod: result.paymentMethod,
+      amount: result.amount,
+      qrString: result.qrString ?? null,
+      vaNumber: result.vaNumber ?? null,
+      expiresAt: result.expiresAt,
+    };
+  }
+
+  /**
+   * Public payment status polling.
+   * Frontend polls this endpoint every N seconds to get payment status.
+   *
+   * Returns ONLY safe, non-sensitive payment state information.
+   * The frontend MUST NOT use this to mark payment as successful by itself —
+   * it displays the status returned from the backend.
+   */
+  @Get("public/:id/status")
+  @Public()
+  @Throttle({ default: { limit: 60, ttl: 60_000 } })
+  async publicStatus(@Param("id") id: string) {
+    return this.donationsService.getPublicDonationStatus(id);
   }
 
   /**
@@ -94,12 +121,5 @@ export class DonationsController {
   ) {
     const donation = await this.donationsService.createAdminDonation(body, user.id);
     return { donationId: donation.id };
-  }
-
-  /** Pengganti generateMockWebhookPayloadAction. */
-  @Post(":id/mock-webhook")
-  @RequirePermission(PERMISSIONS.PAYMENTS_MANAGE)
-  async mockWebhook(@Param("id") id: string) {
-    return { payload: await this.donationsService.generateMockWebhookPayload(id) };
   }
 }

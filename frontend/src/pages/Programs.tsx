@@ -12,6 +12,8 @@ const CATEGORIES = [
   { value: "INFAK", label: "Infak" },
   { value: "SEDEKAH", label: "Sedekah" },
   { value: "WAKAF", label: "Wakaf" },
+  { value: "CSR", label: "CSR" },
+  { value: "DSKL", label: "DSKL" },
 ];
 
 export function ProgramsPage() {

@@ -5,9 +5,11 @@ import { PaymentsRepository } from "./payments.repository";
 import { WebhookService } from "./webhook.service";
 import { AuditModule } from "../audit/audit.module";
 import { JournalModule } from "../journal/journal.module";
+import { WithdrawalsModule } from "../withdrawals/withdrawals.module";
+import { AmilModule } from "../amil/amil.module";
 
 @Module({
-  imports: [AuditModule, JournalModule],
+  imports: [AuditModule, JournalModule, WithdrawalsModule, AmilModule],
   controllers: [PaymentsController],
   providers: [PaymentsService, PaymentsRepository, WebhookService],
   exports: [WebhookService],

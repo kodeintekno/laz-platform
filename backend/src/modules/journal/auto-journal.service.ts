@@ -48,6 +48,8 @@ export class AutoJournalService {
       case "INFAK": return "4102";
       case "SEDEKAH": return "4103";
       case "WAKAF": return "4104";
+      case "CSR": return "4108";
+      case "DSKL": return "4109";
       default: return "4102";
     }
   }
@@ -58,6 +60,8 @@ export class AutoJournalService {
       case "INFAK": return "5102";
       case "SEDEKAH": return "5103";
       case "WAKAF": return "5104";
+      case "CSR": return "5105";
+      case "DSKL": return "5106";
       default: return "5102";
     }
   }
@@ -66,6 +70,9 @@ export class AutoJournalService {
     tx: Prisma.TransactionClient,
     donationId: string,
     amount: number,
+    amilPlatformAmount: number,
+    amilInstitutionAmount: number,
+    netAmount: number,
     programId: string,
     lembagaId: string,
     programCategory: string
@@ -82,6 +89,11 @@ export class AutoJournalService {
     const journalNo = await this.generateJournalNo(tx, lembagaId, new Date());
     const debitCoaId = await this.getCoaId(tx, lembagaId, "1101");
     const creditCoaId = await this.getCoaId(tx, lembagaId, this.getDonationCreditCode(programCategory));
+    const amilCreditCoaId = await this.getCoaId(tx, lembagaId, "4105");
+    const amilPlatformDebitCoaId = await this.getCoaId(tx, lembagaId, "6114"); // Beban Platform
+
+    const netAmountToInstitution = netAmount + amilInstitutionAmount;
+    const totalAmilRevenue = amilInstitutionAmount + amilPlatformAmount;
 
     await tx.journal.create({
       data: {
@@ -96,8 +108,10 @@ export class AutoJournalService {
         postedAt: new Date(),
         details: {
           create: [
-            { accountId: debitCoaId, debit: amount, credit: 0, description: "Penerimaan via Payment Gateway" },
-            { accountId: creditCoaId, debit: 0, credit: amount, description: "Penerimaan via Payment Gateway" },
+            { accountId: debitCoaId, debit: netAmountToInstitution, credit: 0, description: "Penerimaan Kas Bersih (Nett)" },
+            ...(amilPlatformAmount > 0 ? [{ accountId: amilPlatformDebitCoaId, debit: amilPlatformAmount, credit: 0, description: "Beban Platform" }] : []),
+            { accountId: creditCoaId, debit: 0, credit: netAmount, description: "Penerimaan Donasi (Dana Wajib)" },
+            ...(totalAmilRevenue > 0 ? [{ accountId: amilCreditCoaId, debit: 0, credit: totalAmilRevenue, description: "Hak Amil (Lembaga & Beban Platform)" }] : []),
           ]
         }
       }
@@ -149,5 +163,108 @@ export class AutoJournalService {
       }
     });
     this.logger.log(`Created distribution auto-journal ${journalNo}`);
+  }
+
+  async createWithdrawalReservationJournal(
+    tx: Prisma.TransactionClient,
+    withdrawalId: string,
+    amount: number,
+    lembagaId: string,
+    userId: string
+  ) {
+    const journalNo = await this.generateJournalNo(tx, lembagaId, new Date());
+    const debitCoaId = await this.getCoaId(tx, lembagaId, "1104"); // Kas Dalam Perjalanan
+    const creditCoaId = await this.getCoaId(tx, lembagaId, "1101"); // Kas
+
+    await tx.journal.create({
+      data: {
+        lembagaId,
+        journalNo,
+        journalDate: new Date(),
+        description: `Pencairan Dana (Withdrawal) #${withdrawalId.slice(-6).toUpperCase()}`,
+        sourceType: "WITHDRAWAL",
+        sourceId: withdrawalId,
+        status: "POSTED",
+        createdById: userId,
+        postedById: userId,
+        postedAt: new Date(),
+        details: {
+          create: [
+            { accountId: debitCoaId, debit: amount, credit: 0, description: "Kas Dalam Perjalanan (Pencairan)" },
+            { accountId: creditCoaId, debit: 0, credit: amount, description: "Pengeluaran Kas untuk Pencairan" },
+          ]
+        }
+      }
+    });
+    this.logger.log(`Created withdrawal reservation auto-journal ${journalNo}`);
+  }
+
+  async createWithdrawalRejectionJournal(
+    tx: Prisma.TransactionClient,
+    withdrawalId: string,
+    amount: number,
+    lembagaId: string,
+    userId: string | null,
+    reason: string
+  ) {
+    const journalNo = await this.generateJournalNo(tx, lembagaId, new Date());
+    const debitCoaId = await this.getCoaId(tx, lembagaId, "1101"); // Kas
+    const creditCoaId = await this.getCoaId(tx, lembagaId, "1104"); // Kas Dalam Perjalanan
+
+    await tx.journal.create({
+      data: {
+        lembagaId,
+        journalNo,
+        journalDate: new Date(),
+        description: `Pembatalan Pencairan Dana #${withdrawalId.slice(-6).toUpperCase()} - ${reason}`,
+        sourceType: "WITHDRAWAL",
+        sourceId: `${withdrawalId}-REJECT`,
+        status: "POSTED",
+        createdById: userId,
+        postedById: userId,
+        postedAt: new Date(),
+        details: {
+          create: [
+            { accountId: debitCoaId, debit: amount, credit: 0, description: "Pengembalian Dana Kas (Pencairan Ditolak)" },
+            { accountId: creditCoaId, debit: 0, credit: amount, description: "Pembatalan Kas Dalam Perjalanan" },
+          ]
+        }
+      }
+    });
+    this.logger.log(`Created withdrawal rejection auto-journal ${journalNo}`);
+  }
+
+  async createWithdrawalCompletionJournal(
+    tx: Prisma.TransactionClient,
+    withdrawalId: string,
+    amount: number,
+    lembagaId: string,
+    userId: string | null
+  ) {
+    const journalNo = await this.generateJournalNo(tx, lembagaId, new Date());
+    const debitCoaId = await this.getCoaId(tx, lembagaId, "1103"); // Bank (Lembaga)
+    const creditCoaId = await this.getCoaId(tx, lembagaId, "1104"); // Kas Dalam Perjalanan
+
+    await tx.journal.create({
+      data: {
+        lembagaId,
+        journalNo,
+        journalDate: new Date(),
+        description: `Pencairan Dana Selesai #${withdrawalId.slice(-6).toUpperCase()}`,
+        sourceType: "WITHDRAWAL",
+        sourceId: `${withdrawalId}-SUCCESS`,
+        status: "POSTED",
+        createdById: userId, // Can be null if system
+        postedById: userId, // Can be null if system
+        postedAt: new Date(),
+        details: {
+          create: [
+            { accountId: debitCoaId, debit: amount, credit: 0, description: "Penerimaan Kas di Bank Lembaga" },
+            { accountId: creditCoaId, debit: 0, credit: amount, description: "Penyelesaian Kas Dalam Perjalanan" },
+          ]
+        }
+      }
+    });
+    this.logger.log(`Created withdrawal completion auto-journal ${journalNo}`);
   }
 }

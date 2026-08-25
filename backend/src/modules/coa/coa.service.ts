@@ -1,6 +1,7 @@
 import { Injectable, Logger } from "@nestjs/common";
 import { CoaRepository } from "./coa.repository";
 import { AppError } from "../../common/errors/app.error";
+import { COA_TEMPLATE } from "./coa.template";
 
 @Injectable()
 export class CoaService {
@@ -18,13 +19,15 @@ export class CoaService {
 
   /**
    * Provision / seed seluruh akun COA template untuk lembaga.
-   * Akan melempar AppError jika lembaga sudah memiliki COA (idempotent).
+   * Akan melempar AppError jika lembaga sudah memiliki COA penuh (idempotent).
+   * Jika COA belum lengkap, akan otomatis melengkapi (backfill) karena repository
+   * menggunakan operasi `createMany` dengan `skipDuplicates: true`.
    */
   async seedCoaForLembaga(lembagaId: string): Promise<void> {
     const existingCount = await this.coaRepository.countByLembaga(lembagaId);
-    if (existingCount > 0) {
-      this.logger.warn(`Lembaga ${lembagaId} already has COA (${existingCount} accounts). Skipping provision.`);
-      throw new AppError("COA_ALREADY_EXISTS", "Lembaga sudah memiliki Chart of Accounts.", 400);
+    if (existingCount >= COA_TEMPLATE.length) {
+      this.logger.warn(`Lembaga ${lembagaId} already has complete COA (${existingCount} accounts). Skipping provision.`);
+      throw new AppError("COA_ALREADY_EXISTS", "Lembaga sudah memiliki Chart of Accounts yang lengkap.", 400);
     }
 
     this.logger.log(`Seeding COA for lembaga ${lembagaId}`);

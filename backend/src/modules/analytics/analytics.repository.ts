@@ -16,6 +16,9 @@ export class AnalyticsRepository {
       totalDistributionsCompleted,
       activeProgramsCount,
       totalUsersCount,
+      totalReceivedAgg,
+      totalWithdrawnAgg,
+      lembagaBalance
     ] = await Promise.all([
       this.prisma.donation.aggregate({
         where: { status: "PAID", ...whereLembaga },
@@ -31,6 +34,17 @@ export class AnalyticsRepository {
       this.prisma.user.count({
         where: { status: "ACTIVE", ...whereLembaga },
       }),
+      this.prisma.donation.aggregate({
+        where: { status: "PAID", ...whereLembaga },
+        _sum: { institutionAmount: true },
+      }),
+      this.prisma.withdrawal.aggregate({
+        where: { status: "COMPLETED", ...whereLembaga },
+        _sum: { amount: true },
+      }),
+      lembagaId 
+        ? this.prisma.institutionBalance.findUnique({ where: { lembagaId } })
+        : Promise.resolve(null)
     ]);
 
     return {
@@ -38,6 +52,10 @@ export class AnalyticsRepository {
       totalDistributed: Number(totalDistributionsCompleted._sum.amount || 0),
       activePrograms: activeProgramsCount,
       activeUsers: totalUsersCount,
+      totalReceived: Number(totalReceivedAgg._sum.institutionAmount || 0),
+      totalWithdrawn: Number(totalWithdrawnAgg._sum.amount || 0),
+      availableBalance: lembagaBalance ? Number(lembagaBalance.balance || 0) : 0,
+      reservedBalance: lembagaBalance ? Number(lembagaBalance.reservedBalance || 0) : 0,
     };
   }
 
@@ -79,20 +97,33 @@ export class AnalyticsRepository {
       totalDonationsAgg,
       totalVolunteers,
       pendingVolunteerApplications,
+      pendingWithdrawalsAgg,
+      processingPayoutsAgg
     ] = await Promise.all([
       this.prisma.lembaga.count({ where: { status: "PENDING" } }),
       this.prisma.lembaga.count({ where: { status: "APPROVED" } }),
       this.prisma.lembaga.count({ where: { status: "REJECTED" } }),
       this.prisma.program.count(),
-      this.prisma.donation.aggregate({ where: { status: "PAID" }, _sum: { amount: true } }),
+      this.prisma.donation.aggregate({ 
+        where: { status: "PAID" }, 
+        _sum: { amount: true, platformFee: true, institutionAmount: true },
+        _count: { id: true }
+      }),
       this.prisma.volunteer.count(),
       this.prisma.volunteerApplication.count({ where: { status: "PENDING" } }),
+      this.prisma.withdrawal.aggregate({ where: { status: "PENDING" }, _sum: { amount: true } }),
+      this.prisma.payout.aggregate({ where: { status: { in: ["REQUESTED", "ACCEPTED", "PROCESSING"] } }, _sum: { amount: true } }),
     ]);
 
     return {
       lembaga: { pending: lembagaPending, approved: lembagaApproved, rejected: lembagaRejected },
       totalPrograms,
       totalDonationsAmount: Number(totalDonationsAgg._sum.amount || 0),
+      platformRevenue: Number(totalDonationsAgg._sum.platformFee || 0),
+      institutionShare: Number(totalDonationsAgg._sum.institutionAmount || 0),
+      successfulPayments: totalDonationsAgg._count.id,
+      pendingWithdrawalsAmount: Number(pendingWithdrawalsAgg._sum.amount || 0),
+      processingPayoutsAmount: Number(processingPayoutsAgg._sum.amount || 0),
       totalVolunteers,
       pendingVolunteerApplications,
     };

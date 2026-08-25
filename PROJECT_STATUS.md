@@ -46,7 +46,7 @@
 - Cloudinary Upload
 
 ### Planned
-- Midtrans Production Integration
+- Xendit Production Integration
 - Email Notifications
 - WhatsApp Notifications
 - PDF/CSV Export

@@ -16,4 +16,6 @@ export type UploadOptions = {
 export type UploadResult = {
   url: string;
   publicId: string;
+  /** Cloudinary resource type: 'image', 'raw', 'video' */
+  resourceType?: string;
 };

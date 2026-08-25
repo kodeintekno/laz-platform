@@ -66,6 +66,16 @@ import { JournalListPage } from "@/pages/dashboard/journal/JournalListPage";
 import { NewJournalPage } from "@/pages/dashboard/journal/NewJournalPage";
 import { JournalDetailPage } from "@/pages/dashboard/journal/JournalDetailPage";
 import { LedgerPage } from "@/pages/dashboard/ledger/LedgerPage";
+import { LembagaWithdrawalPage } from "@/features/withdrawals/pages/LembagaWithdrawalPage";
+import { AdminWithdrawalPage } from "@/features/withdrawals/pages/AdminWithdrawalPage";
+import { AdminFinanceOverviewPage } from "@/pages/dashboard/finance/AdminFinanceOverviewPage";
+import { FinanceOverviewPage } from "@/pages/dashboard/finance/FinanceOverviewPage";
+import { PayoutsListPage } from "@/pages/dashboard/finance/PayoutsListPage";
+import { LembagaFinanceOverviewPage } from "@/pages/dashboard/lembaga/finance/LembagaFinanceOverviewPage";
+import { LembagaBalancePage } from "@/pages/dashboard/lembaga/finance/LembagaBalancePage";
+import { BankAccountPage } from "@/pages/dashboard/lembaga/finance/BankAccountPage";
+import { LembagaAmilSettingsPage } from "@/pages/dashboard/lembaga/finance/LembagaAmilSettingsPage";
+import { GlobalAmilSettingsPage } from "@/pages/dashboard/amil/GlobalAmilSettingsPage";
 
 export const router = createBrowserRouter([
   {
@@ -251,6 +261,72 @@ export const router = createBrowserRouter([
             element: (
               <RequirePermission permission={PERMISSIONS.LEMBAGA_READ}>
                 <LembagaMyProfilePage />
+              </RequirePermission>
+            ),
+          },
+          // Pencairan Dana (Withdrawal)
+          {
+            path: "withdrawals/mine",
+            element: (
+              <RequirePermission permission={PERMISSIONS.WITHDRAWALS_CREATE as any}>
+                <LembagaWithdrawalPage />
+              </RequirePermission>
+            ),
+          },
+          {
+            path: "withdrawals",
+            element: (
+              <RequirePermission permission={PERMISSIONS.WITHDRAWALS_MANAGE as any}>
+                <AdminWithdrawalPage />
+              </RequirePermission>
+            ),
+          },
+          // Keuangan & Payouts
+          {
+            path: "finance/overview",
+            element: (
+              <RequirePermission permission={PERMISSIONS.PAYMENTS_READ}>
+                <FinanceOverviewPage />
+              </RequirePermission>
+            ),
+          },
+          {
+            path: "payouts",
+            element: (
+              <RequirePermission permission={PERMISSIONS.WITHDRAWALS_MANAGE as any}>
+                <PayoutsListPage />
+              </RequirePermission>
+            ),
+          },
+          {
+            path: "amil-global",
+            element: (
+              <RequirePermission permission={PERMISSIONS.SETTINGS_MANAGE}>
+                <GlobalAmilSettingsPage />
+              </RequirePermission>
+            ),
+          },
+          {
+            path: "lembaga/finance/overview",
+            element: (
+              <RequirePermission permission={PERMISSIONS.DONATIONS_READ}>
+                <LembagaFinanceOverviewPage />
+              </RequirePermission>
+            ),
+          },
+          {
+            path: "lembaga/finance/bank-account",
+            element: (
+              <RequirePermission permission={PERMISSIONS.LEMBAGA_READ}>
+                <BankAccountPage />
+              </RequirePermission>
+            ),
+          },
+          {
+            path: "lembaga/finance/amil",
+            element: (
+              <RequirePermission permission={PERMISSIONS.LEMBAGA_READ}>
+                <LembagaAmilSettingsPage />
               </RequirePermission>
             ),
           },

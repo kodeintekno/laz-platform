@@ -18,6 +18,8 @@ const CATEGORY_LABELS: Record<string, string> = {
   INFAK: "Infak",
   SEDEKAH: "Sedekah",
   WAKAF: "Wakaf",
+  CSR: "CSR",
+  DSKL: "DSKL",
 };
 
 export function ProgramApprovalModal({

@@ -180,6 +180,12 @@ export function ProgramTable({ programs, pagination }: ProgramTableProps) {
           case "WAKAF":
             intent = "muted";
             break;
+          case "CSR":
+            intent = "success";
+            break;
+          case "DSKL":
+            intent = "info";
+            break;
         }
 
         return <Badge intent={intent}>{program.category}</Badge>;

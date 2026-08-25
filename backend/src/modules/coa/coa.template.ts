@@ -32,6 +32,7 @@ export const COA_TEMPLATE: CoaTemplateRow[] = [
   { code: "1101", name: "Kas", accountType: "ASSET", normalBalance: "DEBIT", isHeader: false, parentCode: "1100", level: 3 },
   { code: "1102", name: "Kas Kecil", accountType: "ASSET", normalBalance: "DEBIT", isHeader: false, parentCode: "1100", level: 3 },
   { code: "1103", name: "Bank", accountType: "ASSET", normalBalance: "DEBIT", isHeader: false, parentCode: "1100", level: 3 },
+  { code: "1104", name: "Kas Dalam Perjalanan", accountType: "ASSET", normalBalance: "DEBIT", isHeader: false, parentCode: "1100", level: 3 },
   { code: "1110", name: "Piutang", accountType: "ASSET", normalBalance: "DEBIT", isHeader: true, parentCode: "1000", level: 2 },
   { code: "1111", name: "Piutang Lain-lain", accountType: "ASSET", normalBalance: "DEBIT", isHeader: false, parentCode: "1110", level: 3 },
   { code: "1120", name: "Persediaan", accountType: "ASSET", normalBalance: "DEBIT", isHeader: true, parentCode: "1000", level: 2 },
@@ -62,6 +63,8 @@ export const COA_TEMPLATE: CoaTemplateRow[] = [
   { code: "3104", name: "Dana Wakaf", accountType: "FUND", normalBalance: "CREDIT", isHeader: false, parentCode: "3100", level: 3 },
   { code: "3105", name: "Dana Amil", accountType: "FUND", normalBalance: "CREDIT", isHeader: false, parentCode: "3100", level: 3 },
   { code: "3106", name: "Dana Nonhalal", accountType: "FUND", normalBalance: "CREDIT", isHeader: false, parentCode: "3100", level: 3 },
+  { code: "3107", name: "Dana CSR", accountType: "FUND", normalBalance: "CREDIT", isHeader: false, parentCode: "3100", level: 3 },
+  { code: "3108", name: "Dana DSKL", accountType: "FUND", normalBalance: "CREDIT", isHeader: false, parentCode: "3100", level: 3 },
 
   // ─── 4000 PENERIMAAN DANA ─────────────────────────────────────────────────────
   { code: "4000", name: "Penerimaan Dana", accountType: "REVENUE", normalBalance: "CREDIT", isHeader: true, parentCode: null, level: 1 },
@@ -73,6 +76,8 @@ export const COA_TEMPLATE: CoaTemplateRow[] = [
   { code: "4105", name: "Penerimaan Dana Amil", accountType: "REVENUE", normalBalance: "CREDIT", isHeader: false, parentCode: "4100", level: 3 },
   { code: "4106", name: "Penerimaan Hibah", accountType: "REVENUE", normalBalance: "CREDIT", isHeader: false, parentCode: "4100", level: 3 },
   { code: "4107", name: "Pendapatan Lainnya", accountType: "REVENUE", normalBalance: "CREDIT", isHeader: false, parentCode: "4100", level: 3 },
+  { code: "4108", name: "Penerimaan CSR", accountType: "REVENUE", normalBalance: "CREDIT", isHeader: false, parentCode: "4100", level: 3 },
+  { code: "4109", name: "Penerimaan DSKL", accountType: "REVENUE", normalBalance: "CREDIT", isHeader: false, parentCode: "4100", level: 3 },
 
   // ─── 5000 PENYALURAN DANA ─────────────────────────────────────────────────────
   { code: "5000", name: "Penyaluran Dana", accountType: "EXPENSE", normalBalance: "DEBIT", isHeader: true, parentCode: null, level: 1 },
@@ -81,6 +86,8 @@ export const COA_TEMPLATE: CoaTemplateRow[] = [
   { code: "5102", name: "Penyaluran Infak", accountType: "EXPENSE", normalBalance: "DEBIT", isHeader: false, parentCode: "5100", level: 3 },
   { code: "5103", name: "Penyaluran Sedekah", accountType: "EXPENSE", normalBalance: "DEBIT", isHeader: false, parentCode: "5100", level: 3 },
   { code: "5104", name: "Penyaluran Wakaf", accountType: "EXPENSE", normalBalance: "DEBIT", isHeader: false, parentCode: "5100", level: 3 },
+  { code: "5105", name: "Penyaluran CSR", accountType: "EXPENSE", normalBalance: "DEBIT", isHeader: false, parentCode: "5100", level: 3 },
+  { code: "5106", name: "Penyaluran DSKL", accountType: "EXPENSE", normalBalance: "DEBIT", isHeader: false, parentCode: "5100", level: 3 },
 
   // ─── 6000 BEBAN OPERASIONAL ───────────────────────────────────────────────────
   { code: "6000", name: "Beban Operasional", accountType: "EXPENSE", normalBalance: "DEBIT", isHeader: true, parentCode: null, level: 1 },
@@ -98,4 +105,5 @@ export const COA_TEMPLATE: CoaTemplateRow[] = [
   { code: "6111", name: "Beban Penyusutan Kendaraan", accountType: "EXPENSE", normalBalance: "DEBIT", isHeader: false, parentCode: "6100", level: 3 },
   { code: "6112", name: "Beban Penyusutan Gedung", accountType: "EXPENSE", normalBalance: "DEBIT", isHeader: false, parentCode: "6100", level: 3 },
   { code: "6113", name: "Beban Operasional Lainnya", accountType: "EXPENSE", normalBalance: "DEBIT", isHeader: false, parentCode: "6100", level: 3 },
+  { code: "6114", name: "Beban Amil Platform", accountType: "EXPENSE", normalBalance: "DEBIT", isHeader: false, parentCode: "6100", level: 3 },
 ];

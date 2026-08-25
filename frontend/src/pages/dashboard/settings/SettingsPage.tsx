@@ -8,7 +8,7 @@ export function SettingsPage() {
   // terpisah di sini — key yang sama dengan bentuk data berbeda akan saling
   // menimpa cache React Query dan merusak permissions di seluruh sidebar.
   const { user, isLoading } = useAuth();
-
+  
   if (!isLoading && !user) {
     return (
       <div className="space-y-6">
@@ -32,16 +32,18 @@ export function SettingsPage() {
       {isLoading || !user ? (
         <div className="flex justify-center py-20"><LoadingSpinner /></div>
       ) : (
-        <SettingsForm
-          user={{
-            id: user.id,
-            name: user.name ?? null,
-            email: user.email,
-            phoneNumber: user.phoneNumber ?? null,
-            emailNotifications: user.emailNotifications ?? true,
-            waNotifications: user.waNotifications ?? true,
-          }}
-        />
+        <div className="space-y-8">
+          <SettingsForm
+            user={{
+              id: user.id,
+              name: user.name ?? null,
+              email: user.email,
+              phoneNumber: user.phoneNumber ?? null,
+              emailNotifications: user.emailNotifications ?? true,
+              waNotifications: user.waNotifications ?? true,
+            }}
+          />
+        </div>
       )}
     </div>
   );

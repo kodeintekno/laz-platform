@@ -64,6 +64,9 @@ export const lembagaProfileSchema = z.object({
   logoPublicId: z.string().optional().or(z.literal("")),
   officePhotoUrl: z.string().url().optional().or(z.literal("")),
   officePhotoPublicId: z.string().optional().or(z.literal("")),
+  bankCode: z.string().optional().or(z.literal("")),
+  accountNumber: z.string().optional().or(z.literal("")),
+  accountHolder: z.string().optional().or(z.literal("")),
 });
 
 export type LembagaProfileInput = z.infer<typeof lembagaProfileSchema>;

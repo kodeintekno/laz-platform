@@ -33,7 +33,7 @@ export const NAV_ITEMS: NavItem[] = [
   {
     label: "Reports",
     href: "/dashboard/reports",
-    icon: "BarChart2",
+    icon: "PieChart",
     permission: PERMISSIONS.REPORTS_READ,
   },
   {
@@ -44,20 +44,14 @@ export const NAV_ITEMS: NavItem[] = [
       {
         label: "Programs",
         href: "/dashboard/programs",
-        icon: "BookOpen",
+        icon: "Layers",
         permission: PERMISSIONS.PROGRAMS_READ,
       },
       {
         label: "Payments",
         href: "/dashboard/payments",
-        icon: "CreditCard",
+        icon: "HandCoins",
         permission: PERMISSIONS.PAYMENTS_READ,
-      },
-      {
-        label: "Donations",
-        href: "/dashboard/donations",
-        icon: "Heart",
-        permission: PERMISSIONS.DONATIONS_READ,
       },
       {
         label: "Distributions",
@@ -68,47 +62,108 @@ export const NAV_ITEMS: NavItem[] = [
     ],
   },
   {
-    label: "Relawan",
-    href: "#relawan",
-    icon: "Users",
+    label: "Keuangan",
+    href: "#keuangan-platform",
+    icon: "Landmark",
     children: [
       {
-        label: "Kegiatan Relawan",
-        href: "/dashboard/relawan/kegiatan",
-        icon: "HeartHandshake",
-        permission: PERMISSIONS.VOLUNTEERS_MANAGE,
+        label: "Pengajuan Penarikan",
+        href: "/dashboard/withdrawals",
+        icon: "Banknote",
+        permission: PERMISSIONS.WITHDRAWALS_MANAGE as any,
       },
       {
-        label: "Pendaftaran Relawan",
-        href: "/dashboard/relawan/pendaftaran",
-        icon: "ClipboardCheck",
-        permission: PERMISSIONS.VOLUNTEERS_MANAGE,
+        label: "Riwayat Penarikan",
+        href: "/dashboard/payouts",
+        icon: "Receipt",
+        permission: PERMISSIONS.WITHDRAWALS_MANAGE as any,
+      },
+      {
+        label: "Persentase",
+        href: "/dashboard/amil-global",
+        icon: "Coins",
+        permission: PERMISSIONS.SETTINGS_MANAGE,
+      },
+    ],
+  },
+  {
+    label: "Keuangan",
+    href: "#keuangan",
+    icon: "Wallet",
+    requiresLembaga: true,
+    children: [
+      {
+        label: "Overview",
+        href: "/dashboard/lembaga/finance/overview",
+        icon: "TrendingUp",
+        permission: PERMISSIONS.PAYMENTS_READ,
+        requiresLembaga: true,
+      },
+      {
+        label: "Penarikan",
+        href: "/dashboard/withdrawals/mine",
+        icon: "ArrowDownToLine",
+        permission: PERMISSIONS.WITHDRAWALS_CREATE as any,
+        requiresLembaga: true,
+      },
+      {
+        label: "Bank Account",
+        href: "/dashboard/lembaga/finance/bank-account",
+        icon: "CreditCard",
+        permission: PERMISSIONS.LEMBAGA_READ,
+        requiresLembaga: true,
+      },
+      {
+        label: "Persentase",
+        href: "/dashboard/lembaga/finance/amil",
+        icon: "Coins",
+        permission: PERMISSIONS.LEMBAGA_READ,
+        requiresLembaga: true,
       },
     ],
   },
   {
     label: "Akuntansi",
     href: "#akuntansi",
-    icon: "Calculator",
+    icon: "BookA",
     requiresLembaga: true,
     children: [
       {
         label: "Chart of Accounts",
         href: "/dashboard/coa",
-        icon: "BookMarked",
+        icon: "Network",
         permission: PERMISSIONS.COA_READ,
       },
       {
         label: "Jurnal Umum",
         href: "/dashboard/journal",
-        icon: "ClipboardList",
+        icon: "BookCopy",
         permission: PERMISSIONS.JOURNAL_READ,
       },
       {
         label: "Buku Besar",
         href: "/dashboard/ledger",
-        icon: "Book",
+        icon: "Library",
         permission: PERMISSIONS.JOURNAL_READ,
+      },
+    ],
+  },
+  {
+    label: "Relawan",
+    href: "#relawan",
+    icon: "UsersRound",
+    children: [
+      {
+        label: "Kegiatan Relawan",
+        href: "/dashboard/relawan/kegiatan",
+        icon: "CalendarDays",
+        permission: PERMISSIONS.VOLUNTEERS_MANAGE,
+      },
+      {
+        label: "Pendaftaran Relawan",
+        href: "/dashboard/relawan/pendaftaran",
+        icon: "UserPlus",
+        permission: PERMISSIONS.VOLUNTEERS_MANAGE,
       },
     ],
   },
@@ -120,13 +175,13 @@ export const NAV_ITEMS: NavItem[] = [
       {
         label: "Manajemen Lembaga",
         href: "/dashboard/lembaga",
-        icon: "Building2",
+        icon: "Building",
         permission: PERMISSIONS.LEMBAGA_MANAGE,
       },
       {
         label: "Profil Lembaga",
         href: "/dashboard/lembaga/profil",
-        icon: "Building2",
+        icon: "Contact",
         permission: PERMISSIONS.LEMBAGA_READ,
         requiresLembaga: true,
       },
@@ -141,12 +196,12 @@ export const NAV_ITEMS: NavItem[] = [
   {
     label: "Administrasi",
     href: "#administrasi",
-    icon: "Shield",
+    icon: "ShieldCheck",
     children: [
       {
         label: "Hak Akses",
         href: "/dashboard/rbac",
-        icon: "Shield",
+        icon: "Key",
         permission: PERMISSIONS.ROLES_MANAGE,
       },
       {

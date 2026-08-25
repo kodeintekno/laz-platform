@@ -2,7 +2,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { X, UploadCloud } from "lucide-react";
+import { X, UploadCloud, FileText, ExternalLink } from "lucide-react";
 import { FormLabel } from "./form/form-label";
 import { LoadingSpinner } from "./LoadingSpinner";
 import { logger } from "@/lib/logger";
@@ -51,6 +51,12 @@ export const FileUpload: React.FC<FileUploadProps> = ({
   const [deleting, setDeleting] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string>(initialUrl);
   const [currentPublicId, setCurrentPublicId] = useState<string>(initialPublicId);
+  // Track whether the current file is a PDF (for preview rendering)
+  const [isPdf, setIsPdf] = useState<boolean>(
+    initialUrl
+      ? /\.pdf($|\?)/i.test(initialUrl) || initialUrl.includes("/raw/upload/")
+      : false
+  );
 
   // Sync state if initial values change
   useEffect(() => {
@@ -65,6 +71,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({
   const handleChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    const fileIsPdf = file.type === "application/pdf";
     if (file.size > 2 * 1024 * 1024) {
       toast.error("Gagal mengunggah: File terlalu besar. Maksimum 2 MB.");
       logger.error("File terlalu besar. Maksimum 2 MB.");
@@ -108,6 +115,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({
 
       setPreviewUrl(result.url);
       setCurrentPublicId(result.publicId);
+      setIsPdf(fileIsPdf);
       onUpload({ url: result.url, publicId: result.publicId });
     } catch (err: any) {
       if (err.name === "AbortError") {
@@ -139,6 +147,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({
 
     setPreviewUrl("");
     setCurrentPublicId("");
+    setIsPdf(false);
     onRemove?.();
 
     // Reset file input value so user can upload the same file again if desired
@@ -164,7 +173,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({
         <div className="flex flex-col items-center justify-center p-6 text-center text-muted group-hover:text-primary transition-colors pointer-events-none">
           <UploadCloud className="w-8 h-8 mb-3 opacity-70 group-hover:opacity-100 group-hover:scale-110 transition-all duration-200" strokeWidth={1.5} />
           <p className="text-sm font-semibold mb-1">Pilih atau seret file ke sini</p>
-          <p className="text-[11px] opacity-70">Maksimal 2 MB ({accept.replace(/image\//g, '').toUpperCase().replace(/,/g, ', ')})</p>
+          <p className="text-[11px] opacity-70">Maksimal 2 MB ({accept.replace(/image\//g, '').replace(/application\//g, '').toUpperCase().replace(/,/g, ', ')})</p>
         </div>
       </div>
 
@@ -180,14 +189,38 @@ export const FileUpload: React.FC<FileUploadProps> = ({
       {previewUrl && !uploading && (
         <div className="mt-3">
           <p className="text-sm font-semibold text-primary mb-2">Pratinjau:</p>
-          <div className="relative w-24 h-24 rounded-xl border border-border/40 bg-surface-soft p-1.5 shadow-sm overflow-visible flex items-center justify-center group hover:shadow-md transition-all duration-200">
-            <img
-              src={previewUrl}
-              alt="Preview"
-              className={`max-w-full max-h-full object-contain rounded-lg ${
-                deleting ? "opacity-40" : ""
-              }`}
-            />
+          <div className={`relative rounded-xl border border-border/40 bg-surface-soft shadow-sm overflow-visible flex items-center justify-center group hover:shadow-md transition-all duration-200 ${
+            isPdf ? "w-full p-3" : "w-24 h-24 p-1.5"
+          }`}>
+            {isPdf ? (
+              /* PDF preview */
+              <div className={`flex items-center gap-3 w-full ${deleting ? "opacity-40" : ""}` }>
+                <div className="flex-shrink-0 w-10 h-10 bg-red-50 rounded-lg flex items-center justify-center">
+                  <FileText className="w-6 h-6 text-red-500" strokeWidth={1.5} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-semibold text-primary truncate">File PDF</p>
+                  <a
+                    href={previewUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-[11px] text-brand-primary hover:underline flex items-center gap-1 mt-0.5"
+                  >
+                    <ExternalLink className="w-3 h-3" />
+                    Buka / Lihat PDF
+                  </a>
+                </div>
+              </div>
+            ) : (
+              /* Image preview */
+              <img
+                src={previewUrl}
+                alt="Preview"
+                className={`max-w-full max-h-full object-contain rounded-lg ${
+                  deleting ? "opacity-40" : ""
+                }`}
+              />
+            )}
             {deleting ? (
               <div className="absolute inset-0 flex items-center justify-center bg-surface/70 rounded-xl">
                 <LoadingSpinner size="sm" className="border-t-destructive" />
@@ -198,7 +231,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({
                 onClick={handleRemove}
                 disabled={disabled || uploading || deleting}
                 className="absolute -top-2.5 -right-2.5 bg-destructive hover:bg-destructive/95 text-white rounded-full p-1 shadow-md hover:scale-110 active:scale-95 transition-all duration-150 disabled:opacity-50 disabled:scale-100 flex items-center justify-center cursor-pointer z-10"
-                title="Batalkan & Hapus gambar"
+                title="Batalkan & Hapus file"
               >
                 <X className="w-3.5 h-3.5" strokeWidth={2.5} />
               </button>
