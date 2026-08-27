@@ -9,6 +9,7 @@ import { hasPermission } from "../../../../shared/lib/permissions";
 import { PERMISSIONS } from "../../../../shared/constants/permissions";
 import { MAX_FEATURED_PROGRAMS, type ProgramInput } from "../../../../shared/validations/programs.schema";
 import type { RBACSessionUser } from "../../../../shared/types/rbac";
+import { Prisma } from "@prisma/client";
 
 /** Statuses only a SUPER_ADMIN (programs.approve) may set — everyone else must go through approve/reject. */
 const APPROVAL_GATED_STATUSES = new Set(["PUBLISHED", "REJECTED"]);
@@ -266,13 +267,45 @@ export class ProgramsService {
     return updated;
   }
 
-  async deleteProgram(id: string, adminId: string) {
-    // Delete the program
-    const deletedProgram = await this.programsRepository.delete(id);
+  async deleteProgram(id: string, actor: RBACSessionUser) {
+    // 1. Pastikan program ada
+    const existing = await this.programsRepository.findById(id);
+    if (!existing) throw new NotFoundException("Program tidak ditemukan");
 
-    // Log the deletion
+    // 2. Tenant scoping: LEMBAGA_ADMIN hanya boleh hapus program milik lembaganya sendiri
+    if (
+      actor.lembagaId &&
+      !hasPermission(actor, PERMISSIONS.PROGRAMS_APPROVE) &&
+      existing.lembagaId !== actor.lembagaId
+    ) {
+      throw new AppError(
+        "FORBIDDEN_PROGRAM",
+        "Anda tidak memiliki izin untuk menghapus program lembaga lain",
+        403,
+      );
+    }
+
+    // 3. Hapus program, tangani error foreign key constraint dengan pesan yang jelas
+    let deletedProgram: typeof existing;
+    try {
+      deletedProgram = await this.programsRepository.delete(id);
+    } catch (err) {
+      if (
+        err instanceof Prisma.PrismaClientKnownRequestError &&
+        err.code === "P2003"
+      ) {
+        throw new AppError(
+          "PROGRAM_HAS_RELATIONS",
+          "Program tidak dapat dihapus karena masih memiliki data donasi atau penyaluran terkait",
+          409,
+        );
+      }
+      throw err;
+    }
+
+    // 4. Log the deletion
     await this.auditService.log({
-      userId: adminId,
+      userId: actor.id,
       action: AuditAction.DELETE,
       entity: "Program",
       entityId: id,

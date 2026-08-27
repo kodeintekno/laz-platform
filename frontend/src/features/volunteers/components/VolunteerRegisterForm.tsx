@@ -136,10 +136,12 @@ function Step2({
   isPending,
   uploads,
   setUploads,
+  submitAttempted,
 }: {
   isPending: boolean;
   uploads: UploadDraft;
   setUploads: (fn: (prev: UploadDraft) => UploadDraft) => void;
+  submitAttempted: boolean;
 }) {
   return (
     <div className="space-y-4">
@@ -151,6 +153,8 @@ function Step2({
       <FileUpload
         name="photoUrl"
         label="Foto Diri (Wajib)"
+        required
+        forceValidate={submitAttempted}
         folder="volunteers/photo"
         disabled={isPending}
         initialUrl={uploads.photo.url}
@@ -162,6 +166,8 @@ function Step2({
       <FileUpload
         name="ktpUrl"
         label="KTP (Wajib)"
+        required
+        forceValidate={submitAttempted}
         accept="image/png, image/jpeg, application/pdf"
         folder="volunteers/documents"
         disabled={isPending}
@@ -231,6 +237,7 @@ export function VolunteerRegisterForm() {
   const { refresh } = useVolunteerAuth();
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
+  const [submitAttempted, setSubmitAttempted] = useState(false);
 
   const savedDraft = useRef(loadDraft());
   const savedUploads = useRef(loadUploadDraft());
@@ -300,11 +307,23 @@ export function VolunteerRegisterForm() {
 
   const onSubmit = (data: VolunteerRegistrationInput) => {
     // Guard: only submit on the last step.
-    // Prevents accidental submission when user presses Enter on a text field in earlier steps.
     if (currentStep !== STEPS.length - 1) {
       handleNext();
       return;
     }
+
+    setSubmitAttempted(true);
+
+    // Guard: validate wajib uploads
+    if (!uploads.photo.url) {
+      setError("Foto diri wajib diupload.");
+      return;
+    }
+    if (!uploads.ktp.url) {
+      setError("KTP wajib diupload.");
+      return;
+    }
+
     setError(null);
     startTransition(async () => {
       try {
@@ -340,7 +359,7 @@ export function VolunteerRegisterForm() {
             >
               {currentStep === 0 && <Step1 isPending={isPending} />}
               {currentStep === 1 && (
-                <Step2 isPending={isPending} uploads={uploads} setUploads={handleSetUploads} />
+                <Step2 isPending={isPending} uploads={uploads} setUploads={handleSetUploads} submitAttempted={submitAttempted} />
               )}
             </div>
 

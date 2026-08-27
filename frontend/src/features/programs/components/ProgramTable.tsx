@@ -50,6 +50,7 @@ export function ProgramTable({ programs, pagination }: ProgramTableProps) {
   const { can } = usePermission();
   const canApprove = can(PERMISSIONS.PROGRAMS_APPROVE);
   const canFeature = can(PERMISSIONS.PROGRAMS_APPROVE);
+  const canDelete = can(PERMISSIONS.PROGRAMS_DELETE);
   const [isPending, startTransition] = useTransition();
   const [confirmState, setConfirmState] = useState<{
     isOpen: boolean;
@@ -238,18 +239,26 @@ export function ProgramTable({ programs, pagination }: ProgramTableProps) {
             onClick: () => router.push(`/dashboard/programs/${program.slug}/edit`),
             intent: "info" as const,
           },
-          {
-            label: "Penyaluran",
-            icon: HandCoins,
-            onClick: () => router.push(`/dashboard/programs/${program.slug}/distributions/new`),
-            intent: "success" as const,
-          },
-          {
-            label: "Hapus",
-            icon: Trash2,
-            onClick: () => handleDelete(program),
-            intent: "destructive" as const,
-          },
+          ...((program.status === "PUBLISHED" || program.status === "COMPLETED")
+            ? [
+                {
+                  label: "Penyaluran",
+                  icon: HandCoins,
+                  onClick: () => router.push(`/dashboard/programs/${program.slug}/distributions/new`),
+                  intent: "success" as const,
+                },
+              ]
+            : []),
+          ...(canDelete
+            ? [
+                {
+                  label: "Hapus",
+                  icon: Trash2,
+                  onClick: () => handleDelete(program),
+                  intent: "destructive" as const,
+                },
+              ]
+            : []),
         ];
 
         return <ActionDropdown items={items} />;

@@ -49,8 +49,8 @@ export class UsersController {
   /** Daftar role untuk dropdown form user. */
   @Get("roles")
   @RequirePermission(PERMISSIONS.USERS_READ)
-  async roles() {
-    return this.usersService.getRoles();
+  async roles(@CurrentUser() user: RBACSessionUser) {
+    return this.usersService.getRoles(user.roleName === "SUPER_ADMIN");
   }
 
   @Get("users/:id")
@@ -112,6 +112,12 @@ export class UsersController {
     if (!body?.roleId) {
       throw new BadRequestException("Data tidak lengkap");
     }
-    return this.usersService.changeRole(id, body.roleId, user.id);
+    return this.usersService.changeRole(
+      id,
+      body.roleId,
+      user.id,
+      user.lembagaId ?? undefined,
+      user.roleName === "SUPER_ADMIN"
+    );
   }
 }

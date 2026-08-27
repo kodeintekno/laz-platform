@@ -11,19 +11,28 @@ import {
 import { FileInterceptor } from "@nestjs/platform-express";
 import { Public } from "../../common/decorators/public.decorator";
 import { CloudinaryProvider } from "../../lib/upload/cloudinary.provider";
+import { FileProcessingService } from "../../lib/upload/file-processing.service";
 
-const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB — images & PDF documents
+/** Hard limit — FileProcessingService will also validate, but Multer stops huge uploads early */
+const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
 
 /**
  * Upload Cloudinary — pengganti src/app/api/upload/route.ts.
  * POST bersifat @Public() agar form registrasi (Lembaga/Relawan) dapat
  * mengupload file sebelum login. Throttler global tetap aktif sebagai
  * proteksi rate-limit. DELETE tetap memerlukan autentikasi.
- * Multer memory storage, 10MB, gambar atau PDF (dokumen legalitas/KTP/CV).
+ *
+ * Pipeline:
+ *  1. Multer: memory storage, hard 10 MB limit, whitelist MIME filter
+ *  2. FileProcessingService: magic-bytes validation + image→WebP compression
+ *  3. CloudinaryProvider: upload buffer hasil processing
  */
 @Controller("api/upload")
 export class UploadsController {
-  constructor(private readonly cloudinaryProvider: CloudinaryProvider) {}
+  constructor(
+    private readonly cloudinaryProvider: CloudinaryProvider,
+    private readonly fileProcessingService: FileProcessingService,
+  ) {}
 
   @Public()
   @Post()
@@ -31,8 +40,15 @@ export class UploadsController {
     FileInterceptor("file", {
       limits: { fileSize: MAX_FILE_SIZE },
       fileFilter: (_req, file, cb) => {
-        if (!file.mimetype.startsWith("image/") && file.mimetype !== "application/pdf") {
-          return cb(new BadRequestException("Hanya file gambar atau PDF yang diizinkan"), false);
+        // Strict whitelist — hanya PNG, JPG/JPEG, dan PDF
+        const allowed = ["image/png", "image/jpeg", "application/pdf"];
+        if (!allowed.includes(file.mimetype)) {
+          return cb(
+            new BadRequestException(
+              `Format file tidak diizinkan: ${file.mimetype}. Hanya PNG, JPG/JPEG, dan PDF yang diterima.`,
+            ),
+            false,
+          );
         }
         cb(null, true);
       },
@@ -45,11 +61,23 @@ export class UploadsController {
     if (!file) {
       throw new BadRequestException("No file provided");
     }
+
+    // Process: validate magic bytes + compress images to WebP
+    const processed = await this.fileProcessingService.process(file);
+
+    // Upload processed buffer to Cloudinary
     const result = await this.cloudinaryProvider.upload(
-      { buffer: file.buffer, mimetype: file.mimetype },
+      { buffer: processed.buffer, mimetype: processed.mimetype },
       { folder: folder || undefined },
     );
-    return { url: result.url, publicId: result.publicId, resourceType: result.resourceType };
+
+    return {
+      url: result.url,
+      publicId: result.publicId,
+      resourceType: result.resourceType,
+      originalSize: processed.originalSize,
+      processedSize: processed.processedSize,
+    };
   }
 
   @Delete()
@@ -61,3 +89,4 @@ export class UploadsController {
     return { deleted: true };
   }
 }
+

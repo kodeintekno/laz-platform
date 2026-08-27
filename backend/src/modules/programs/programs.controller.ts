@@ -105,6 +105,6 @@ export class ProgramsController {
   @Delete(":id")
   @RequirePermission(PERMISSIONS.PROGRAMS_DELETE)
   async remove(@Param("id") id: string, @CurrentUser() user: RBACSessionUser) {
-    return this.programsService.deleteProgram(id, user.id);
+    return this.programsService.deleteProgram(id, user);
   }
 }

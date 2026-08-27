@@ -115,10 +115,11 @@ const STEP_FIELDS: FieldPath<LembagaRegistrationInput>[][] = [
 // ---------------------------------------------------------------------------
 // Inner step panels (they consume FormProvider context)
 // ---------------------------------------------------------------------------
-function Step1({ isPending, uploads, setUploads }: {
+function Step1({ isPending, uploads, setUploads, submitAttempted }: {
   isPending: boolean;
   uploads: UploadDraft;
   setUploads: (fn: (prev: UploadDraft) => UploadDraft) => void;
+  submitAttempted: boolean;
 }) {
   const { setValue, trigger } = useFormContext<LembagaRegistrationInput>();
   return (
@@ -148,6 +149,8 @@ function Step1({ isPending, uploads, setUploads }: {
       <FileUpload
         name="logoUrl"
         label="Logo Lembaga"
+        required
+        forceValidate={submitAttempted}
         folder="lembaga/logo"
         disabled={isPending}
         initialUrl={uploads.logo.url}
@@ -175,10 +178,11 @@ function Step1({ isPending, uploads, setUploads }: {
   );
 }
 
-function Step2({ isPending, uploads, setUploads }: {
+function Step2({ isPending, uploads, setUploads, submitAttempted }: {
   isPending: boolean;
   uploads: UploadDraft;
   setUploads: (fn: (prev: UploadDraft) => UploadDraft) => void;
+  submitAttempted: boolean;
 }) {
   return (
     <div className="space-y-4">
@@ -189,6 +193,8 @@ function Step2({ isPending, uploads, setUploads }: {
       <FileUpload
         name="aktaYayasanUrl"
         label="Akta Yayasan"
+        required
+        forceValidate={submitAttempted}
         accept="image/png, image/jpeg, application/pdf"
         folder="lembaga/documents"
         disabled={isPending}
@@ -200,6 +206,8 @@ function Step2({ isPending, uploads, setUploads }: {
       <FileUpload
         name="skKemenkumhamUrl"
         label="SK Kemenkumham / Legalitas"
+        required
+        forceValidate={submitAttempted}
         accept="image/png, image/jpeg, application/pdf"
         folder="lembaga/documents"
         disabled={isPending}
@@ -307,6 +315,7 @@ export function LembagaRegistrationForm() {
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState(false);
+  const [submitAttempted, setSubmitAttempted] = useState(false);
 
   // Load saved step & draft on first mount
   const savedDraft = useRef(loadDraft());
@@ -373,9 +382,16 @@ export function LembagaRegistrationForm() {
   );
 
   const handleNext = async () => {
+    // Mark attempted so FileUpload required errors show on current step
+    setSubmitAttempted(true);
     const fields = STEP_FIELDS[currentStep];
     const valid = fields.length === 0 ? true : await trigger(fields);
+    // For step 1: also check logo upload
+    if (currentStep === 0 && !uploads.logo.url) return;
+    // For step 2: also check akta & sk
+    if (currentStep === 1 && (!uploads.aktaYayasan.url || !uploads.skKemenkumham.url)) return;
     if (valid) {
+      setSubmitAttempted(false); // reset for next step
       setCurrentStep((s) => Math.min(STEPS.length - 1, s + 1));
       setError(null);
     }
@@ -387,12 +403,28 @@ export function LembagaRegistrationForm() {
   };
 
   const onSubmit = (data: LembagaRegistrationInput) => {
-    // Guard: only submit on the last step.
-    // Prevents accidental submission when user presses Enter on a text field in earlier steps.
     if (currentStep !== STEPS.length - 1) {
       handleNext();
       return;
     }
+
+    // Mark attempted so all required FileUpload fields show errors if empty
+    setSubmitAttempted(true);
+
+    // Guard: validate wajib uploads (tracked outside RHF state)
+    if (!uploads.logo.url) {
+      setError("Logo lembaga wajib diupload. Kembali ke langkah 1.");
+      return;
+    }
+    if (!uploads.aktaYayasan.url) {
+      setError("Akta Yayasan wajib diupload. Kembali ke langkah 2.");
+      return;
+    }
+    if (!uploads.skKemenkumham.url) {
+      setError("SK Kemenkumham / Legalitas wajib diupload. Kembali ke langkah 2.");
+      return;
+    }
+
     setError(null);
     startTransition(async () => {
       try {
@@ -459,10 +491,10 @@ export function LembagaRegistrationForm() {
               style={{ animationFillMode: "both" }}
             >
               {currentStep === 0 && (
-                <Step1 isPending={isPending} uploads={uploads} setUploads={handleSetUploads} />
+                <Step1 isPending={isPending} uploads={uploads} setUploads={handleSetUploads} submitAttempted={submitAttempted} />
               )}
               {currentStep === 1 && (
-                <Step2 isPending={isPending} uploads={uploads} setUploads={handleSetUploads} />
+                <Step2 isPending={isPending} uploads={uploads} setUploads={handleSetUploads} submitAttempted={submitAttempted} />
               )}
               {currentStep === 2 && <Step3 isPending={isPending} />}
             </div>
