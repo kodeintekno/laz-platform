@@ -14,6 +14,17 @@ interface FileUploadProps {
   accept?: string;
   disabled?: boolean;
   /**
+   * Mark this upload as required. Shows a red asterisk on the label and
+   * displays an error message if the user tries to submit without uploading.
+   */
+  required?: boolean;
+  /**
+   * When set to true, immediately show the required-empty error even if the
+   * user has never interacted with this field. Useful for triggering validation
+   * on form submit when the field is still empty.
+   */
+  forceValidate?: boolean;
+  /**
    * Called when upload succeeds. Passes the uploaded image URL and its publicId.
    */
   onUpload: (payload: { url: string; publicId: string }) => void;
@@ -38,6 +49,8 @@ export const FileUpload: React.FC<FileUploadProps> = ({
   label = "Upload",
   accept = "image/png, image/jpeg",
   disabled = false,
+  required = false,
+  forceValidate = false,
   onUpload,
   onRemove,
   initialUrl = "",
@@ -57,6 +70,9 @@ export const FileUpload: React.FC<FileUploadProps> = ({
       ? /\.pdf($|\?)/i.test(initialUrl) || initialUrl.includes("/raw/upload/")
       : false
   );
+  // Show required-empty error after first interaction (remove or external error)
+  const [touched, setTouched] = useState(false);
+  const hasFile = Boolean(previewUrl);
 
   // Sync state if initial values change
   useEffect(() => {
@@ -72,9 +88,9 @@ export const FileUpload: React.FC<FileUploadProps> = ({
     const file = e.target.files?.[0];
     if (!file) return;
     const fileIsPdf = file.type === "application/pdf";
-    if (file.size > 2 * 1024 * 1024) {
-      toast.error("Gagal mengunggah: File terlalu besar. Maksimum 2 MB.");
-      logger.error("File terlalu besar. Maksimum 2 MB.");
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error("Gagal mengunggah: File terlalu besar. Maksimum 10 MB.");
+      logger.error("File terlalu besar. Maksimum 10 MB.");
       // Reset the file input so it can trigger again
       e.target.value = "";
       return;
@@ -116,6 +132,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({
       setPreviewUrl(result.url);
       setCurrentPublicId(result.publicId);
       setIsPdf(fileIsPdf);
+      setTouched(true);
       onUpload({ url: result.url, publicId: result.publicId });
     } catch (err: any) {
       if (err.name === "AbortError") {
@@ -148,6 +165,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({
     setPreviewUrl("");
     setCurrentPublicId("");
     setIsPdf(false);
+    setTouched(true); // mark touched so required error shows
     onRemove?.();
 
     // Reset file input value so user can upload the same file again if desired
@@ -155,12 +173,22 @@ export const FileUpload: React.FC<FileUploadProps> = ({
     if (fileInput) fileInput.value = "";
   };
 
+  // Derived: show required-empty error when touched, force-validated, or external error forces it
+  const requiredError = required && !hasFile && (touched || forceValidate || Boolean(error))
+    ? "File ini wajib diupload"
+    : null;
+  const displayError = error || requiredError;
+  const isInvalid = Boolean(displayError);
+
   return (
     <div className="space-y-1.5 w-full">
       <FormLabel htmlFor={name}>
         {label}
+        {required && <span className="ml-1 text-destructive" aria-hidden="true">*</span>}
       </FormLabel>
-      <div className="relative flex flex-col items-center justify-center w-full min-h-[140px] border-2 border-dashed border-border/60 rounded-xl bg-surface/50 hover:bg-surface-muted transition-colors focus-within:ring-2 focus-within:ring-brand-primary/30 focus-within:border-brand-primary group">
+      <div className={`relative flex flex-col items-center justify-center w-full min-h-[140px] border-2 border-dashed rounded-xl bg-surface/50 hover:bg-surface-muted transition-colors focus-within:ring-2 focus-within:ring-brand-primary/30 focus-within:border-brand-primary group ${
+        isInvalid ? "border-destructive/70 bg-destructive/5" : "border-border/60"
+      }`}>
         <input
           id={name}
           name={name}
@@ -173,7 +201,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({
         <div className="flex flex-col items-center justify-center p-6 text-center text-muted group-hover:text-primary transition-colors pointer-events-none">
           <UploadCloud className="w-8 h-8 mb-3 opacity-70 group-hover:opacity-100 group-hover:scale-110 transition-all duration-200" strokeWidth={1.5} />
           <p className="text-sm font-semibold mb-1">Pilih atau seret file ke sini</p>
-          <p className="text-[11px] opacity-70">Maksimal 2 MB ({accept.replace(/image\//g, '').replace(/application\//g, '').toUpperCase().replace(/,/g, ', ')})</p>
+          <p className="text-[11px] opacity-70">Maks. 10 MB &bull; {accept.replace(/image\//g, '').replace(/application\//g, '').toUpperCase().replace(/,\s*/g, ', ')}</p>
         </div>
       </div>
 
@@ -242,8 +270,8 @@ export const FileUpload: React.FC<FileUploadProps> = ({
       {description && (
         <p className="text-[11px] text-muted leading-tight mt-1">{description}</p>
       )}
-      {error && (
-        <p className="text-sm text-destructive mt-1">{error}</p>
+      {displayError && (
+        <p className="text-sm text-destructive mt-1">{displayError}</p>
       )}
     </div>
   );

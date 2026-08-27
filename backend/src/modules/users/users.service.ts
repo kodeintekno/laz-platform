@@ -25,8 +25,12 @@ export class UsersService {
     return this.usersRepository.findMany(page, limit, search, lembagaId);
   }
 
-  async getRoles() {
-    return this.usersRepository.findRoles();
+  async getRoles(isSuperAdmin: boolean = false) {
+    const roles = await this.usersRepository.findRoles();
+    if (!isSuperAdmin) {
+      return roles.filter((role) => role.name !== "SUPER_ADMIN");
+    }
+    return roles;
   }
 
   async getUserById(id: string) {
@@ -53,9 +57,23 @@ export class UsersService {
     }
 
     // 2. Resolve target tenant scoping
-    const targetLembagaId = isSuperAdmin ? input.lembagaId : (adminLembagaId || input.lembagaId);
-    if (!targetLembagaId) {
-      throw new AppError("LEMBAGA_REQUIRED", "Lembaga tujuan harus ditentukan.", 422);
+    const targetRole = await this.usersRepository.findRoleById(input.roleId);
+    if (!targetRole) {
+      throw new AppError("ROLE_NOT_FOUND", "Role tidak ditemukan.", 404);
+    }
+    
+    if (targetRole.name === "SUPER_ADMIN" && !isSuperAdmin) {
+      throw new ForbiddenException("Hanya Super Admin yang dapat membuat Super Admin baru.");
+    }
+
+    let targetLembagaId: string | null | undefined = isSuperAdmin ? input.lembagaId : (adminLembagaId || input.lembagaId);
+    
+    if (targetRole.name === "SUPER_ADMIN") {
+      targetLembagaId = null;
+    } else {
+      if (!targetLembagaId) {
+        throw new AppError("LEMBAGA_REQUIRED", "Lembaga tujuan harus ditentukan.", 422);
+      }
     }
 
     // 3. Hash password
@@ -137,6 +155,15 @@ export class UsersService {
     }
 
     // 5. Prepare update payload
+    const targetRole = await this.usersRepository.findRoleById(input.roleId);
+    if (!targetRole) {
+      throw new AppError("ROLE_NOT_FOUND", "Role tidak ditemukan.", 404);
+    }
+    
+    if (targetRole.name === "SUPER_ADMIN" && !isSuperAdmin) {
+      throw new ForbiddenException("Hanya Super Admin yang dapat menunjuk role Super Admin.");
+    }
+
     const updateData: any = {
       name: input.name,
       email: input.email,
@@ -145,7 +172,11 @@ export class UsersService {
     };
 
     if (isSuperAdmin) {
-      updateData.lembagaId = input.lembagaId;
+      if (targetRole.name === "SUPER_ADMIN") {
+        updateData.lembagaId = null;
+      } else {
+        updateData.lembagaId = input.lembagaId || existingUser.lembagaId;
+      }
     }
 
     if (input.password && input.password.trim() !== "") {
@@ -246,10 +277,31 @@ export class UsersService {
   /**
    * Update a user's role (legacy compatibility).
    */
-  async changeRole(targetUserId: string, newRoleId: string, adminUserId: string) {
+  async changeRole(
+    targetUserId: string,
+    newRoleId: string,
+    adminUserId: string,
+    adminLembagaId?: string,
+    isSuperAdmin?: boolean
+  ) {
     const user = await this.usersRepository.findById(targetUserId);
     if (!user) {
       throw new NotFoundException("User tidak ditemukan");
+    }
+
+    if (!isSuperAdmin && user.lembagaId !== adminLembagaId) {
+      throw new ForbiddenException(
+        "Akses ditolak: Anda tidak dapat mengubah data pengguna dari lembaga amil zakat lain.",
+      );
+    }
+    
+    const targetRole = await this.usersRepository.findRoleById(newRoleId);
+    if (!targetRole) {
+      throw new AppError("ROLE_NOT_FOUND", "Role tidak ditemukan.", 404);
+    }
+    
+    if (targetRole.name === "SUPER_ADMIN" && !isSuperAdmin) {
+      throw new ForbiddenException("Hanya Super Admin yang dapat menunjuk role Super Admin.");
     }
 
     if (user.roleId === newRoleId) {

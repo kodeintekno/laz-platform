@@ -52,8 +52,8 @@ export function ProfileCard({ user }: ProfileCardProps) {
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (file.size > 2 * 1024 * 1024) {
-      toast.error("File terlalu besar. Maksimum 2 MB.");
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error("File terlalu besar. Maksimum 10 MB.");
       return;
     }
     setIsAvatarUploading(true);

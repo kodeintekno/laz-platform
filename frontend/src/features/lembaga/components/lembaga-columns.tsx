@@ -5,7 +5,6 @@ import type { Lembaga } from "@prisma/client";
 import { Pencil, Trash2, CheckCircle2, XCircle, Eye } from "lucide-react";
 
 interface GetLembagaColumnsProps {
-  onEdit: (lembaga: Lembaga) => void;
   onDelete: (lembaga: Lembaga) => void;
   onView?: (lembaga: Lembaga) => void;
   onApprove?: (lembaga: Lembaga) => void;
@@ -19,7 +18,6 @@ const STATUS_META: Record<string, { label: string; intent: "success" | "warning"
 };
 
 export function getLembagaColumns({
-  onEdit,
   onDelete,
   onView,
   onApprove,
@@ -92,12 +90,6 @@ export function getLembagaColumns({
             ...(lembaga.status === "PENDING" && onReject
               ? [{ label: "Tolak", icon: XCircle, onClick: () => onReject(lembaga), intent: "destructive" as const }]
               : []),
-            {
-              label: "Ubah",
-              icon: Pencil,
-              onClick: () => onEdit(lembaga),
-              intent: "info",
-            },
             {
               label: "Hapus",
               icon: Trash2,

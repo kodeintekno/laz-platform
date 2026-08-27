@@ -2,6 +2,7 @@
 
 import { useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { useFormContext, useWatch } from "react-hook-form";
 import { createUserSchema, updateUserSchema } from "../validations/users.schema";
 import { createUserAction } from "../actions/users.actions";
 import { type User } from "@prisma/client";
@@ -15,6 +16,29 @@ interface UserFormProps {
   isSuperAdmin?: boolean;
   currentUserId: string;
   action?: (prevState: any, formData: FormData) => Promise<any>;
+}
+
+function LembagaSelector({ isSuperAdmin, isPending, isSelf, lembagaOptions, roles }: any) {
+  const { control } = useFormContext();
+  const roleId = useWatch({ control, name: "roleId" });
+  
+  const selectedRole = roles.find((r: any) => r.id === roleId);
+  const isSuperAdminRole = selectedRole?.name === "SUPER_ADMIN";
+
+  if (!isSuperAdmin || isSuperAdminRole) return null;
+
+  return (
+    <div className="md:col-span-2">
+      <FormField
+        name="lembagaId"
+        label="Lembaga"
+        type="select"
+        options={lembagaOptions}
+        disabled={isPending || isSelf}
+        description={isSelf ? "Super Admin tidak terikat pada lembaga manapun." : "Pilih lembaga tempat pengguna ini bernaung."}
+      />
+    </div>
+  );
 }
 
 export function UserForm({
@@ -99,7 +123,7 @@ export function UserForm({
                 name: "",
                 email: "",
                 roleId: "",
-                lembagaId: isSuperAdmin ? "" : (lembagas[0]?.id || ""),
+                lembagaId: isSuperAdmin ? "" : undefined,
                 status: "ACTIVE",
                 password: "",
                 confirmPassword: "",
@@ -145,18 +169,13 @@ export function UserForm({
               description={isSelf ? "Anda tidak dapat mengubah status akun Anda sendiri." : "Menentukan apakah akun aktif atau nonaktif."}
             />
 
-            {isSuperAdmin && (
-              <div className="md:col-span-2">
-                <FormField
-                  name="lembagaId"
-                  label="Lembaga"
-                  type="select"
-                  options={lembagaOptions}
-                  disabled={isPending || isSelf}
-                  description={isSelf ? "Super Admin tidak terikat pada lembaga manapun." : "Pilih lembaga tempat pengguna ini bernaung."}
-                />
-              </div>
-            )}
+            <LembagaSelector
+              isSuperAdmin={isSuperAdmin}
+              isPending={isPending}
+              isSelf={isSelf}
+              lembagaOptions={lembagaOptions}
+              roles={roles}
+            />
           </div>
 
           <hr className="border-border/40 my-6" />

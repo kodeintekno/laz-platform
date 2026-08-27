@@ -56,10 +56,6 @@ export function LembagaTable({ lembagas, search, pagination }: LembagaTableProps
     });
   };
 
-  const handleEdit = (lembaga: Lembaga) => {
-    navigate(`/dashboard/lembaga/${lembaga.id}/edit`);
-  };
-
   const handleApprove = (lembaga: Lembaga) => {
     startTransition(async () => {
       const result = await approveLembagaAction(lembaga.id);
@@ -92,7 +88,6 @@ export function LembagaTable({ lembagas, search, pagination }: LembagaTableProps
   };
 
   const columns = getLembagaColumns({
-    onEdit: handleEdit,
     onDelete: handleDelete,
     onView: (lembaga) => setDetailLembaga(lembaga),
     onApprove: handleApprove,

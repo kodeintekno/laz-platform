@@ -68,6 +68,15 @@ export class UsersRepository {
   }
 
   /**
+   * Find a role by ID.
+   */
+  async findRoleById(id: string) {
+    return this.prisma.role.findUnique({
+      where: { id },
+    });
+  }
+
+  /**
    * Find a user by their unique ID, including role and LAZ details.
    */
   async findById(id: string) {
