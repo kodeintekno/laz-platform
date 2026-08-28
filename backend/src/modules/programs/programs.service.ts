@@ -10,6 +10,7 @@ import { PERMISSIONS } from "../../../../shared/constants/permissions";
 import { MAX_FEATURED_PROGRAMS, type ProgramInput } from "../../../../shared/validations/programs.schema";
 import type { RBACSessionUser } from "../../../../shared/types/rbac";
 import { Prisma } from "@prisma/client";
+import { AmilService } from "../amil/amil.service";
 
 /** Statuses only a SUPER_ADMIN (programs.approve) may set — everyone else must go through approve/reject. */
 const APPROVAL_GATED_STATUSES = new Set(["PUBLISHED", "REJECTED"]);
@@ -35,6 +36,7 @@ export class ProgramsService {
     private readonly programsRepository: ProgramsRepository,
     private readonly auditService: AuditService,
     private readonly prisma: PrismaService,
+    private readonly amilService: AmilService,
   ) {}
 
   async getDashboardPrograms(
@@ -95,18 +97,31 @@ export class ProgramsService {
       );
     }
 
-    const newProgram = await this.programsRepository.create({
-      title: data.title,
-      slug,
-      description: data.description,
-      targetAmount: data.targetAmount,
-      category: data.category,
-      status: data.status,
-      imageUrl: data.image || null,
-      startDate: data.startDate ? new Date(data.startDate) : null,
-      endDate: data.endDate ? new Date(data.endDate) : null,
-      createdById: adminId,
-      lembagaId: admin.lembagaId,
+    const newProgram = await this.prisma.$transaction(async (tx) => {
+      const snapshot = await this.amilService.getDefaultProgramAmilSnapshot(tx, {
+        lembagaId: admin.lembagaId!,
+        category: data.category,
+        institutionPercentage: data.institutionPercentage,
+      });
+      return tx.program.create({
+        data: {
+          title: data.title,
+          slug,
+          description: data.description,
+          targetAmount: data.targetAmount,
+          category: data.category,
+          status: data.status,
+          imageUrl: data.image || null,
+          startDate: data.startDate ? new Date(data.startDate) : null,
+          endDate: data.endDate ? new Date(data.endDate) : null,
+          createdById: adminId,
+          lembagaId: admin.lembagaId!,
+          amilPlatformPercentage: snapshot.platformPercentage,
+          amilInstitutionPercentage: snapshot.institutionPercentage,
+          amilMaxTotalPercentage: snapshot.maxTotalPercentage,
+          amilLockedAt: data.status === "PUBLISHED" ? new Date() : null,
+        },
+      });
     });
 
     await this.auditService.log({
@@ -133,20 +148,63 @@ export class ProgramsService {
       throw new NotFoundException("Admin tidak ditemukan");
     }
 
-    const oldProgram = await this.prisma.program.findUnique({
-      where: { id },
-      select: { imageUrl: true },
-    });
+    const oldProgram = await this.prisma.program.findUnique({ where: { id } });
+    if (!oldProgram) throw new NotFoundException("Program tidak ditemukan");
+    if (actor.lembagaId && oldProgram.lembagaId !== actor.lembagaId && !hasPermission(actor, PERMISSIONS.PROGRAMS_APPROVE)) {
+      throw new AppError("FORBIDDEN_PROGRAM", "Anda tidak memiliki izin untuk mengubah program lembaga lain", 403);
+    }
 
-    const updatedProgram = await this.programsRepository.update(id, {
-      title: data.title,
-      description: data.description,
-      targetAmount: data.targetAmount,
-      category: data.category,
-      status: data.status,
-      imageUrl: data.image || null,
-      startDate: data.startDate ? new Date(data.startDate) : null,
-      endDate: data.endDate ? new Date(data.endDate) : null,
+    const snapshotLocked = !!oldProgram.amilLockedAt || ["PUBLISHED", "COMPLETED", "CANCELLED"].includes(oldProgram.status);
+    const requestedInstitution = data.institutionPercentage ?? Number(oldProgram.amilInstitutionPercentage);
+    if (snapshotLocked && (
+      data.category !== oldProgram.category
+      || Math.abs(requestedInstitution - Number(oldProgram.amilInstitutionPercentage)) > 1e-8
+    )) {
+      throw new AppError(
+        "PROGRAM_AMIL_LOCKED",
+        "Kategori dan porsi amil program yang sudah dipublikasikan tidak dapat diubah",
+        409,
+      );
+    }
+
+    const updatedProgram = await this.prisma.$transaction(async (tx) => {
+      let snapshot = {
+        platformPercentage: Number(oldProgram.amilPlatformPercentage),
+        institutionPercentage: Number(oldProgram.amilInstitutionPercentage),
+        maxTotalPercentage: Number(oldProgram.amilMaxTotalPercentage),
+      };
+      if (!snapshotLocked && data.category !== oldProgram.category) {
+        snapshot = await this.amilService.getDefaultProgramAmilSnapshot(tx, {
+          lembagaId: oldProgram.lembagaId,
+          category: data.category,
+          institutionPercentage: data.institutionPercentage,
+        });
+      } else if (!snapshotLocked) {
+        snapshot.institutionPercentage = requestedInstitution;
+        this.amilService.validateProgramAmilSnapshot(
+          snapshot.platformPercentage,
+          snapshot.institutionPercentage,
+          snapshot.maxTotalPercentage,
+        );
+      }
+
+      return tx.program.update({
+        where: { id },
+        data: {
+          title: data.title,
+          description: data.description,
+          targetAmount: data.targetAmount,
+          category: data.category,
+          status: data.status,
+          imageUrl: data.image || null,
+          startDate: data.startDate ? new Date(data.startDate) : null,
+          endDate: data.endDate ? new Date(data.endDate) : null,
+          amilPlatformPercentage: snapshot.platformPercentage,
+          amilInstitutionPercentage: snapshot.institutionPercentage,
+          amilMaxTotalPercentage: snapshot.maxTotalPercentage,
+          ...(!oldProgram.amilLockedAt && data.status === "PUBLISHED" ? { amilLockedAt: new Date() } : {}),
+        },
+      });
     });
 
     // If the image was changed or removed, delete the old image from Cloudinary
@@ -169,6 +227,7 @@ export class ProgramsService {
       action: AuditAction.UPDATE,
       entity: "Program",
       entityId: updatedProgram.id,
+      oldData: oldProgram as any,
       newData: updatedProgram as any,
     });
 
@@ -193,8 +252,14 @@ export class ProgramsService {
       action: AuditAction.PROGRAM_APPROVE,
       entity: "Program",
       entityId: id,
-      oldData: { status: existing.status },
-      newData: { status: updated.status },
+      oldData: { status: existing.status, amilLockedAt: existing.amilLockedAt },
+      newData: {
+        status: updated.status,
+        amilLockedAt: updated.amilLockedAt,
+        amilPlatformPercentage: Number(updated.amilPlatformPercentage),
+        amilInstitutionPercentage: Number(updated.amilInstitutionPercentage),
+        amilMaxTotalPercentage: Number(updated.amilMaxTotalPercentage),
+      },
     });
 
     return updated;

@@ -26,6 +26,7 @@ export { PageHeader } from "./PageHeader";
 export { TableSkeleton } from "./TableSkeleton";
 export { DateRangeFilter } from "./DateRangeFilter";
 export { StepIndicator } from "./StepIndicator";
+export { DatePicker } from "./DatePicker";
 export * from "./form";
 
 

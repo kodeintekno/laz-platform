@@ -43,6 +43,9 @@ export const lembagaRegistrationSchema = z
     adminEmail: z.string().email("Format email tidak valid"),
     adminPassword: z.string().min(8, "Password minimal 8 karakter"),
     confirmPassword: z.string(),
+    termsAccepted: z.boolean().refine((val) => val === true, {
+      message: "Anda harus menyetujui Syarat dan Ketentuan",
+    }),
   })
   .refine((data) => data.adminPassword === data.confirmPassword, {
     message: "Password tidak cocok",

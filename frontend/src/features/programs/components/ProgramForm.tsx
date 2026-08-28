@@ -10,6 +10,8 @@ import { logger } from "@/lib/logger";
 import { usePermission } from "@/hooks/usePermission";
 import { PERMISSIONS } from "@shared/constants/permissions";
 import { type Program } from "@prisma/client";
+import { ProgramAmilAllocation } from "@/features/amil/components/ProgramAmilAllocation";
+import { useAuth } from "@/auth/AuthProvider";
 
 export function ProgramForm({
   initialData,
@@ -20,6 +22,7 @@ export function ProgramForm({
 }) {
   const router = useRouter();
   const { can } = usePermission();
+  const { user } = useAuth();
   const canApprove = can(PERMISSIONS.PROGRAMS_APPROVE);
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
@@ -102,6 +105,9 @@ export function ProgramForm({
   }));
 
   const isStatusLocked = !canApprove && initialData && !SELF_SERVICE_STATUSES.includes(initialData.status);
+  const isAmilLocked = !!initialData && (
+    !!initialData.amilLockedAt || ["PUBLISHED", "COMPLETED", "CANCELLED"].includes(initialData.status)
+  );
 
   return (
     <Card>
@@ -117,6 +123,9 @@ export function ProgramForm({
           image: initialData.imageUrl ?? "",
           startDate: initialData.startDate ? new Date(initialData.startDate).toISOString().split('T')[0] : "",
           endDate: initialData.endDate ? new Date(initialData.endDate).toISOString().split('T')[0] : "",
+          institutionPercentage: Number(initialData.amilInstitutionPercentage),
+          amilPlatformPercentage: Number(initialData.amilPlatformPercentage),
+          amilMaxTotalPercentage: Number(initialData.amilMaxTotalPercentage),
         } : {
           title: "",
           description: "",
@@ -156,7 +165,8 @@ export function ProgramForm({
               label="Kategori"
               type="select"
               options={categoryOptions}
-              disabled={isPending}
+              disabled={isPending || isAmilLocked}
+              description={isAmilLocked ? "Kategori terkunci karena program sudah pernah dipublikasikan." : undefined}
             />
 
             <FormField
@@ -203,6 +213,8 @@ export function ProgramForm({
             placeholder="Tulis deskripsi program lengkap di sini..."
             disabled={isPending}
           />
+
+          {user?.lembagaId && <ProgramAmilAllocation initialData={initialData} />}
 
           <FileUpload
             description="Upload gambar header (Opsional, PNG/JPEG, max 2 MB)"

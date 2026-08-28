@@ -380,6 +380,10 @@ async function main() {
       const calculatedCurrentAmount = prog.donations
         .filter((d) => d.status === "PAID")
         .reduce((sum, d) => sum + d.amount, 0);
+      const programGlobalSetting = globalSettings.find((setting) => setting.category === prog.category);
+      const programPlatformPercentage = Number(programGlobalSetting?.defaultPlatformPercentage ?? 5);
+      const programMaxTotalPercentage = Number(programGlobalSetting?.maxTotalPercentage ?? 12.5);
+      const programInstitutionPercentage = programMaxTotalPercentage - programPlatformPercentage;
 
       const createdProgram = await prisma.program.upsert({
         where: { lembagaId_slug: { lembagaId: approvedLembaga.id, slug: prog.slug } },
@@ -397,6 +401,10 @@ async function main() {
           endDate: prog.endDate,
           createdById: prog.createdById,
           lembagaId: approvedLembaga.id,
+          amilPlatformPercentage: programPlatformPercentage,
+          amilInstitutionPercentage: programInstitutionPercentage,
+          amilMaxTotalPercentage: programMaxTotalPercentage,
+          amilLockedAt: prog.status === "PUBLISHED" ? new Date() : null,
         },
       });
 
@@ -415,9 +423,8 @@ async function main() {
         let netAmount = d.amount;
 
         if (isPaid) {
-          const setting = globalSettings.find(s => s.category === prog.category);
-          platformPercentage = setting ? setting.defaultPlatformPercentage : 5;
-          institutionPercentage = setting ? setting.maxTotalPercentage - platformPercentage : 7.5;
+          platformPercentage = Number(createdProgram.amilPlatformPercentage);
+          institutionPercentage = Number(createdProgram.amilInstitutionPercentage);
           
           amilPlatformAmount = Math.floor(d.amount * (platformPercentage / 100));
           amilInstitutionAmount = Math.floor(d.amount * (institutionPercentage / 100));

@@ -11,7 +11,8 @@ import {
   lembagaRegistrationSchema,
   type LembagaRegistrationInput,
 } from "../validations/lembaga.schema";
-import { FormField, Button } from "@/components/ui";
+import { FormField, Button, FormCheckbox } from "@/components/ui";
+import { LEMBAGA_TERMS_MD } from "../constants/terms";
 import { StepIndicator, type StepConfig } from "@/components/ui/StepIndicator";
 import { FileUpload } from "@/components/ui/FileUpload";
 import { Alert } from "@/components/ui/Alert";
@@ -66,7 +67,7 @@ function loadUploadDraft(): UploadDraft {
 function loadStep(): number {
   try {
     const raw = localStorage.getItem(STEP_KEY);
-    return raw ? Math.max(0, Math.min(2, parseInt(raw, 10))) : 0;
+    return raw ? Math.max(0, Math.min(3, parseInt(raw, 10))) : 0;
   } catch {
     return 0;
   }
@@ -103,6 +104,7 @@ const STEPS: StepConfig[] = [
   { label: "Data Lembaga", description: "Profil & informasi" },
   { label: "Dokumen Legalitas", description: "Upload dokumen resmi" },
   { label: "Akun Admin", description: "Kredensial login" },
+  { label: "Syarat & Ketentuan", description: "Persetujuan platform" },
 ];
 
 // Fields per step for targeted validation
@@ -110,6 +112,7 @@ const STEP_FIELDS: FieldPath<LembagaRegistrationInput>[][] = [
   ["name", "picName", "picPhone", "address", "description", "website", "izinYayasanNumber", "logoUrl"],
   [], // uploads only — no required text fields in step 2
   ["adminName", "adminEmail", "adminPassword", "confirmPassword"],
+  ["termsAccepted"],
 ];
 
 // ---------------------------------------------------------------------------
@@ -184,6 +187,7 @@ function Step2({ isPending, uploads, setUploads, submitAttempted }: {
   setUploads: (fn: (prev: UploadDraft) => UploadDraft) => void;
   submitAttempted: boolean;
 }) {
+  const { setValue } = useFormContext<LembagaRegistrationInput>();
   return (
     <div className="space-y-4">
       <div className="mb-2">
@@ -200,8 +204,14 @@ function Step2({ isPending, uploads, setUploads, submitAttempted }: {
         disabled={isPending}
         initialUrl={uploads.aktaYayasan.url}
         initialPublicId={uploads.aktaYayasan.publicId}
-        onUpload={(p) => setUploads(prev => ({ ...prev, aktaYayasan: p }))}
-        onRemove={() => setUploads(prev => ({ ...prev, aktaYayasan: EMPTY_UPLOAD }))}
+        onUpload={(p) => {
+          setUploads(prev => ({ ...prev, aktaYayasan: p }));
+          setValue("aktaYayasanUrl", p.url, { shouldValidate: true });
+        }}
+        onRemove={() => {
+          setUploads(prev => ({ ...prev, aktaYayasan: EMPTY_UPLOAD }));
+          setValue("aktaYayasanUrl", "", { shouldValidate: true });
+        }}
       />
       <FileUpload
         name="skKemenkumhamUrl"
@@ -213,8 +223,14 @@ function Step2({ isPending, uploads, setUploads, submitAttempted }: {
         disabled={isPending}
         initialUrl={uploads.skKemenkumham.url}
         initialPublicId={uploads.skKemenkumham.publicId}
-        onUpload={(p) => setUploads(prev => ({ ...prev, skKemenkumham: p }))}
-        onRemove={() => setUploads(prev => ({ ...prev, skKemenkumham: EMPTY_UPLOAD }))}
+        onUpload={(p) => {
+          setUploads(prev => ({ ...prev, skKemenkumham: p }));
+          setValue("skKemenkumhamUrl", p.url, { shouldValidate: true });
+        }}
+        onRemove={() => {
+          setUploads(prev => ({ ...prev, skKemenkumham: EMPTY_UPLOAD }));
+          setValue("skKemenkumhamUrl", "", { shouldValidate: true });
+        }}
       />
       <FileUpload
         name="npwpUrl"
@@ -259,6 +275,44 @@ function Step3({ isPending }: { isPending: boolean }) {
   );
 }
 
+function renderMarkdown(text: string) {
+  // Split by double newline for paragraphs
+  const paragraphs = text.split('\n\n');
+  return paragraphs.map((p, i) => {
+    // Split by ** to find bold text
+    const parts = p.split(/(\*\*.*?\*\*)/g);
+    return (
+      <p key={i} className="mb-3 last:mb-0">
+        {parts.map((part, j) => {
+          if (part.startsWith('**') && part.endsWith('**')) {
+            return <strong key={j} className="font-bold text-foreground">{part.slice(2, -2)}</strong>;
+          }
+          return <span key={j}>{part}</span>;
+        })}
+      </p>
+    );
+  });
+}
+
+function Step4({ isPending }: { isPending: boolean }) {
+  return (
+    <div className="space-y-4">
+      <div className="mb-2">
+        <h3 className="text-lg font-bold text-primary">Syarat dan Ketentuan</h3>
+        <p className="text-sm text-secondary">Silakan baca dan setujui Syarat dan Ketentuan kerja sama.</p>
+      </div>
+      <div className="h-64 overflow-y-auto p-5 border border-border rounded-lg bg-surface-muted/30 text-sm text-secondary text-justify mb-4 leading-relaxed">
+        {renderMarkdown(LEMBAGA_TERMS_MD)}
+      </div>
+      <FormCheckbox 
+        name="termsAccepted" 
+        label="Saya menyatakan bahwa saya telah membaca, memahami, dan menyetujui seluruh Syarat dan Ketentuan Kerja Sama Lembaga Ruang Berbagi." 
+        disabled={isPending} 
+      />
+    </div>
+  );
+}
+
 // ---------------------------------------------------------------------------
 // Inner navigation buttons — uses form context
 // ---------------------------------------------------------------------------
@@ -272,7 +326,7 @@ function StepNav({
   currentStep: number;
   totalSteps: number;
   isPending: boolean;
-  onNext: () => Promise<void>;
+  onNext: (e?: React.MouseEvent) => Promise<void>;
   onBack: () => void;
 }) {
   const isLast = currentStep === totalSteps - 1;
@@ -289,18 +343,25 @@ function StepNav({
           ← Kembali
         </Button>
       )}
-      {isLast ? (
-        <Button type="submit" isLoading={isPending} className="flex-1 sm:flex-none px-8 text-sm font-semibold">
-          Kirim Pendaftaran
-        </Button>
-      ) : (
+      {!isLast && (
         <Button
+          key="btn-next"
           type="button"
           onClick={onNext}
           disabled={isPending}
           className="flex-1 sm:flex-none px-8 text-sm font-semibold"
         >
           Lanjut →
+        </Button>
+      )}
+      {isLast && (
+        <Button 
+          key="btn-submit"
+          type="submit" 
+          isLoading={isPending} 
+          className="flex-1 sm:flex-none px-8 text-sm font-semibold"
+        >
+          Kirim Pendaftaran
         </Button>
       )}
     </div>
@@ -331,24 +392,35 @@ export function LembagaRegistrationForm() {
     description: "",
     website: "",
     izinYayasanNumber: "",
-    logoUrl: "",
-    logoPublicId: "",
-    officePhotoUrl: "",
-    officePhotoPublicId: "",
-    aktaYayasanUrl: "",
-    aktaYayasanPublicId: "",
-    skKemenkumhamUrl: "",
-    skKemenkumhamPublicId: "",
-    npwpUrl: "",
-    npwpPublicId: "",
-    otherDocumentUrl: "",
-    otherDocumentPublicId: "",
+    logoUrl: savedUploads.current.logo.url || "",
+    logoPublicId: savedUploads.current.logo.publicId || "",
+    officePhotoUrl: savedUploads.current.officePhoto.url || "",
+    officePhotoPublicId: savedUploads.current.officePhoto.publicId || "",
+    aktaYayasanUrl: savedUploads.current.aktaYayasan.url || "",
+    aktaYayasanPublicId: savedUploads.current.aktaYayasan.publicId || "",
+    skKemenkumhamUrl: savedUploads.current.skKemenkumham.url || "",
+    skKemenkumhamPublicId: savedUploads.current.skKemenkumham.publicId || "",
+    npwpUrl: savedUploads.current.npwp.url || "",
+    npwpPublicId: savedUploads.current.npwp.publicId || "",
+    otherDocumentUrl: savedUploads.current.otherDocument.url || "",
+    otherDocumentPublicId: savedUploads.current.otherDocument.publicId || "",
     adminName: "",
     adminEmail: "",
     adminPassword: "",
     confirmPassword: "",
+    termsAccepted: false as any, // literal true bypass default cast issue
     ...savedDraft.current,
   };
+
+  // Ensure that saved draft values don't overwrite the uploads if they were empty in the draft
+  if (!defaultValues.aktaYayasanUrl && savedUploads.current.aktaYayasan.url) {
+    defaultValues.aktaYayasanUrl = savedUploads.current.aktaYayasan.url;
+    defaultValues.aktaYayasanPublicId = savedUploads.current.aktaYayasan.publicId;
+  }
+  if (!defaultValues.skKemenkumhamUrl && savedUploads.current.skKemenkumham.url) {
+    defaultValues.skKemenkumhamUrl = savedUploads.current.skKemenkumham.url;
+    defaultValues.skKemenkumhamPublicId = savedUploads.current.skKemenkumham.publicId;
+  }
 
   const form = useForm<LembagaRegistrationInput>({
     resolver: zodResolver(lembagaRegistrationSchema) as any,
@@ -381,7 +453,10 @@ export function LembagaRegistrationForm() {
     []
   );
 
-  const handleNext = async () => {
+  const handleNext = async (e?: React.MouseEvent) => {
+    if (e) {
+      e.preventDefault();
+    }
     // Mark attempted so FileUpload required errors show on current step
     setSubmitAttempted(true);
     const fields = STEP_FIELDS[currentStep];
@@ -480,7 +555,10 @@ export function LembagaRegistrationForm() {
 
       <FormProvider {...form}>
         <form
-          onSubmit={handleSubmit(onSubmit)}
+          onSubmit={handleSubmit(onSubmit, (errs) => {
+            console.error("Form validation errors:", errs);
+            toast.error("Ada isian yang belum lengkap atau tidak valid di langkah sebelumnya. Cek kembali form Anda.");
+          })}
           className="space-y-4"
         >
           <fieldset disabled={isPending} className="space-y-4 w-full border-none p-0 m-0">
@@ -497,6 +575,7 @@ export function LembagaRegistrationForm() {
                 <Step2 isPending={isPending} uploads={uploads} setUploads={handleSetUploads} submitAttempted={submitAttempted} />
               )}
               {currentStep === 2 && <Step3 isPending={isPending} />}
+              {currentStep === 3 && <Step4 isPending={isPending} />}
             </div>
 
             {error && (

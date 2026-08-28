@@ -241,7 +241,13 @@ export class DonationsRepository {
     return this.prisma.$transaction(async (tx) => {
       const program = await tx.program.findUnique({
         where: { id: data.programId },
-        select: { lembagaId: true, status: true, category: true },
+        select: {
+          lembagaId: true,
+          status: true,
+          category: true,
+          amilPlatformPercentage: true,
+          amilInstitutionPercentage: true,
+        },
       });
       if (!program) throw new AppError("PROGRAM_NOT_FOUND", "Program tidak ditemukan", 404);
       if (program.status === "PENDING_REVIEW") {
@@ -262,7 +268,11 @@ export class DonationsRepository {
       let institutionAmount = 0;
 
       if (data.status === "PAID") {
-        const split = await this.amilService.calculateSplit(data.amount, program.category, program.lembagaId, tx);
+        const split = this.amilService.calculateSplitFromProgramSnapshot(
+          data.amount,
+          Number(program.amilPlatformPercentage),
+          Number(program.amilInstitutionPercentage),
+        );
         platformPercentage = split.platformPercentage;
         institutionPercentage = split.institutionPercentage;
         amilPlatformAmount = split.amilPlatformAmount;

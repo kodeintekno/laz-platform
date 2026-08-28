@@ -94,6 +94,13 @@ export function ProgramDetailPage() {
             </div>
           </div>
 
+          <div className="mb-6 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm">
+            <p className="font-bold text-emerald-900">Transparansi Porsi Amil Program</p>
+            <div className="mt-2 flex justify-between text-emerald-800"><span>Amil lembaga</span><strong>{Number(program.amilInstitutionPercentage).toFixed(2)}%</strong></div>
+            <div className="mt-1 flex justify-between text-emerald-800"><span>Amil platform</span><strong>{Number(program.amilPlatformPercentage).toFixed(2)}%</strong></div>
+            <div className="mt-2 flex justify-between border-t border-emerald-200 pt-2 text-emerald-950"><span>Dana program</span><strong>{Math.max(0, 100 - Number(program.amilInstitutionPercentage) - Number(program.amilPlatformPercentage)).toFixed(2)}%</strong></div>
+          </div>
+
           <div className="mt-auto">
             <Link
               to={`/donate/${program.slug}`}

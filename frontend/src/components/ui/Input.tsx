@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import { Eye, EyeOff } from "lucide-react";
+import { DatePicker } from "./DatePicker";
 
 export interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   error?: boolean;
@@ -46,6 +47,64 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
             )}
           </button>
         </div>
+      );
+    }
+
+    if (type === "date") {
+      const { value, defaultValue, onChange, placeholder, ...rest } = props;
+      
+      const [internalDate, setInternalDate] = React.useState<Date | null>(() => {
+        const initialVal = value ?? defaultValue;
+        if (typeof initialVal === "string" && initialVal.trim() !== "") {
+          const parts = initialVal.split("-");
+          if (parts.length === 3) {
+            return new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+          }
+          return new Date(initialVal);
+        }
+        return null;
+      });
+
+      React.useEffect(() => {
+        if (value !== undefined) {
+          if (typeof value === "string" && value.trim() !== "") {
+            const parts = value.split("-");
+            if (parts.length === 3) {
+              setInternalDate(new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10)));
+            } else {
+              setInternalDate(new Date(value));
+            }
+          } else {
+            setInternalDate(null);
+          }
+        }
+      }, [value]);
+
+      const handleDateChange = (date: Date | null) => {
+        if (value === undefined) {
+          setInternalDate(date);
+        }
+        if (onChange) {
+          const isoStr = date 
+            ? `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
+            : "";
+          const e = {
+            target: { name: rest.name, value: isoStr },
+            currentTarget: { name: rest.name, value: isoStr }
+          } as React.ChangeEvent<HTMLInputElement>;
+          onChange(e);
+        }
+      };
+
+      return (
+        <DatePicker
+          {...(rest as any)}
+          value={internalDate}
+          onChange={handleDateChange}
+          error={error}
+          disabled={disabled}
+          className={className}
+        />
       );
     }
 

@@ -84,6 +84,12 @@ export const NAV_ITEMS: NavItem[] = [
         icon: "Coins",
         permission: PERMISSIONS.SETTINGS_MANAGE,
       },
+      {
+        label: "Permohonan Amil",
+        href: "/dashboard/amil-platform-requests",
+        icon: "Activity",
+        permission: PERMISSIONS.SETTINGS_MANAGE,
+      },
     ],
   },
   {
@@ -117,6 +123,13 @@ export const NAV_ITEMS: NavItem[] = [
         label: "Persentase",
         href: "/dashboard/lembaga/finance/amil",
         icon: "Coins",
+        permission: PERMISSIONS.LEMBAGA_READ,
+        requiresLembaga: true,
+      },
+      {
+        label: "Pengajuan Amil Platform",
+        href: "/dashboard/lembaga/finance/amil-platform-request",
+        icon: "Activity",
         permission: PERMISSIONS.LEMBAGA_READ,
         requiresLembaga: true,
       },
