@@ -98,6 +98,10 @@ export interface Program {
   distributedAmount: number;
   startDate?: Date | string | null;
   endDate?: Date | string | null;
+  amilPlatformPercentage: number;
+  amilInstitutionPercentage: number;
+  amilMaxTotalPercentage: number;
+  amilLockedAt?: Date | string | null;
   lembagaId: string;
   createdAt: Date;
   updatedAt: Date;

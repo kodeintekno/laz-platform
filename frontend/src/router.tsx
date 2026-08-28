@@ -75,7 +75,9 @@ import { LembagaFinanceOverviewPage } from "@/pages/dashboard/lembaga/finance/Le
 import { LembagaBalancePage } from "@/pages/dashboard/lembaga/finance/LembagaBalancePage";
 import { BankAccountPage } from "@/pages/dashboard/lembaga/finance/BankAccountPage";
 import { LembagaAmilSettingsPage } from "@/pages/dashboard/lembaga/finance/LembagaAmilSettingsPage";
+import { LembagaPlatformAmilRequestPage } from "@/pages/dashboard/lembaga/finance/LembagaPlatformAmilRequestPage";
 import { GlobalAmilSettingsPage } from "@/pages/dashboard/amil/GlobalAmilSettingsPage";
+import { PlatformAmilRequestsPage } from "@/pages/dashboard/amil/PlatformAmilRequestsPage";
 
 export const router = createBrowserRouter([
   {
@@ -307,6 +309,14 @@ export const router = createBrowserRouter([
             ),
           },
           {
+            path: "amil-platform-requests",
+            element: (
+              <RequirePermission permission={PERMISSIONS.SETTINGS_MANAGE}>
+                <PlatformAmilRequestsPage />
+              </RequirePermission>
+            ),
+          },
+          {
             path: "lembaga/finance/overview",
             element: (
               <RequirePermission permission={PERMISSIONS.DONATIONS_READ}>
@@ -327,6 +337,14 @@ export const router = createBrowserRouter([
             element: (
               <RequirePermission permission={PERMISSIONS.LEMBAGA_READ}>
                 <LembagaAmilSettingsPage />
+              </RequirePermission>
+            ),
+          },
+          {
+            path: "lembaga/finance/amil-platform-request",
+            element: (
+              <RequirePermission permission={PERMISSIONS.LEMBAGA_READ}>
+                <LembagaPlatformAmilRequestPage />
               </RequirePermission>
             ),
           },

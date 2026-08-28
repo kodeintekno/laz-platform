@@ -63,7 +63,13 @@ export class PaymentsRepository {
       // We need program category and lembagaId for Amil split
       const program = await tx.program.findUniqueOrThrow({
         where: { id: params.programId },
-        select: { id: true, lembagaId: true, category: true }
+        select: {
+          id: true,
+          lembagaId: true,
+          category: true,
+          amilPlatformPercentage: true,
+          amilInstitutionPercentage: true,
+        }
       });
 
       // 2. Hitung Revenue Split lebih dulu jika PAID (diperlukan untuk update donation)
@@ -76,7 +82,11 @@ export class PaymentsRepository {
       let institutionAmount = 0; // Legacy
 
       if (params.newDonationStatus === "PAID") {
-        const split = await this.amilService.calculateSplit(Number(params.amount), program.category, program.lembagaId, tx);
+        const split = this.amilService.calculateSplitFromProgramSnapshot(
+          Number(params.amount),
+          Number(program.amilPlatformPercentage),
+          Number(program.amilInstitutionPercentage),
+        );
         platformPercentage = split.platformPercentage;
         institutionPercentage = split.institutionPercentage;
         amilPlatformAmount = split.amilPlatformAmount;

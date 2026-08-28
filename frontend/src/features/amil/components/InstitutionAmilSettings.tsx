@@ -91,8 +91,8 @@ export function InstitutionAmilSettings() {
     <div className="space-y-6 mt-8">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h2 className="text-xl font-bold text-slate-800">Porsi Amil Lembaga</h2>
-          <p className="text-slate-500 mt-1 text-sm">Sesuaikan persentase bagian amil (dana operasional) untuk lembaga Anda.</p>
+          <h2 className="text-xl font-bold text-slate-800">Default Porsi Amil Lembaga</h2>
+          <p className="text-slate-500 mt-1 text-sm">Nilai ini menjadi default program baru dan tidak mengubah snapshot program yang sudah dibuat.</p>
         </div>
       </div>
 
@@ -101,9 +101,9 @@ export function InstitutionAmilSettings() {
         <div>
           <h4 className="font-semibold text-sm mb-1">Panduan Singkat</h4>
           <p className="text-sm text-blue-700/80 leading-relaxed">
-            Di sini Anda dapat menentukan berapa persen dana operasional yang akan diambil oleh lembaga Anda.
+            Di sini Anda dapat menentukan default dana operasional untuk program baru lembaga Anda.
             Setiap donasi tunduk pada <strong>Batas Maksimal Total</strong>, di mana sebagian sudah dialokasikan otomatis untuk <strong>Platform</strong>.
-            Anda hanya bisa mengatur porsi lembaga hingga sisa batas maksimal yang tersedia.
+            Anda hanya bisa mengatur porsi lembaga hingga sisa batas maksimal yang tersedia. Program lama tidak ikut berubah.
           </p>
         </div>
       </div>

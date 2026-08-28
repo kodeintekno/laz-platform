@@ -87,6 +87,11 @@ export function ProgramApprovalModal({
               <dt className="text-secondary font-medium">Lembaga</dt>
               <dd className="text-primary font-semibold">{program.lembaga?.name ?? "-"}</dd>
             </div>
+            <div className="sm:col-span-2 grid grid-cols-1 sm:grid-cols-3 gap-3 rounded-xl border border-emerald-200 bg-emerald-50 p-4">
+              <div><dt className="text-xs font-semibold text-emerald-700">AMIL LEMBAGA</dt><dd className="mt-1 text-lg font-black text-emerald-900">{Number(program.amilInstitutionPercentage).toFixed(2)}%</dd></div>
+              <div><dt className="text-xs font-semibold text-amber-700">AMIL PLATFORM</dt><dd className="mt-1 text-lg font-black text-amber-900">{Number(program.amilPlatformPercentage).toFixed(2)}%</dd></div>
+              <div><dt className="text-xs font-semibold text-slate-600">TOTAL / BATAS</dt><dd className="mt-1 text-lg font-black text-slate-800">{(Number(program.amilInstitutionPercentage) + Number(program.amilPlatformPercentage)).toFixed(2)}% / {Number(program.amilMaxTotalPercentage).toFixed(2)}%</dd></div>
+            </div>
             {program.startDate && (
               <div>
                 <dt className="text-secondary font-medium">Tanggal Mulai</dt>

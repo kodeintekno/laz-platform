@@ -216,6 +216,7 @@ export class ProgramsRepository {
       data: {
         status: "PUBLISHED",
         approvedAt: new Date(),
+        amilLockedAt: new Date(),
         approvedById,
         rejectionReason: null,
       },
@@ -233,6 +234,7 @@ export class ProgramsRepository {
         rejectionReason: reason,
         approvedById,
         approvedAt: null,
+        amilLockedAt: null,
       },
     });
   }
