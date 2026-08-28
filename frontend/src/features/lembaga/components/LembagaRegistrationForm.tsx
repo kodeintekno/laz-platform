@@ -272,7 +272,7 @@ function StepNav({
   currentStep: number;
   totalSteps: number;
   isPending: boolean;
-  onNext: () => Promise<void>;
+  onNext: (e?: React.MouseEvent) => Promise<void>;
   onBack: () => void;
 }) {
   const isLast = currentStep === totalSteps - 1;
@@ -289,18 +289,25 @@ function StepNav({
           ← Kembali
         </Button>
       )}
-      {isLast ? (
-        <Button type="submit" isLoading={isPending} className="flex-1 sm:flex-none px-8 text-sm font-semibold">
-          Kirim Pendaftaran
-        </Button>
-      ) : (
+      {!isLast && (
         <Button
+          key="btn-next"
           type="button"
           onClick={onNext}
           disabled={isPending}
           className="flex-1 sm:flex-none px-8 text-sm font-semibold"
         >
           Lanjut →
+        </Button>
+      )}
+      {isLast && (
+        <Button 
+          key="btn-submit"
+          type="submit" 
+          isLoading={isPending} 
+          className="flex-1 sm:flex-none px-8 text-sm font-semibold"
+        >
+          Kirim Pendaftaran
         </Button>
       )}
     </div>
@@ -381,7 +388,10 @@ export function LembagaRegistrationForm() {
     []
   );
 
-  const handleNext = async () => {
+  const handleNext = async (e?: React.MouseEvent) => {
+    if (e) {
+      e.preventDefault();
+    }
     // Mark attempted so FileUpload required errors show on current step
     setSubmitAttempted(true);
     const fields = STEP_FIELDS[currentStep];
