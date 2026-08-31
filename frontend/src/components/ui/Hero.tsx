@@ -46,7 +46,7 @@ export default function Hero({ onAction }: { onAction: () => void }) {
               transition={{ delay: 0.2 }}
               className="text-lg md:text-xl text-gray-500 max-w-lg leading-relaxed font-medium"
             >
-              Ubah niat baik menjadi dampak nyata. Platform transparan untuk Zakat, Infaq, dan Sedekah yang amanah dan tercatat secara real-time.
+              Ubah niat baik menjadi dampak nyata. Platform transparan untuk Zakat dan Infak/Sedekah yang amanah dan tercatat secara real-time.
             </motion.p>
           </div>
 

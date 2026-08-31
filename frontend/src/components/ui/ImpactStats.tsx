@@ -30,7 +30,7 @@ export function ImpactStats({
             Dampak Kebaikan Bersama
           </h2>
           <p className="mt-4 text-base text-surface-soft/80">
-            Amanah zakat, infak, dan sedekah Anda yang telah kami salurkan untuk kesejahteraan umat.
+            Amanah zakat dan Infak/Sedekah Anda yang telah kami salurkan untuk kesejahteraan umat.
           </p>
         </div>
 

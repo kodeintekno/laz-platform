@@ -6,6 +6,8 @@ import { api, asAction } from "@/lib/api-client";
 import { Badge, Button, Select } from "@/components/ui";
 import { getMyInstitutionAmilSettings } from "../actions/amil.actions";
 import { toast } from "@/stores/toast.store";
+import { formatProgramCategory } from "@/lib/program-category";
+import { parseAmilPercentage } from "../amil-percentage";
 
 type AmilSetting = {
   category: string;
@@ -19,10 +21,6 @@ const STATUS_META: Record<string, { label: string; intent: "success" | "warning"
   APPROVED: { label: "Disetujui", intent: "success" },
   REJECTED: { label: "Ditolak", intent: "destructive" },
 };
-
-function hasAtMostTwoDecimals(value: number) {
-  return Math.abs(value * 100 - Math.round(value * 100)) < Number.EPSILON * 100;
-}
 
 export function PlatformAmilRequestForm() {
   const [searchParams] = useSearchParams();
@@ -63,18 +61,14 @@ export function PlatformAmilRequestForm() {
   const platform = Number(selected?.platformPercentage ?? 0);
   const maximum = Number(selected?.maxTotalPercentage ?? 0);
   const proposedTotal = institution + requested;
+  const parsedRequested = parseAmilPercentage(requestedPercentage, "Porsi amil platform yang diajukan");
   const errors = {
-    requestedPercentage: !requestedPercentage.trim()
-      ? "Porsi platform yang diajukan wajib diisi"
-      : !Number.isFinite(requested) || requested < 0 || requested > 100
-        ? "Porsi platform harus berada di antara 0% dan 100%"
-        : !hasAtMostTwoDecimals(requested)
-          ? "Gunakan maksimal 2 angka desimal"
-          : requested === platform
+    requestedPercentage: parsedRequested.error
+      ?? (requested === platform
             ? "Porsi yang diajukan harus berbeda dari porsi saat ini"
             : proposedTotal > maximum
               ? `Total usulan tidak boleh melebihi ${maximum.toFixed(2)}%`
-              : "",
+              : ""),
     reason: reason.trim().length < 10
       ? "Alasan permohonan minimal 10 karakter"
       : reason.trim().length > 1000
@@ -126,7 +120,7 @@ export function PlatformAmilRequestForm() {
               disabled={mutation.isPending}
               className="bg-indigo-50 border-indigo-200 text-indigo-900 font-semibold focus:border-indigo-500 focus:ring-indigo-500/20"
             >
-              {settings.map((setting) => <option key={setting.category} value={setting.category}>{setting.category}</option>)}
+              {settings.map((setting) => <option key={setting.category} value={setting.category}>{formatProgramCategory(setting.category)}</option>)}
             </Select>
           </div>
         </div>
@@ -142,7 +136,7 @@ export function PlatformAmilRequestForm() {
         {pendingRequest && (
           <div className="flex gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
             <Clock3 className="h-5 w-5 shrink-0" />
-            <div><p className="font-semibold">Masih ada permohonan yang menunggu</p><p className="mt-1">Tunggu keputusan Super Admin sebelum mengajukan perubahan baru untuk kategori {category}.</p></div>
+            <div><p className="font-semibold">Masih ada permohonan yang menunggu</p><p className="mt-1">Tunggu keputusan Ruang Berbagi sebelum mengajukan perubahan baru untuk kategori {formatProgramCategory(category)}.</p></div>
           </div>
         )}
 
@@ -200,10 +194,10 @@ export function PlatformAmilRequestForm() {
           return (
             <div key={request.id} className="rounded-xl border border-slate-200 bg-white p-4">
               <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-start">
-                <div className="flex gap-3"><StatusIcon className="mt-0.5 h-5 w-5 text-slate-500" /><div><p className="font-semibold text-slate-800">{request.category}: {Number(request.currentPlatformPercentage).toFixed(2)}% → {Number(request.requestedPlatformPercentage).toFixed(2)}%</p><p className="mt-1 text-sm text-slate-600">{request.reason}</p><p className="mt-2 text-xs text-slate-400">{new Date(request.createdAt).toLocaleString("id-ID")}</p></div></div>
+                <div className="flex gap-3"><StatusIcon className="mt-0.5 h-5 w-5 text-slate-500" /><div><p className="font-semibold text-slate-800">{formatProgramCategory(request.category)}: {Number(request.currentPlatformPercentage).toFixed(2)}% → {Number(request.requestedPlatformPercentage).toFixed(2)}%</p><p className="mt-1 text-sm text-slate-600">{request.reason}</p><p className="mt-2 text-xs text-slate-400">{new Date(request.createdAt).toLocaleString("id-ID")}</p></div></div>
                 <Badge intent={meta.intent}>{meta.label}</Badge>
               </div>
-              {request.reviewNote && <p className="mt-3 rounded-lg bg-slate-50 p-3 text-sm text-slate-700"><strong>Catatan Super Admin:</strong> {request.reviewNote}</p>}
+              {request.reviewNote && <p className="mt-3 rounded-lg bg-slate-50 p-3 text-sm text-slate-700"><strong>Catatan Ruang Berbagi:</strong> {request.reviewNote}</p>}
             </div>
           );
         })}

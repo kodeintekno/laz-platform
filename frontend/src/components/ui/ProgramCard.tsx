@@ -1,5 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
+import { formatProgramCategory } from "@/lib/program-category";
 
 export interface ProgramCardProps {
   program: {
@@ -67,7 +68,7 @@ export function ProgramCard({ program, now = Date.now(), isPriority = false }: P
           </div>
         )}
         <div className="absolute top-3 left-3 bg-surface/90 backdrop-blur-sm px-2.5 py-1 rounded-xl text-xs font-semibold text-brand-primary shadow-soft">
-          {program.category}
+          {formatProgramCategory(program.category)}
         </div>
       </div>
       <div className="p-5 flex-1 flex flex-col">

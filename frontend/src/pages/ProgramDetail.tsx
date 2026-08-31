@@ -1,6 +1,7 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api-client";
+import { formatProgramCategory } from "@/lib/program-category";
 import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
 import { Link } from "react-router-dom";
 
@@ -47,7 +48,7 @@ export function ProgramDetailPage() {
             <div className="w-full h-full flex items-center justify-center text-muted">Tidak ada gambar</div>
           )}
           <div className="absolute top-4 left-4 bg-brand-primary px-3 py-1.5 rounded-xl text-xs font-bold text-white">
-            {program.category}
+            {formatProgramCategory(program.category)}
           </div>
         </div>
 

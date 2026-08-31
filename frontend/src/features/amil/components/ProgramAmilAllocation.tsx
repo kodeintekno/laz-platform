@@ -6,6 +6,7 @@ import { AlertCircle, ArrowRight, Building2, HandCoins } from "lucide-react";
 import { getMyInstitutionAmilSettings } from "../actions/amil.actions";
 import type { ProgramInput } from "@/features/programs/validations/programs.schema";
 import type { Program } from "@prisma/client";
+import { formatProgramCategory } from "@/lib/program-category";
 
 type AmilSetting = {
   category: string;
@@ -75,7 +76,7 @@ export function ProgramAmilAllocation({ initialData }: { initialData?: Program }
         <div>
           <h2 className="font-bold text-slate-800">Porsi Amil Program</h2>
           <p className="mt-1 text-sm text-slate-600">
-            Porsi ini disimpan khusus untuk program <strong>{category}</strong> ini. Perubahan tidak memengaruhi program lama atau program berikutnya.
+            Porsi ini disimpan khusus untuk program <strong>{formatProgramCategory(category)}</strong> ini. Perubahan tidak memengaruhi program lama atau program berikutnya.
           </p>
         </div>
       </div>

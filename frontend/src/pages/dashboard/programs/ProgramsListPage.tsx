@@ -64,7 +64,7 @@ export function ProgramsListPage() {
     <div className="space-y-6">
       <PageHeader
         title="Program Management"
-        description="Kelola semua program kampanye zakat, infak, dan sedekah."
+        description="Kelola semua program kampanye zakat dan Infak/Sedekah."
         action={
           can(PERMISSIONS.PROGRAMS_CREATE) && !isSuperAdmin ? (
             <Link to="/dashboard/programs/new">

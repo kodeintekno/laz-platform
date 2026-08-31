@@ -6,7 +6,7 @@ export function LembagaPlatformAmilRequestPage() {
     <div className="space-y-6">
       <PageHeader
         title="Pengajuan Amil Platform"
-        description="Ajukan perubahan porsi amil platform untuk ditinjau oleh Super Admin."
+        description="Ajukan perubahan porsi amil platform untuk ditinjau oleh Ruang Berbagi."
       />
       <PlatformAmilRequestForm />
     </div>

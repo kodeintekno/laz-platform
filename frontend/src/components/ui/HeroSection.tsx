@@ -11,7 +11,7 @@ export default function HeroSection() {
             Setiap Rupiah Anda, Menjadi Harapan Baru
           </h1>
           <p className="text-lg md:text-xl text-surface-soft/90">
-            Salurkan zakat, infaq, dan sedekah Anda dengan mudah, aman, dan transparan.
+            Salurkan zakat dan Infak/Sedekah Anda dengan mudah, aman, dan transparan.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 mt-4">
             <Link

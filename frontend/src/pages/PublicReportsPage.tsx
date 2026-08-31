@@ -7,7 +7,7 @@ export function PublicReportsPage() {
       <div className="max-w-7xl mx-auto space-y-12">
         <div className="text-center space-y-4">
           <h2 className="text-4xl font-black text-gray-900 tracking-tight">Laporan <span className="text-emerald-600">Transparansi</span></h2>
-          <p className="text-gray-500 max-w-2xl mx-auto font-medium">Akses publik untuk memantau langsung semua aliran dana dan distribusi zakat, infaq, serta sedekah yang diamanahkan kepada kami.</p>
+          <p className="text-gray-500 max-w-2xl mx-auto font-medium">Akses publik untuk memantau langsung semua aliran dana dan distribusi zakat serta Infak/Sedekah yang diamanahkan kepada kami.</p>
         </div>
         <Transparency />
       </div>

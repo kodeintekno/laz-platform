@@ -38,7 +38,7 @@ export function TrustIndicators() {
           <div>
             <h4 className="text-base font-bold text-primary mb-1">Sesuai Syariat</h4>
             <p className="text-sm text-secondary leading-relaxed">
-              Pengelolaan dana zakat, infak, dan sedekah terverifikasi mematuhi asas fikih MUI.
+              Pengelolaan dana zakat dan Infak/Sedekah terverifikasi mematuhi asas fikih MUI.
             </p>
           </div>
         </div>

@@ -4,6 +4,8 @@ import { getGlobalAmilSettings, updateGlobalAmilSetting } from "../actions/amil.
 import { useAuth } from "@/auth/AuthProvider";
 import { useToastStore } from "@/stores/toast.store";
 import { Info, Settings2, Save, X, Edit3, ShieldAlert } from "lucide-react";
+import { formatProgramCategory } from "@/lib/program-category";
+import { parseAmilPercentage } from "../amil-percentage";
 
 export function GlobalAmilSettings() {
   const { user } = useAuth();
@@ -72,14 +74,20 @@ export function GlobalAmilSettings() {
 
   const handleSave = () => {
     if (!editingCategory) return;
-    if (Number(formData.defaultPlatformPercentage) > Number(formData.maxTotalPercentage)) {
-      addToast("Platform percentage tidak boleh lebih besar dari Total percentage.", "warning");
+    const maximum = parseAmilPercentage(formData.maxTotalPercentage, "Batas maksimum total amil");
+    const platform = parseAmilPercentage(formData.defaultPlatformPercentage, "Default porsi amil platform");
+    if (maximum.error || platform.error) {
+      addToast(maximum.error ?? platform.error!, "warning");
+      return;
+    }
+    if (platform.value > maximum.value) {
+      addToast("Default porsi amil platform tidak boleh melebihi batas maksimum total amil.", "warning");
       return;
     }
     mutation.mutate({
       category: editingCategory,
-      maxTotalPercentage: Number(formData.maxTotalPercentage),
-      defaultPlatformPercentage: Number(formData.defaultPlatformPercentage),
+      maxTotalPercentage: maximum.value,
+      defaultPlatformPercentage: platform.value,
     });
   };
 
@@ -112,7 +120,7 @@ export function GlobalAmilSettings() {
           >
             <div className="p-4">
               <div className="flex justify-between items-center mb-4">
-                <h3 className="text-base font-bold text-slate-800 tracking-tight">{setting.category}</h3>
+                <h3 className="text-base font-bold text-slate-800 tracking-tight">{formatProgramCategory(setting.category)}</h3>
                 {!isEditing && (
                   <button
                     onClick={() => handleEdit(setting)}

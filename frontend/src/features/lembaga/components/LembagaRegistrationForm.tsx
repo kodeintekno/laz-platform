@@ -538,7 +538,7 @@ export function LembagaRegistrationForm() {
         </div>
         <h2 className="text-xl font-bold text-primary">Pendaftaran Terkirim!</h2>
         <p className="text-secondary max-w-md mx-auto text-sm leading-relaxed">
-          Pendaftaran lembaga Anda sedang menunggu persetujuan Super Admin. Anda
+          Pendaftaran lembaga Anda sedang menunggu persetujuan Ruang Berbagi. Anda
           akan dapat login setelah pendaftaran disetujui.
         </p>
         <Button onClick={() => navigate("/login")} className="mt-2">

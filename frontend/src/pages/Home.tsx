@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api-client";
 import { useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
+import { formatProgramCategory } from "@/lib/program-category";
 import {
   ShieldCheck,
   BarChart3,
@@ -23,6 +24,7 @@ import Transparency from "@/components/ui/Transparency";
 import ImpactGallery from "@/components/ui/ImpactGallery";
 import FAQ from "@/components/ui/FAQ";
 import Testimonials from "@/components/ui/Testimonials";
+import type { CampaignCategory } from "@/types/redesign";
 
 export function HomePage() {
   const navigate = useNavigate();
@@ -48,7 +50,7 @@ export function HomePage() {
       id: p.id,
       title: p.title,
       description: p.description,
-      category: p.category.toLowerCase(),
+      category: formatProgramCategory(p.category).toLowerCase() as CampaignCategory,
       targetAmount: p.targetAmount,
       raisedAmount: p.currentAmount,
       distributedAmount: 0,

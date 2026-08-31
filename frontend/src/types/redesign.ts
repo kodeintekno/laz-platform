@@ -1,4 +1,4 @@
-export type CampaignCategory = 'zakat' | 'wakaf' | 'sedekah' | 'donasi';
+export type CampaignCategory = 'zakat' | 'infak/sedekah' | 'wakaf' | 'csr' | 'dskl' | 'donasi';
 
 export interface Campaign {
   id: string;

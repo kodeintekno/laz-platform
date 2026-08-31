@@ -5,12 +5,12 @@ import { ChevronDown } from "lucide-react";
 import { api } from "@/lib/api-client";
 import { ProgramCard, EmptyState, Pagination } from "@/components/ui";
 import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
+import { formatProgramCategory } from "@/lib/program-category";
 
 const CATEGORIES = [
   { value: "", label: "Semua Kategori" },
   { value: "ZAKAT", label: "Zakat" },
-  { value: "INFAK", label: "Infak" },
-  { value: "SEDEKAH", label: "Sedekah" },
+  { value: "INFAK_SEDEKAH", label: formatProgramCategory("INFAK_SEDEKAH") },
   { value: "WAKAF", label: "Wakaf" },
   { value: "CSR", label: "CSR" },
   { value: "DSKL", label: "DSKL" },
@@ -70,7 +70,7 @@ export function ProgramsPage() {
           Pilih Program Kebaikanmu
         </h1>
         <p className="mt-4 text-lg text-secondary">
-          Salurkan zakat, infak, dan sedekah Anda kepada yang membutuhkan.
+          Salurkan zakat dan Infak/Sedekah Anda kepada yang membutuhkan.
         </p>
       </div>
 

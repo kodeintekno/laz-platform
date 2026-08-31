@@ -139,7 +139,11 @@ export const FileUpload: React.FC<FileUploadProps> = ({
         logger.info("FileUpload handleChange: Upload dibatalkan");
       } else {
         logger.error({ err }, "FileUpload handleChange error");
-        toast.error("Gagal mengunggah file. Pastikan format valid dan koneksi stabil.");
+        toast.error(
+          err instanceof Error
+            ? `Gagal mengunggah: ${err.message}`
+            : "Gagal mengunggah file. Pastikan format valid dan koneksi stabil.",
+        );
       }
     } finally {
       setUploading(false);

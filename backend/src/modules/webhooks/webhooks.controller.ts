@@ -1,4 +1,4 @@
-import { Body, Controller, Headers, HttpCode, Post } from "@nestjs/common";
+import { Body, Controller, Headers, HttpCode, Post, Param } from "@nestjs/common";
 import { SkipThrottle } from "@nestjs/throttler";
 import { Public } from "../../common/decorators/public.decorator";
 import {
@@ -70,5 +70,34 @@ export class WebhooksController {
     );
 
     return { result };
+  }
+
+  @Post("dev/simulate/:type")
+  @Public()
+  @SkipThrottle()
+  async simulateXenditWebhook(@Param("type") type: string) {
+    if (process.env.NODE_ENV === "production") {
+      return { success: false, message: "Only available in development" };
+    }
+
+    const { exec } = await import("child_process");
+    const { promisify } = await import("util");
+    const execAsync = promisify(exec);
+
+    try {
+      let command = "npx ts-node simulate-xendit.ts payment";
+      if (type === "payout") {
+        command = "npx ts-node simulate-xendit.ts payout SUCCEEDED";
+      }
+      
+      const { stdout, stderr } = await execAsync(command, { cwd: process.cwd() });
+      this.logger.log(`Simulate Xendit executed: ${stdout}`);
+      if (stderr) this.logger.warn(`Simulate Xendit stderr: ${stderr}`);
+      
+      return { success: true, stdout, stderr };
+    } catch (error: any) {
+      this.logger.error(`Simulate Xendit failed: ${error.message}`);
+      return { success: false, error: error.message };
+    }
   }
 }

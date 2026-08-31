@@ -70,7 +70,7 @@ Jumlah Porsi Amil Platform dan Porsi Amil Lembaga tidak boleh melebihi batas mak
 Ketentuan dasarnya adalah:
 **Porsi Amil Platform + Porsi Amil Lembaga ≤ Batas Maksimum Porsi Amil**
 
-Batas maksimum porsi amil dapat berbeda untuk setiap jenis dana, termasuk namun tidak terbatas pada Zakat, Infak, Sedekah, Wakaf, CSR, DSKL, atau jenis dana lainnya yang tersedia dalam Ruang Berbagi.
+Batas maksimum porsi amil dapat berbeda untuk setiap jenis dana, termasuk namun tidak terbatas pada Zakat, Infak/Sedekah, Wakaf, CSR, DSKL, atau jenis dana lainnya yang tersedia dalam Ruang Berbagi.
 
 Besaran batas maksimum yang digunakan mengikuti konfigurasi yang berlaku pada sistem Ruang Berbagi serta ketentuan hukum, regulasi, kebijakan, atau pedoman yang berlaku.
 

@@ -23,6 +23,22 @@ export class AllExceptionsFilter implements ExceptionFilter {
   catch(exception: unknown, host: ArgumentsHost) {
     const res = host.switchToHttp().getResponse<Response>();
 
+    // Multer throws its own error type before the controller is entered. Keep
+    // the documented upload limit visible instead of turning this into a
+    // generic HTTP 500 response.
+    if (
+      exception instanceof Error &&
+      (exception as Error & { code?: string }).code === "LIMIT_FILE_SIZE"
+    ) {
+      return res.status(HttpStatus.PAYLOAD_TOO_LARGE).json({
+        success: false,
+        error: {
+          code: "FILE_TOO_LARGE",
+          message: "Ukuran file terlalu besar. Maksimum 10 MB per file.",
+        },
+      });
+    }
+
     if (exception instanceof ZodError) {
       return res.status(HttpStatus.UNPROCESSABLE_ENTITY).json({
         success: false,
