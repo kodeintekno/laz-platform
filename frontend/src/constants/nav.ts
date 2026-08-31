@@ -79,7 +79,7 @@ export const NAV_ITEMS: NavItem[] = [
         permission: PERMISSIONS.WITHDRAWALS_MANAGE as any,
       },
       {
-        label: "Persentase",
+        label: "Porsi Amil",
         href: "/dashboard/amil-global",
         icon: "Coins",
         permission: PERMISSIONS.SETTINGS_MANAGE,
