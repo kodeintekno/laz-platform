@@ -32,6 +32,7 @@ import { LedgerModule } from "./modules/ledger/ledger.module";
 import { XenditModule } from "./lib/xendit/xendit.module";
 import { WithdrawalsModule } from "./modules/withdrawals/withdrawals.module";
 import { AmilModule } from "./modules/amil/amil.module";
+import { NotificationsModule } from "./modules/notifications/notifications.module";
 
 const isDev = process.env.NODE_ENV !== "production";
 
@@ -67,6 +68,7 @@ const isDev = process.env.NODE_ENV !== "production";
     // Rate limit global /api ~300/menit; override per-route via @Throttle
     ThrottlerModule.forRoot([{ name: "global", ttl: 60_000, limit: 300 }]),
     PrismaModule,
+    NotificationsModule,
     AuditModule,
     AuthModule,
     // VolunteersModule must be registered before PublicModule: PublicModule

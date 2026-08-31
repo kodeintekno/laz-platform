@@ -21,6 +21,6 @@ import { VolunteerAuthGuard } from "./volunteer-auth.guard";
     VolunteerActivitiesRepository,
     VolunteerAuthGuard,
   ],
-  exports: [VolunteersService],
+  exports: [VolunteersService, VolunteerAuthGuard],
 })
 export class VolunteersModule {}

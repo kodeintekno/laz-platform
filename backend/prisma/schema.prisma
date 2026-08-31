@@ -40,6 +40,7 @@ model User {
   withdrawalsRequested               Withdrawal[]                @relation("WithdrawalRequester")
   withdrawalsApproved                Withdrawal[]                @relation("WithdrawalApprover")
   amilPlatformChangeRequestsReviewed AmilPlatformChangeRequest[] @relation("AmilPlatformChangeRequestReviewer")
+  notifications                      Notification[]
 
   @@map("users")
 }
@@ -289,8 +290,34 @@ model Volunteer {
   createdAt     DateTime               @default(now())
   updatedAt     DateTime               @updatedAt
   applications  VolunteerApplication[]
+  notifications Notification[]
 
   @@map("volunteers")
+}
+
+model Notification {
+  id          String           @id @default(cuid())
+  userId      String?
+  volunteerId String?
+  type        NotificationType @default(INFO)
+  title       String
+  message     String
+  link        String?
+  readAt      DateTime?
+  createdAt   DateTime         @default(now())
+  user        User?            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  volunteer   Volunteer?       @relation(fields: [volunteerId], references: [id], onDelete: Cascade)
+
+  @@index([userId, readAt, createdAt])
+  @@index([volunteerId, readAt, createdAt])
+  @@map("notifications")
+}
+
+enum NotificationType {
+  INFO
+  SUCCESS
+  WARNING
+  ACTION_REQUIRED
 }
 
 /// Kegiatan relawan dibuat oleh Lembaga — entitas mandiri (opsional terhubung

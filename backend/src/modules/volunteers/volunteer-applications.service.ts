@@ -1,9 +1,10 @@
-import { Injectable, NotFoundException } from "@nestjs/common";
+import { Injectable, NotFoundException, Optional } from "@nestjs/common";
 import { VolunteerApplicationsRepository } from "./volunteer-applications.repository";
 import { PrismaService } from "../../prisma/prisma.service";
 import { AuditService } from "../audit/audit.service";
 import { AuditAction } from "../audit/audit.types";
 import { AppError } from "../../common/errors/app.error";
+import { NotificationsService } from "../notifications/notifications.service";
 
 const ACTIVE_STATUSES = ["APPROVED", "REPORT_SUBMITTED", "COMPLETED"];
 
@@ -13,12 +14,13 @@ export class VolunteerApplicationsService {
     private readonly applicationsRepository: VolunteerApplicationsRepository,
     private readonly prisma: PrismaService,
     private readonly auditService: AuditService,
+    @Optional() private readonly notifications?: NotificationsService,
   ) {}
 
   async apply(volunteerId: string, activityId: string) {
     const activity = await this.prisma.volunteerActivity.findUnique({
       where: { id: activityId },
-      select: { id: true, lembagaId: true, status: true, quota: true },
+      select: { id: true, lembagaId: true, status: true, quota: true, title: true },
     });
     if (!activity) {
       throw new AppError("ACTIVITY_NOT_FOUND", "Kegiatan tidak ditemukan", 404);
@@ -45,12 +47,19 @@ export class VolunteerApplicationsService {
       }
     }
 
-    return this.applicationsRepository.create({
+    const application = await this.applicationsRepository.create({
       volunteerId,
       activityId,
       lembagaId: activity.lembagaId,
       status: "PENDING",
     });
+    await this.notifications?.notifyLembaga(activity.lembagaId, {
+      type: "ACTION_REQUIRED",
+      title: "Pendaftaran relawan baru",
+      message: `Seorang relawan mendaftar pada kegiatan “${activity.title}”.`,
+      link: "/dashboard/relawan/pendaftaran",
+    });
+    return application;
   }
 
   /** "Pendaftaran Saya" — PENDING/REJECTED (belum/tidak jadi diikuti). */
@@ -103,6 +112,13 @@ export class VolunteerApplicationsService {
       newData: { status: updated.status },
     });
 
+    await this.notifications?.notifyVolunteer(application.volunteerId, {
+      type: "SUCCESS",
+      title: "Pendaftaran disetujui",
+      message: `Pendaftaran Anda untuk “${application.activity.title}” telah disetujui.`,
+      link: "/volunteer/my-activities",
+    });
+
     return updated;
   }
 
@@ -124,6 +140,13 @@ export class VolunteerApplicationsService {
       entity: "VolunteerApplication",
       entityId: id,
       newData: { status: updated.status, rejectionReason: reason },
+    });
+
+    await this.notifications?.notifyVolunteer(application.volunteerId, {
+      type: "WARNING",
+      title: "Pendaftaran belum disetujui",
+      message: `Pendaftaran untuk “${application.activity.title}” ditolak${reason ? `: ${reason}` : "."}`,
+      link: "/volunteer/applications",
     });
 
     return updated;
@@ -158,6 +181,13 @@ export class VolunteerApplicationsService {
       newData: { status: updated.status },
     });
 
+    await this.notifications?.notifyLembaga(application.lembagaId, {
+      type: "ACTION_REQUIRED",
+      title: "Laporan relawan menunggu verifikasi",
+      message: `Laporan kegiatan “${application.activity.title}” telah dikirim.`,
+      link: "/dashboard/relawan/pendaftaran",
+    });
+
     return updated;
   }
 
@@ -186,6 +216,13 @@ export class VolunteerApplicationsService {
       newData: { status: updated.status },
     });
 
+    await this.notifications?.notifyVolunteer(application.volunteerId, {
+      type: "SUCCESS",
+      title: "Laporan telah diverifikasi",
+      message: `Kegiatan “${application.activity.title}” telah dinyatakan selesai.`,
+      link: "/volunteer/history",
+    });
+
     return updated;
   }
 
@@ -212,6 +249,13 @@ export class VolunteerApplicationsService {
       entity: "VolunteerApplication",
       entityId: id,
       newData: { status: updated.status, reportNote: note },
+    });
+
+    await this.notifications?.notifyVolunteer(application.volunteerId, {
+      type: "ACTION_REQUIRED",
+      title: "Laporan perlu direvisi",
+      message: `Laporan “${application.activity.title}” perlu direvisi${note ? `: ${note}` : "."}`,
+      link: "/volunteer/my-activities",
     });
 
     return updated;

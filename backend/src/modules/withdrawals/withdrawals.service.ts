@@ -1,9 +1,10 @@
-import { Injectable, Logger } from "@nestjs/common";
+import { Injectable, Logger, Optional } from "@nestjs/common";
 import { PrismaService } from "../../prisma/prisma.service";
 import { WithdrawalsRepository } from "./withdrawals.repository";
 import { AppError } from "../../common/errors/app.error";
 import { XenditService } from "../../lib/xendit/xendit.service";
 import * as crypto from "crypto";
+import { NotificationsService } from "../notifications/notifications.service";
 
 @Injectable()
 export class WithdrawalsService {
@@ -12,7 +13,8 @@ export class WithdrawalsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly withdrawalsRepository: WithdrawalsRepository,
-    private readonly xenditService: XenditService
+    private readonly xenditService: XenditService,
+    @Optional() private readonly notifications?: NotificationsService,
   ) { }
 
   async createWithdrawal(lembagaId: string, userId: string, amount: number) {
@@ -37,7 +39,7 @@ export class WithdrawalsService {
       throw new AppError("BANK_NOT_CONFIGURED", "Bank account is not completely configured.", 400);
     }
 
-    return this.withdrawalsRepository.createWithdrawal(
+    const withdrawal = await this.withdrawalsRepository.createWithdrawal(
       lembagaId,
       amount,
       userId,
@@ -45,10 +47,25 @@ export class WithdrawalsService {
       lembaga.accountNumber,
       lembaga.accountHolder
     );
+    await this.notifications?.notifyRole("SUPER_ADMIN", {
+      type: "ACTION_REQUIRED",
+      title: "Penarikan dana menunggu persetujuan",
+      message: `Ada permintaan penarikan dana sebesar ${new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(amount)}.`,
+      link: "/dashboard/withdrawals",
+    });
+    return withdrawal;
   }
 
   async approveWithdrawal(withdrawalId: string, superAdminId: string) {
     const withdrawal = await this.withdrawalsRepository.approveWithdrawal(withdrawalId, superAdminId);
+    if (!withdrawal) throw new AppError("NOT_FOUND", "Withdrawal not found.", 404);
+
+    await this.notifications?.notifyLembaga(withdrawal.lembagaId, {
+      type: "SUCCESS",
+      title: "Penarikan dana disetujui",
+      message: "Permintaan penarikan dana Anda telah disetujui dan sedang diproses.",
+      link: "/dashboard/lembaga/finance/overview",
+    });
 
     // Kick off the payout process. We don't await this so the UI responds quickly.
     // If it fails synchronously, the retry endpoint can be used.
@@ -125,7 +142,15 @@ export class WithdrawalsService {
     if (!reason || reason.trim() === "") {
       throw new AppError("INVALID_INPUT", "Rejection reason is required.", 400);
     }
-    return this.withdrawalsRepository.rejectWithdrawal(withdrawalId, superAdminId, reason);
+    const withdrawal = await this.withdrawalsRepository.rejectWithdrawal(withdrawalId, superAdminId, reason);
+    if (!withdrawal) throw new AppError("NOT_FOUND", "Withdrawal not found.", 404);
+    await this.notifications?.notifyLembaga(withdrawal.lembagaId, {
+      type: "WARNING",
+      title: "Penarikan dana ditolak",
+      message: `Permintaan penarikan dana ditolak: ${reason}`,
+      link: "/dashboard/lembaga/finance/overview",
+    });
+    return withdrawal;
   }
 
   async getLembagaWithdrawals(lembagaId: string, page = 1, limit = 20) {

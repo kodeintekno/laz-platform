@@ -18,7 +18,8 @@ const makeUsersRepository = () => ({
   findById: vi.fn(),
   findMany: vi.fn(),
   findRoles: vi.fn(),
-  findAllLazs: vi.fn(),
+  findAllLembagas: vi.fn(),
+  findRoleById: vi.fn(),
   create: vi.fn(),
   update: vi.fn(),
   updateRole: vi.fn(),
@@ -60,6 +61,7 @@ describe("UsersService", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     usersRepository = makeUsersRepository();
+    usersRepository.findRoleById.mockResolvedValue({ id: "role-user", name: "LEMBAGA_ADMIN" });
     auditService = makeAuditService();
     service = new UsersService(usersRepository as any, auditService as any);
   });
@@ -262,7 +264,7 @@ describe("UsersService", () => {
     it("returns user unchanged when same role assigned", async () => {
       usersRepository.findById.mockResolvedValue(REGULAR_USER);
 
-      const result = await service.changeRole("user-2", REGULAR_USER.roleId, "admin-1");
+      const result = await service.changeRole("user-2", REGULAR_USER.roleId, "admin-1", "lembaga-1", false);
 
       expect(result).toEqual(REGULAR_USER);
       expect(usersRepository.updateRole).not.toHaveBeenCalled();
@@ -273,7 +275,7 @@ describe("UsersService", () => {
       usersRepository.countSuperAdmins.mockResolvedValue(1);
 
       await expect(
-        service.changeRole("super-1", "role-user", "admin-1"),
+        service.changeRole("super-1", "role-user", "admin-1", undefined, true),
       ).rejects.toMatchObject({ code: "LAST_SUPER_ADMIN" });
     });
 
@@ -283,7 +285,7 @@ describe("UsersService", () => {
       const updated = { ...REGULAR_USER, roleId: "role-new", role: { name: "MANAGER" } };
       usersRepository.updateRole.mockResolvedValue(updated);
 
-      const result = await service.changeRole("user-2", "role-new", "admin-1");
+      const result = await service.changeRole("user-2", "role-new", "admin-1", "lembaga-1", false);
 
       expect(result).toEqual(updated);
       expect(revokeUserSessions).toHaveBeenCalledWith("user-2");

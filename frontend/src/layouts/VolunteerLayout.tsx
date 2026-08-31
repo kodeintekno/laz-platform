@@ -3,6 +3,7 @@ import { Outlet, Link, useLocation } from "react-router-dom";
 import { LayoutDashboard, Search, ClipboardList, ListChecks, Award, Settings, LogOut, Menu, X } from "lucide-react";
 import { useVolunteerAuth } from "@/auth/VolunteerAuthProvider";
 import { cn } from "@/lib/utils";
+import { NotificationBell } from "@/features/notifications/NotificationBell";
 
 const NAV = [
   { label: "Dashboard", href: "/volunteer/dashboard", icon: LayoutDashboard },
@@ -90,15 +91,18 @@ export function VolunteerLayout() {
       </aside>
 
       <div className="flex-1 flex flex-col min-w-0">
-        <header className="h-16 bg-surface border-b border-border/40 flex items-center px-4 shrink-0 lg:hidden">
+        <header className="h-16 bg-surface border-b border-border/40 flex items-center justify-between px-4 shrink-0">
+          <div className="flex items-center">
           <button
             onClick={() => setIsNavOpen(true)}
             aria-label="Buka navigasi"
-            className="p-2 rounded-xl text-secondary hover:bg-surface-muted"
+            className="p-2 rounded-xl text-secondary hover:bg-surface-muted lg:hidden"
           >
             <Menu className="w-5 h-5" />
           </button>
-          <img src="/logo.png" alt="Ruang Berbagi" className="ml-3 h-7 w-auto object-contain" />
+          <img src="/logo.png" alt="Ruang Berbagi" className="ml-3 h-7 w-auto object-contain lg:hidden" />
+          </div>
+          <NotificationBell principal="volunteer" />
         </header>
         <main className="flex-1 overflow-y-auto p-4 sm:p-6">
           <Outlet />
