@@ -1,6 +1,6 @@
 # LAZ Platform
 
-Multi-tenant ZISWAF (Zakat, Infak, Sedekah, dan Wakaf) donation management platform. Built as an NestJS 11 API backend paired with a Vite 7 + React 19 single-page frontend, backed by PostgreSQL via Prisma ORM.
+Multi-tenant ZISWAF (Zakat, Infak/Sedekah, dan Wakaf) donation management platform. Built as an NestJS 11 API backend paired with a Vite 7 + React 19 single-page frontend, backed by PostgreSQL via Prisma ORM.
 
 ---
 

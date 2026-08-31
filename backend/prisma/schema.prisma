@@ -422,8 +422,7 @@ enum AuditAction {
 
 enum ProgramCategory {
   ZAKAT
-  INFAK
-  SEDEKAH
+  INFAK_SEDEKAH
   WAKAF
   CSR
   DSKL

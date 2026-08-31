@@ -17,6 +17,7 @@ import {
   setFeaturedProgramAction,
 } from "../actions/programs.actions";
 import { ProgramApprovalModal } from "./ProgramApprovalModal";
+import { formatProgramCategory } from "@/lib/program-category";
 
 type ProgramWithCreator = Omit<Prisma.ProgramGetPayload<{
   include: { createdBy: { select: { name: true } }; lembaga: { select: { name: true; slug: true } } };
@@ -172,11 +173,8 @@ export function ProgramTable({ programs, pagination }: ProgramTableProps) {
           case "ZAKAT":
             intent = "success";
             break;
-          case "INFAK":
+          case "INFAK_SEDEKAH":
             intent = "info";
-            break;
-          case "SEDEKAH":
-            intent = "warning";
             break;
           case "WAKAF":
             intent = "muted";
@@ -189,7 +187,7 @@ export function ProgramTable({ programs, pagination }: ProgramTableProps) {
             break;
         }
 
-        return <Badge intent={intent}>{program.category}</Badge>;
+        return <Badge intent={intent}>{formatProgramCategory(program.category)}</Badge>;
       },
     },
     {
@@ -273,7 +271,7 @@ export function ProgramTable({ programs, pagination }: ProgramTableProps) {
         data={programs}
         pagination={pagination}
         emptyTitle="Tidak ada program ditemukan"
-        emptyDescription="Daftar program kampanye zakat, infak, atau sedekah kosong."
+        emptyDescription="Daftar program kampanye zakat atau Infak/Sedekah kosong."
       />
 
       <ConfirmDialog

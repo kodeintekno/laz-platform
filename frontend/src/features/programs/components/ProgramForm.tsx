@@ -77,7 +77,7 @@ export function ProgramForm({
     router.back();
   };
 
-  const PROGRAM_CATEGORIES = ["ZAKAT", "INFAK", "SEDEKAH", "WAKAF", "CSR", "DSKL"] as const;
+  const PROGRAM_CATEGORIES = ["ZAKAT", "INFAK_SEDEKAH", "WAKAF", "CSR", "DSKL"] as const;
   const ALL_STATUS_LABELS: Record<string, string> = {
     DRAFT: "Draft (Sembunyikan)",
     PENDING_REVIEW: "Ajukan untuk Direview",
@@ -130,7 +130,7 @@ export function ProgramForm({
           title: "",
           description: "",
           targetAmount: 0,
-          category: "INFAK",
+          category: "INFAK_SEDEKAH",
           status: "DRAFT",
           image: "",
           startDate: "",
@@ -141,7 +141,7 @@ export function ProgramForm({
         <CardContent className="space-y-6">
           {initialData?.status === "REJECTED" && initialData.rejectionReason && (
             <div className="rounded-xl border border-destructive/30 bg-destructive/10 p-4 text-sm">
-              <p className="font-bold text-destructive mb-1">Program ini ditolak oleh Super Admin</p>
+              <p className="font-bold text-destructive mb-1">Program ini ditolak oleh Ruang Berbagi</p>
               <p className="text-secondary">{initialData.rejectionReason}</p>
               {!canApprove && (
                 <p className="text-secondary mt-1">
@@ -183,7 +183,7 @@ export function ProgramForm({
               type="select"
               options={statusOptions}
               disabled={isPending || isStatusLocked}
-              description={isStatusLocked ? "Hanya Super Admin yang dapat mengubah status ini." : undefined}
+              description={isStatusLocked ? "Hanya Ruang Berbagi yang dapat mengubah status ini." : undefined}
             />
           </div>
 

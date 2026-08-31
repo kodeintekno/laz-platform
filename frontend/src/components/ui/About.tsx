@@ -23,7 +23,7 @@ export default function About() {
             Menghubungkan <span className="text-emerald-600">Kebaikan</span> dengan <span className="text-emerald-600">Kepercayaan</span>
           </h2>
           <p className="text-lg text-gray-500 leading-relaxed">
-            Ruang Berbagi adalah platform digital yang berdedikasi untuk mentransformasi cara umat Islam menunaikan kewajiban Zakat, Wakaf, dan Sedekah melalui teknologi yang transparan dan akuntabel.
+            Ruang Berbagi adalah platform digital yang berdedikasi untuk mentransformasi cara umat Islam menunaikan Zakat, Wakaf, dan Infak/Sedekah melalui teknologi yang transparan dan akuntabel.
           </p>
           <div className="flex gap-8 border-t border-gray-100 pt-8">
             <div>
@@ -61,7 +61,7 @@ export default function About() {
           {[
             { title: 'Zakat Digital', desc: 'Hitung dan bayar zakat fitrah maupun zakat maal secara otomatis.', icon: ShieldCheck },
             { title: 'Wakaf Produktif', desc: 'Investasi akhirat melalui pembangunan sumur, masjid, hingga sekolah.', icon: Award },
-            { title: 'Sedekah Jariyah', desc: 'Langkah sederhana yang mengalirkan pahala tak terputus.', icon: Heart },
+            { title: 'Infak/Sedekah Jariyah', desc: 'Langkah sederhana yang mengalirkan pahala tak terputus.', icon: Heart },
             { title: 'Donasi Khusus', desc: 'Bantuan kemanusiaan darurat untuk bencana dan kesehatan.', icon: Globe },
           ].map((service, i) => (
             <div key={i} className="bg-white p-8 rounded-[3rem] border border-gray-100 hover:border-emerald-100 transition-all hover:shadow-xl hover:shadow-emerald-900/5 group">

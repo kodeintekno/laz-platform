@@ -3,6 +3,8 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getInstitutionAmilSettings, updateInstitutionAmilSettingByAdmin } from "../actions/amil.actions";
 import { useToastStore } from "@/stores/toast.store";
 import { Settings2, Save, X, Edit3, ShieldAlert } from "lucide-react";
+import { formatProgramCategory } from "@/lib/program-category";
+import { parseAmilPercentage } from "../amil-percentage";
 
 interface AdminInstitutionAmilSettingsProps {
   lembagaId: string;
@@ -68,17 +70,23 @@ export function AdminInstitutionAmilSettings({ lembagaId }: AdminInstitutionAmil
 
   const handleSave = () => {
     if (!editingCategory) return;
-    
-    const total = Number(formData.institutionPercentage) + Number(formData.platformPercentage);
-    if (total > Number(formData.maxTotalPercentage)) {
-      addToast(`Total persentase (${total.toFixed(2)}%) melebihi batas maksimum (${Number(formData.maxTotalPercentage).toFixed(2)}%)`, "warning");
+    const institution = parseAmilPercentage(formData.institutionPercentage, "Porsi amil lembaga");
+    const platform = parseAmilPercentage(formData.platformPercentage, "Porsi amil platform");
+    const maximum = parseAmilPercentage(formData.maxTotalPercentage, "Batas maksimum total amil");
+    if (institution.error || platform.error || maximum.error) {
+      addToast(institution.error ?? platform.error ?? maximum.error!, "warning");
+      return;
+    }
+    const total = institution.value + platform.value;
+    if (total > maximum.value) {
+      addToast(`Total persentase (${total.toFixed(2)}%) melebihi batas maksimum (${maximum.value.toFixed(2)}%)`, "warning");
       return;
     }
 
     mutation.mutate({
       category: editingCategory,
-      institutionPercentage: Number(formData.institutionPercentage),
-      platformPercentage: Number(formData.platformPercentage),
+      institutionPercentage: institution.value,
+      platformPercentage: platform.value,
     });
   };
 
@@ -115,7 +123,7 @@ export function AdminInstitutionAmilSettings({ lembagaId }: AdminInstitutionAmil
                 <div className="p-4">
                   <div className="flex justify-between items-center mb-4">
                     <div className="flex items-center gap-2">
-                      <h3 className="text-base font-bold text-slate-800 tracking-tight">{setting.category}</h3>
+                      <h3 className="text-base font-bold text-slate-800 tracking-tight">{formatProgramCategory(setting.category)}</h3>
                       <span className="text-xs text-slate-500 font-medium bg-slate-100 px-2 py-0.5 rounded-md">Maks: {totalAmil.toFixed(2)}%</span>
                     </div>
                     {!isEditing && (

@@ -1,6 +1,6 @@
 import { z } from "zod";
 // Local program enums – avoid importing @prisma/client in client‑side code
-export const PROGRAM_CATEGORIES = ["ZAKAT", "INFAK", "SEDEKAH", "WAKAF", "CSR", "DSKL"] as const;
+export const PROGRAM_CATEGORIES = ["ZAKAT", "INFAK_SEDEKAH", "WAKAF", "CSR", "DSKL"] as const;
 export const PROGRAM_STATUSES = ["DRAFT","PENDING_REVIEW","PUBLISHED","REJECTED","COMPLETED","CANCELLED"] as const;
 
 /** Statuses a LEMBAGA_ADMIN may set directly via create/update — publishing/rejecting requires SUPER_ADMIN approval. */

@@ -29,7 +29,7 @@ describe("CoaService", () => {
 
   it("should provision COA if institution has no COA", async () => {
     repo.countByLembaga.mockResolvedValueOnce(0); // Before seed
-    repo.countByLembaga.mockResolvedValueOnce(61); // After seed
+    repo.countByLembaga.mockResolvedValueOnce(COA_TEMPLATE.length); // After seed
 
     await service.seedCoaForLembaga("lembaga-1");
 
@@ -37,7 +37,7 @@ describe("CoaService", () => {
   });
 
   it("should throw error if institution already has COA (no duplicate)", async () => {
-    repo.countByLembaga.mockResolvedValue(61); // Already exists
+    repo.countByLembaga.mockResolvedValue(COA_TEMPLATE.length); // Already exists
 
     await expect(service.seedCoaForLembaga("lembaga-1")).rejects.toThrow(AppError);
     
@@ -53,6 +53,15 @@ describe("CoaService", () => {
         expect(codes.has(acc.parentCode)).toBe(true); 
       }
     }
+  });
+
+  it("uses one canonical Infak/Sedekah account for fund, revenue, and distribution", () => {
+    expect(COA_TEMPLATE.filter((account) => account.name.includes("Infak/Sedekah"))).toEqual([
+      expect.objectContaining({ code: "3102", name: "Dana Infak/Sedekah" }),
+      expect.objectContaining({ code: "4102", name: "Penerimaan Infak/Sedekah" }),
+      expect.objectContaining({ code: "5102", name: "Penyaluran Infak/Sedekah" }),
+    ]);
+    expect(COA_TEMPLATE.some((account) => ["3103", "4103", "5103"].includes(account.code))).toBe(false);
   });
 
   it("institution A cannot see COA of institution B", async () => {

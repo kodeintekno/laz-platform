@@ -20,6 +20,23 @@ export class AmilService {
     private readonly auditService: AuditService,
   ) {}
 
+  private normalizePercentage(value: number, label: string): number {
+    const percentage = Number(value);
+    if (!Number.isFinite(percentage) || percentage < 0 || percentage > 100) {
+      throw new BadRequestException(`${label} harus berada di antara 0% dan 100%`);
+    }
+    if (Math.abs(percentage * 100 - Math.round(percentage * 100)) > 1e-8) {
+      throw new BadRequestException(`${label} maksimal menggunakan 2 angka desimal`);
+    }
+    return percentage;
+  }
+
+  private assertValidCategory(category: ProgramCategory): void {
+    if (!Object.values(ProgramCategory).includes(category)) {
+      throw new BadRequestException("Kategori program tidak valid");
+    }
+  }
+
   async getGlobalSettings() {
     return this.prisma.amilGlobalSetting.findMany({
       orderBy: { category: "asc" },
@@ -27,17 +44,30 @@ export class AmilService {
   }
 
   async updateGlobalSetting(category: ProgramCategory, maxTotalPercentage: number, defaultPlatformPercentage: number) {
-    if (maxTotalPercentage < 0 || maxTotalPercentage > 100) {
-      throw new BadRequestException("maxTotalPercentage must be between 0 and 100");
+    this.assertValidCategory(category);
+    const maximum = this.normalizePercentage(maxTotalPercentage, "Batas maksimum total amil");
+    const platformDefault = this.normalizePercentage(defaultPlatformPercentage, "Default porsi amil platform");
+    if (platformDefault > maximum) {
+      throw new BadRequestException("Default porsi amil platform tidak boleh melebihi batas maksimum total amil");
     }
-    if (defaultPlatformPercentage < 0 || defaultPlatformPercentage > maxTotalPercentage) {
-      throw new BadRequestException("defaultPlatformPercentage must be between 0 and maxTotalPercentage");
+
+    const institutionSettings = await this.prisma.amilInstitutionSetting.findMany({
+      where: { category },
+      select: { lembagaId: true, institutionPercentage: true, platformPercentage: true },
+    });
+    const incompatible = institutionSettings.find(
+      (setting) => Number(setting.institutionPercentage) + Number(setting.platformPercentage) > maximum,
+    );
+    if (incompatible) {
+      throw new BadRequestException(
+        `Batas maksimum tidak dapat diturunkan ke ${maximum}% karena masih ada konfigurasi lembaga dengan total porsi lebih besar`,
+      );
     }
 
     return this.prisma.amilGlobalSetting.upsert({
       where: { category },
-      update: { maxTotalPercentage, defaultPlatformPercentage },
-      create: { category, maxTotalPercentage, defaultPlatformPercentage },
+      update: { maxTotalPercentage: maximum, defaultPlatformPercentage: platformDefault },
+      create: { category, maxTotalPercentage: maximum, defaultPlatformPercentage: platformDefault },
     });
   }
 
@@ -61,6 +91,7 @@ export class AmilService {
   }
 
   async updateInstitutionSetting(lembagaId: string, category: ProgramCategory, institutionPercentage: number, platformPercentageOverride?: number) {
+    this.assertValidCategory(category);
     const globalSetting = await this.prisma.amilGlobalSetting.findUnique({
       where: { category },
     });
@@ -73,6 +104,7 @@ export class AmilService {
     // Admin Lembaga cannot provide platformPercentageOverride (it will be undefined).
     // Super Admin can provide it.
     let platformPercentage = Number(globalSetting.defaultPlatformPercentage);
+    const normalizedInstitutionPercentage = this.normalizePercentage(institutionPercentage, "Porsi amil lembaga");
     
     // Check if there is an existing setting to preserve existing platformPercentage if not overridden
     const existingSetting = await this.prisma.amilInstitutionSetting.findUnique({
@@ -80,27 +112,24 @@ export class AmilService {
     });
 
     if (platformPercentageOverride !== undefined) {
-      platformPercentage = platformPercentageOverride;
+      platformPercentage = this.normalizePercentage(platformPercentageOverride, "Porsi amil platform");
     } else if (existingSetting) {
       platformPercentage = Number(existingSetting.platformPercentage);
     }
+    platformPercentage = this.normalizePercentage(platformPercentage, "Porsi amil platform");
 
-    const totalPercentage = platformPercentage + institutionPercentage;
-
-    if (institutionPercentage < 0 || platformPercentage < 0) {
-      throw new BadRequestException("Percentage cannot be negative");
-    }
+    const totalPercentage = platformPercentage + normalizedInstitutionPercentage;
 
     if (totalPercentage > Number(globalSetting.maxTotalPercentage)) {
       throw new BadRequestException(
-        `Total percentage (${totalPercentage}%) exceeds the maximum allowed (${globalSetting.maxTotalPercentage}%) for ${category}`
+        `Total porsi amil (${totalPercentage}%) melebihi batas maksimum (${globalSetting.maxTotalPercentage}%) untuk kategori ${category}`
       );
     }
 
     return this.prisma.amilInstitutionSetting.upsert({
       where: { lembagaId_category: { lembagaId, category } },
-      update: { institutionPercentage, platformPercentage },
-      create: { lembagaId, category, institutionPercentage, platformPercentage },
+      update: { institutionPercentage: normalizedInstitutionPercentage, platformPercentage },
+      create: { lembagaId, category, institutionPercentage: normalizedInstitutionPercentage, platformPercentage },
     });
   }
 
@@ -113,6 +142,7 @@ export class AmilService {
       institutionPercentage?: number;
     },
   ) {
+    this.assertValidCategory(input.category);
     const globalSetting = await tx.amilGlobalSetting.findUnique({ where: { category: input.category } });
     if (!globalSetting) throw new NotFoundException(`Pengaturan amil untuk kategori ${input.category} tidak ditemukan`);
 
@@ -132,16 +162,12 @@ export class AmilService {
   }
 
   validateProgramAmilSnapshot(platformPercentage: number, institutionPercentage: number, maxTotalPercentage: number) {
-    const values = [platformPercentage, institutionPercentage, maxTotalPercentage];
-    if (values.some((value) => !Number.isFinite(value) || value < 0 || value > 100)) {
-      throw new BadRequestException("Persentase snapshot amil program tidak valid");
-    }
-    if (values.some((value) => Math.abs(value * 100 - Math.round(value * 100)) > 1e-8)) {
-      throw new BadRequestException("Persentase amil maksimal menggunakan 2 angka desimal");
-    }
-    if (platformPercentage + institutionPercentage > maxTotalPercentage) {
+    const platform = this.normalizePercentage(platformPercentage, "Porsi amil platform program");
+    const institution = this.normalizePercentage(institutionPercentage, "Porsi amil lembaga program");
+    const maximum = this.normalizePercentage(maxTotalPercentage, "Batas maksimum amil program");
+    if (platform + institution > maximum) {
       throw new BadRequestException(
-        `Total porsi amil (${platformPercentage + institutionPercentage}%) melebihi batas maksimum (${maxTotalPercentage}%)`,
+        `Total porsi amil (${platform + institution}%) melebihi batas maksimum (${maximum}%)`,
       );
     }
   }
@@ -163,59 +189,67 @@ export class AmilService {
     reason: string,
   ) {
     const cleanReason = reason?.trim();
-    if (!Object.values(ProgramCategory).includes(category)) {
-      throw new BadRequestException("Kategori program tidak valid");
-    }
-    if (!Number.isFinite(requestedPlatformPercentage) || requestedPlatformPercentage < 0 || requestedPlatformPercentage > 100) {
-      throw new BadRequestException("Porsi amil platform yang diajukan harus berada di antara 0% dan 100%");
-    }
+    this.assertValidCategory(category);
+    const requestedPercentage = this.normalizePercentage(requestedPlatformPercentage, "Porsi amil platform yang diajukan");
     if (!cleanReason || cleanReason.length < 10 || cleanReason.length > 1000) {
       throw new BadRequestException("Alasan permohonan harus terdiri dari 10 sampai 1000 karakter");
     }
 
-    const request = await this.prisma.$transaction(async (tx) => {
-      const globalSetting = await tx.amilGlobalSetting.findUnique({ where: { category } });
-      if (!globalSetting) throw new NotFoundException(`Pengaturan amil untuk kategori ${category} tidak ditemukan`);
-      const existing = await tx.amilInstitutionSetting.findUnique({
-        where: { lembagaId_category: { lembagaId, category } },
-      });
-      const currentPlatformPercentage = existing
-        ? Number(existing.platformPercentage)
-        : Number(globalSetting.defaultPlatformPercentage);
-      const institutionPercentage = existing
-        ? Number(existing.institutionPercentage)
-        : Number(globalSetting.maxTotalPercentage) - currentPlatformPercentage;
-      const maximum = Number(globalSetting.maxTotalPercentage);
+    let request;
+    try {
+      request = await this.prisma.$transaction(async (tx) => {
+        const globalSetting = await tx.amilGlobalSetting.findUnique({ where: { category } });
+        if (!globalSetting) throw new NotFoundException(`Pengaturan amil untuk kategori ${category} tidak ditemukan`);
+        const existing = await tx.amilInstitutionSetting.findUnique({
+          where: { lembagaId_category: { lembagaId, category } },
+        });
+        const currentPlatformPercentage = existing
+          ? Number(existing.platformPercentage)
+          : Number(globalSetting.defaultPlatformPercentage);
+        const institutionPercentage = existing
+          ? Number(existing.institutionPercentage)
+          : Number(globalSetting.maxTotalPercentage) - currentPlatformPercentage;
+        const maximum = Number(globalSetting.maxTotalPercentage);
 
-      if (requestedPlatformPercentage === currentPlatformPercentage) {
-        throw new BadRequestException("Porsi platform yang diajukan harus berbeda dari porsi saat ini");
-      }
-      if (requestedPlatformPercentage + institutionPercentage > maximum) {
-        throw new BadRequestException(`Total porsi usulan tidak boleh melebihi batas maksimum ${maximum}%`);
-      }
-      const pending = await tx.amilPlatformChangeRequest.findFirst({
-        where: { lembagaId, category, status: "PENDING" },
-        select: { id: true },
+        if (requestedPercentage === currentPlatformPercentage) {
+          throw new BadRequestException("Porsi platform yang diajukan harus berbeda dari porsi saat ini");
+        }
+        if (requestedPercentage + institutionPercentage > maximum) {
+          throw new BadRequestException(`Total porsi usulan tidak boleh melebihi batas maksimum ${maximum}%`);
+        }
+        const pending = await tx.amilPlatformChangeRequest.findFirst({
+          where: { lembagaId, category, status: "PENDING" },
+          select: { id: true },
+        });
+        if (pending) {
+          throw new AppError(
+            "AMIL_REQUEST_ALREADY_PENDING",
+            `Masih ada permohonan kategori ${category} yang menunggu keputusan Super Admin`,
+            409,
+          );
+        }
+
+        return tx.amilPlatformChangeRequest.create({
+          data: {
+            lembagaId,
+            category,
+            currentPlatformPercentage,
+            requestedPlatformPercentage: requestedPercentage,
+            institutionPercentage,
+            reason: cleanReason,
+          },
+        });
       });
-      if (pending) {
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
         throw new AppError(
           "AMIL_REQUEST_ALREADY_PENDING",
           `Masih ada permohonan kategori ${category} yang menunggu keputusan Super Admin`,
           409,
         );
       }
-
-      return tx.amilPlatformChangeRequest.create({
-        data: {
-          lembagaId,
-          category,
-          currentPlatformPercentage,
-          requestedPlatformPercentage,
-          institutionPercentage,
-          reason: cleanReason,
-        },
-      });
-    });
+      throw error;
+    }
 
     await this.auditService.log({
       userId,

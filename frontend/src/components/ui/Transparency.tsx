@@ -32,7 +32,7 @@ export default function Transparency() {
 
   const recentDonations = [
     { id: '1', donorName: 'Hamba Allah', amount: 500000, type: 'zakat', message: 'Semoga berkah untuk semuanya' },
-    { id: '2', donorName: 'Budi Santoso', amount: 1000000, type: 'sedekah', message: 'Titip doa untuk keluarga' },
+    { id: '2', donorName: 'Budi Santoso', amount: 1000000, type: 'infak/sedekah', message: 'Titip doa untuk keluarga' },
     { id: '3', donorName: 'Hamba Allah', amount: 250000, type: 'wakaf', message: '' },
     { id: '4', donorName: 'Siti Aminah', amount: 150000, type: 'donasi', message: 'Semoga bermanfaat' },
     { id: '5', donorName: 'Hamba Allah', amount: 3000000, type: 'zakat', message: 'Zakat maal keluarga' }

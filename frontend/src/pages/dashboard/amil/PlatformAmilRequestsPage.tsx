@@ -7,6 +7,7 @@ import { api, asAction } from "@/lib/api-client";
 import { Badge, Button, EmptyState, PageHeader, Pagination, Select, TableSkeleton } from "@/components/ui";
 import { DataTableToolbar } from "@/components/ui/data-table";
 import { toast } from "@/stores/toast.store";
+import { formatProgramCategory } from "@/lib/program-category";
 
 const STATUS_META: Record<string, { label: string; intent: "success" | "warning" | "destructive" }> = {
   PENDING: { label: "Menunggu", intent: "warning" },
@@ -113,7 +114,7 @@ export function PlatformAmilRequestsPage() {
                       <p className="mt-1 max-w-56 text-xs text-secondary">{request.program?.title ?? "Pengajuan langsung dari lembaga"}</p>
                       <p className="mt-1 text-[11px] text-muted">{new Date(request.createdAt).toLocaleString("id-ID")}</p>
                     </td>
-                    <td className="p-4 font-semibold text-primary">{request.category}</td>
+                    <td className="p-4 font-semibold text-primary">{formatProgramCategory(request.category)}</td>
                     <td className="p-4">
                       <p className="font-bold text-primary">{Number(request.currentPlatformPercentage).toFixed(2)}% → {Number(request.requestedPlatformPercentage).toFixed(2)}%</p>
                       <p className="mt-1 text-xs text-secondary">Porsi lembaga saat diajukan: {Number(request.institutionPercentage).toFixed(2)}%</p>

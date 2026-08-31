@@ -113,7 +113,7 @@ export class AmilController {
   }
 
   @Post("my-platform-change-requests")
-  @RequirePermission("lembaga.read")
+  @RequirePermission("programs.update")
   async createMyPlatformChangeRequest(
     @CurrentUser() user: RBACSessionUser,
     @Body() body: { category: ProgramCategory; requestedPlatformPercentage: number; reason: string },
@@ -129,7 +129,7 @@ export class AmilController {
   }
 
   @Put("my-settings")
-  @RequirePermission("lembaga.read")
+  @RequirePermission("programs.update")
   async updateMyInstitutionSetting(
     @CurrentUser() user: RBACSessionUser,
     @Body() body: { category: ProgramCategory; institutionPercentage: number }

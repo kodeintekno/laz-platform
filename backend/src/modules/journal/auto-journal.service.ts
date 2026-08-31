@@ -45,8 +45,7 @@ export class AutoJournalService {
   private getDonationCreditCode(category: string): string {
     switch(category) {
       case "ZAKAT": return "4101";
-      case "INFAK": return "4102";
-      case "SEDEKAH": return "4103";
+      case "INFAK_SEDEKAH": return "4102";
       case "WAKAF": return "4104";
       case "CSR": return "4108";
       case "DSKL": return "4109";
@@ -57,8 +56,7 @@ export class AutoJournalService {
   private getDistributionDebitCode(category: string): string {
     switch(category) {
       case "ZAKAT": return "5101";
-      case "INFAK": return "5102";
-      case "SEDEKAH": return "5103";
+      case "INFAK_SEDEKAH": return "5102";
       case "WAKAF": return "5104";
       case "CSR": return "5105";
       case "DSKL": return "5106";

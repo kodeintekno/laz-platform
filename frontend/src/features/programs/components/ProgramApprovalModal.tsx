@@ -1,6 +1,7 @@
 import type { Prisma } from "@prisma/client";
 import { Button, Badge } from "@/components/ui";
 import { X } from "lucide-react";
+import { formatProgramCategory } from "@/lib/program-category";
 
 type ProgramWithRelations = Omit<
   Prisma.ProgramGetPayload<{
@@ -11,15 +12,6 @@ type ProgramWithRelations = Omit<
   targetAmount: number;
   currentAmount: number;
   distributedAmount: number;
-};
-
-const CATEGORY_LABELS: Record<string, string> = {
-  ZAKAT: "Zakat",
-  INFAK: "Infak",
-  SEDEKAH: "Sedekah",
-  WAKAF: "Wakaf",
-  CSR: "CSR",
-  DSKL: "DSKL",
 };
 
 export function ProgramApprovalModal({
@@ -73,7 +65,7 @@ export function ProgramApprovalModal({
           <dl className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
             <div>
               <dt className="text-secondary font-medium">Kategori</dt>
-              <dd className="text-primary font-semibold">{CATEGORY_LABELS[program.category] ?? program.category}</dd>
+              <dd className="text-primary font-semibold">{formatProgramCategory(program.category)}</dd>
             </div>
             <div>
               <dt className="text-secondary font-medium">Target Dana</dt>
