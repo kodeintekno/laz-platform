@@ -21,13 +21,9 @@ export function PaymentsListPage() {
   const handleSimulate = async () => {
     try {
       setIsSimulating(true);
-      const result = await api.post("/dev/simulate/payment");
-      if (result.success) {
-        alert("Simulasi pembayaran berhasil!");
-        queryClient.invalidateQueries({ queryKey: ["payments"] });
-      } else {
-        alert("Gagal: " + (result.error || result.message || "Kesalahan tidak diketahui"));
-      }
+      await api.post("/dev/simulate/payment");
+      alert("Simulasi pembayaran berhasil!");
+      queryClient.invalidateQueries({ queryKey: ["payments"] });
     } catch (e: any) {
       alert("Error: " + e.message);
     } finally {
@@ -70,7 +66,7 @@ export function PaymentsListPage() {
           <Button 
             onClick={handleSimulate} 
             disabled={isSimulating}
-            variant="outline"
+            intent="outline"
             size="sm"
             className="flex items-center gap-2"
           >
