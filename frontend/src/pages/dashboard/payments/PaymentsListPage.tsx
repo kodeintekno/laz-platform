@@ -21,7 +21,7 @@ export function PaymentsListPage() {
   const handleSimulate = async () => {
     try {
       setIsSimulating(true);
-      await api.post("/dev/simulate/payment");
+      await api.post("/webhooks/dev/simulate/payment");
       alert("Simulasi pembayaran berhasil!");
       queryClient.invalidateQueries({ queryKey: ["payments"] });
     } catch (e: any) {

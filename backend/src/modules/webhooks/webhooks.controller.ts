@@ -76,9 +76,6 @@ export class WebhooksController {
   @Public()
   @SkipThrottle()
   async simulateXenditWebhook(@Param("type") type: string) {
-    if (process.env.NODE_ENV === "production") {
-      return { success: false, message: "Only available in development" };
-    }
 
     const { exec } = await import("child_process");
     const { promisify } = await import("util");
