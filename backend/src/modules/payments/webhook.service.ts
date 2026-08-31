@@ -1,4 +1,4 @@
-import { Injectable, Logger, Inject, forwardRef } from "@nestjs/common";
+import { Injectable, Logger, Inject, forwardRef, Optional } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { PaymentsRepository } from "./payments.repository";
 import { AuditService } from "../audit/audit.service";
@@ -40,6 +40,7 @@ export interface XenditPaymentWebhookPayload {
 }
 
 import { WithdrawalsRepository } from "../withdrawals/withdrawals.repository";
+import { NotificationsService } from "../notifications/notifications.service";
 
 @Injectable()
 export class WebhookService {
@@ -47,10 +48,12 @@ export class WebhookService {
 
   constructor(
     private readonly paymentsRepository: PaymentsRepository,
+    @Optional()
     @Inject(forwardRef(() => WithdrawalsRepository))
     private readonly withdrawalsRepository: WithdrawalsRepository,
     private readonly auditService: AuditService,
     private readonly configService: ConfigService<Env>,
+    @Optional() private readonly notifications?: NotificationsService,
   ) {}
 
   /**
@@ -234,6 +237,16 @@ export class WebhookService {
       },
       "Xendit webhook processed successfully",
     );
+
+    if (newPaymentStatus === "SUCCESS") {
+      const donor = payment.donation.isAnonymous ? "Donatur anonim" : (payment.donation.donorName || "Donatur");
+      await this.notifications?.notifyLembaga(payment.donation.lembagaId, {
+        type: "SUCCESS",
+        title: "Donasi berhasil diterima",
+        message: `${donor} berdonasi sebesar ${new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(dbAmount)}.`,
+        link: "/dashboard/donations",
+      });
+    }
 
     return { status: "Processed", newStatus: newPaymentStatus };
   }

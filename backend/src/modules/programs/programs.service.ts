@@ -1,4 +1,4 @@
-import { Injectable, Logger, NotFoundException } from "@nestjs/common";
+import { Injectable, Logger, NotFoundException, Optional } from "@nestjs/common";
 import { ProgramsRepository } from "./programs.repository";
 import { AuditService } from "../audit/audit.service";
 import { AuditAction } from "../audit/audit.types";
@@ -11,6 +11,7 @@ import { MAX_FEATURED_PROGRAMS, type ProgramInput } from "../../../../shared/val
 import type { RBACSessionUser } from "../../../../shared/types/rbac";
 import { Prisma } from "@prisma/client";
 import { AmilService } from "../amil/amil.service";
+import { NotificationsService } from "../notifications/notifications.service";
 
 /** Statuses only a SUPER_ADMIN (programs.approve) may set — everyone else must go through approve/reject. */
 const APPROVAL_GATED_STATUSES = new Set(["PUBLISHED", "REJECTED"]);
@@ -37,6 +38,7 @@ export class ProgramsService {
     private readonly auditService: AuditService,
     private readonly prisma: PrismaService,
     private readonly amilService: AmilService,
+    @Optional() private readonly notifications?: NotificationsService,
   ) {}
 
   async getDashboardPrograms(
@@ -131,6 +133,15 @@ export class ProgramsService {
       entityId: newProgram.id,
       newData: newProgram as any,
     });
+
+    if (newProgram.status === "PENDING_REVIEW") {
+      await this.notifications?.notifyRole("SUPER_ADMIN", {
+        type: "ACTION_REQUIRED",
+        title: "Program menunggu review",
+        message: `Program “${newProgram.title}” baru diajukan untuk ditinjau.`,
+        link: "/dashboard/programs",
+      });
+    }
 
     return newProgram;
   }
@@ -231,6 +242,15 @@ export class ProgramsService {
       newData: updatedProgram as any,
     });
 
+    if (oldProgram.status !== "PENDING_REVIEW" && updatedProgram.status === "PENDING_REVIEW") {
+      await this.notifications?.notifyRole("SUPER_ADMIN", {
+        type: "ACTION_REQUIRED",
+        title: "Program menunggu review",
+        message: `Program “${updatedProgram.title}” diajukan untuk ditinjau.`,
+        link: "/dashboard/programs",
+      });
+    }
+
     return updatedProgram;
   }
 
@@ -262,6 +282,13 @@ export class ProgramsService {
       },
     });
 
+    await this.notifications?.notifyUser(existing.createdById, {
+      type: "SUCCESS",
+      title: "Program disetujui",
+      message: `Program “${existing.title}” telah disetujui dan dipublikasikan.`,
+      link: "/dashboard/programs",
+    });
+
     return updated;
   }
 
@@ -285,6 +312,13 @@ export class ProgramsService {
       entityId: id,
       oldData: { status: existing.status },
       newData: { status: updated.status, rejectionReason: reason },
+    });
+
+    await this.notifications?.notifyUser(existing.createdById, {
+      type: "WARNING",
+      title: "Program perlu diperbaiki",
+      message: `Program “${existing.title}” ditolak: ${reason}`,
+      link: "/dashboard/programs",
     });
 
     return updated;

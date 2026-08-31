@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from "@nestjs/common";
+import { Injectable, NotFoundException, Optional } from "@nestjs/common";
 import bcrypt from "bcryptjs";
 import { LembagaRepository } from "./lembaga.repository";
 import { PrismaService } from "../../prisma/prisma.service";
@@ -8,6 +8,7 @@ import { AppError } from "../../common/errors/app.error";
 import { CoaService } from "../coa/coa.service";
 import type { LembagaAdminInput, LembagaProfileInput } from "../../../../shared/validations/lembaga.schema";
 import type { LembagaDocumentType, LembagaStatus } from "@prisma/client";
+import { NotificationsService } from "../notifications/notifications.service";
 
 export interface RegisterLembagaInput {
   name: string;
@@ -34,6 +35,7 @@ export class LembagaService {
     private readonly auditService: AuditService,
     private readonly prisma: PrismaService,
     private readonly coaService: CoaService,
+    @Optional() private readonly notifications?: NotificationsService,
   ) {}
 
   async getLembagas(page?: number, pageSize?: number, search?: string, status?: LembagaStatus) {
@@ -127,6 +129,13 @@ export class LembagaService {
       newData: { name: lembaga.name, slug: lembaga.slug, status: lembaga.status },
     });
 
+    await this.notifications?.notifyRole("SUPER_ADMIN", {
+      type: "ACTION_REQUIRED",
+      title: "Pendaftaran lembaga baru",
+      message: `${lembaga.name} menunggu pemeriksaan dan persetujuan Anda.`,
+      link: "/dashboard/lembaga",
+    });
+
     return { lembagaId: lembaga.id, status: lembaga.status };
   }
 
@@ -151,6 +160,13 @@ export class LembagaService {
       newData: { status: updated.status },
     });
 
+    await this.notifications?.notifyLembaga(id, {
+      type: "SUCCESS",
+      title: "Lembaga telah disetujui",
+      message: `${updated.name} telah disetujui. Anda sekarang dapat menggunakan dashboard lembaga.`,
+      link: "/dashboard",
+    });
+
     return updated;
   }
 
@@ -170,6 +186,13 @@ export class LembagaService {
       entityId: id,
       oldData: { status: existing.status },
       newData: { status: updated.status, rejectionReason: reason },
+    });
+
+    await this.notifications?.notifyLembaga(id, {
+      type: "WARNING",
+      title: "Pendaftaran lembaga ditolak",
+      message: `Pendaftaran ${updated.name} ditolak: ${reason}`,
+      link: "/dashboard/settings",
     });
 
     return updated;

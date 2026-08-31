@@ -3,8 +3,9 @@
 import { useUIStore } from "@/stores/ui.store";
 import { useState, useRef, useEffect } from "react";
 import { signOut } from "next-auth/react";
-import { LogOut, Bell, Menu } from "lucide-react";
+import { LogOut, Menu } from "lucide-react";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { NotificationBell } from "@/features/notifications/NotificationBell";
 
 interface HeaderProps {
   user?: {
@@ -59,13 +60,7 @@ export function Header({ user }: HeaderProps) {
 
       {/* Right: Actions */}
       <div className="flex items-center gap-4">
-        {/* Notification Icon */}
-        <button
-          className="p-1.5 rounded-full text-muted hover:bg-surface-muted hover:text-primary transition-all cursor-pointer"
-          aria-label="Notification bell"
-        >
-          <Bell className="w-5 h-5" />
-        </button>
+        <NotificationBell />
 
         {/* User Profile Dropdown */}
         <div className="relative" ref={dropdownRef}>
