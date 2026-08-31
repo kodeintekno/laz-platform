@@ -1,5 +1,6 @@
 import { Injectable } from "@nestjs/common";
 import { v2 as cloudinary } from "cloudinary";
+import type { UploadApiResponse } from "cloudinary";
 import type { IUploadProvider, UploadFile, UploadOptions, UploadResult } from "./provider";
 
 /**
@@ -45,15 +46,27 @@ export class CloudinaryProvider implements IUploadProvider {
     const folder = options?.folder ?? "";
     const transformation = options?.transformation;
 
-    const dataUri = `data:${file.mimetype};base64,${file.buffer.toString("base64")}`;
-    // Use resource_type 'auto' so Cloudinary correctly handles both images and
-    // PDFs/raw files. Without this, PDF uploads silently fail or get corrupted
-    // because the default resource_type is 'image'.
-    const uploadResult = await cloudinary.uploader.upload(dataUri, {
-      folder,
-      transformation,
-      resource_type: "auto",
+    // Stream the binary buffer directly. Encoding it as a base64 data URI adds
+    // roughly 33% to the request body, so a valid file below our 10 MB limit
+    // can be rejected by an upstream/provider request-size limit.
+    const uploadResult = await new Promise<UploadApiResponse>((resolve, reject) => {
+      const stream = cloudinary.uploader.upload_stream(
+        {
+          folder,
+          transformation,
+          // Let Cloudinary route images and PDFs to the appropriate resource type.
+          resource_type: "auto",
+        },
+        (error, result) => {
+          if (error) return reject(error);
+          if (!result) return reject(new Error("Cloudinary did not return an upload result"));
+          resolve(result);
+        },
+      );
+
+      stream.end(file.buffer);
     });
+
     return {
       url: uploadResult.secure_url,
       publicId: uploadResult.public_id,

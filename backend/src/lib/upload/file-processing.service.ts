@@ -4,6 +4,7 @@ import type { UploadFile } from "./provider";
 
 /** Allowed MIME types (whitelist — stricter than image/*) */
 const ALLOWED_MIMES = new Set(["image/png", "image/jpeg", "application/pdf"]);
+type AllowedMime = "image/png" | "image/jpeg" | "application/pdf";
 
 /** 10 MB hard limit — reject before processing */
 const MAX_INPUT_BYTES = 10 * 1024 * 1024;
@@ -100,18 +101,18 @@ export class FileProcessingService {
     }
 
     // PNG or JPEG → convert to WebP
-    return this.processImage(file.buffer, originalSize);
+    return this.processImage(file.buffer, originalSize, detectedMime);
   }
 
   // ---------------------------------------------------------------------------
   // Private helpers
   // ---------------------------------------------------------------------------
 
-  private detectMimeFromBuffer(buffer: Buffer): string | null {
+  private detectMimeFromBuffer(buffer: Buffer): AllowedMime | null {
     for (const sig of MAGIC_SIGNATURES) {
       if (buffer.length < sig.offset + sig.bytes.length) continue;
       const match = sig.bytes.every((b, i) => buffer[sig.offset + i] === b);
-      if (match) return sig.mime;
+      if (match) return sig.mime as AllowedMime;
     }
     return null;
   }
@@ -126,7 +127,11 @@ export class FileProcessingService {
    *     by QUALITY_STEP and retry (max ~6 iterations: 80→75→70→65→60→55→50).
    *  4. Return whichever version is smaller (compressed vs. original buffer).
    */
-  private async processImage(buffer: Buffer, originalSize: number): Promise<ProcessedFile> {
+  private async processImage(
+    buffer: Buffer,
+    originalSize: number,
+    originalMime: "image/png" | "image/jpeg",
+  ): Promise<ProcessedFile> {
     let pipeline = sharp(buffer).rotate(); // auto-orient via EXIF
 
     // Resize only if needed
@@ -165,7 +170,7 @@ export class FileProcessingService {
     // (e.g. a tiny 50KB PNG should not become a larger WebP)
     const useWebp = webpBuffer.length < originalSize;
     const finalBuffer = useWebp ? webpBuffer : buffer;
-    const finalMime = useWebp ? "image/webp" : "image/jpeg"; // original is always PNG or JPEG
+    const finalMime = useWebp ? "image/webp" : originalMime;
 
     this.logger.log(
       `Image processed: ${(originalSize / 1024).toFixed(0)} KB → ${(finalBuffer.length / 1024).toFixed(0)} KB` +

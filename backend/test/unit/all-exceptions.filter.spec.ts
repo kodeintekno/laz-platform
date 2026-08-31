@@ -125,6 +125,21 @@ describe("AllExceptionsFilter", () => {
     });
   });
 
+  it("maps Multer file-size errors to a clear upload-limit response", () => {
+    const { host, json } = makeHost();
+    const err = Object.assign(new Error("File too large"), { code: "LIMIT_FILE_SIZE" });
+
+    filter.catch(err, host);
+
+    expect(json).toHaveBeenCalledWith({
+      success: false,
+      error: {
+        code: "FILE_TOO_LARGE",
+        message: "Ukuran file terlalu besar. Maksimum 10 MB per file.",
+      },
+    });
+  });
+
   it("maps unknown Error → 500 INTERNAL_ERROR without leaking details", () => {
     const { host, json } = makeHost();
 
