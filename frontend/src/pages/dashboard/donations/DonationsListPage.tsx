@@ -2,17 +2,13 @@ import { useQuery } from "@tanstack/react-query";
 import { useSearchParams } from "react-router-dom";
 import { api } from "@/lib/api-client";
 import { useAuth } from "@/auth/AuthProvider";
-import { usePermission } from "@/hooks/usePermission";
-import { PERMISSIONS } from "@shared/constants/permissions";
 import { DonationTable } from "@/features/donations/components/DonationTable";
-import { PageHeader, Button, TableSkeleton } from "@/components/ui";
+import { PageHeader, TableSkeleton } from "@/components/ui";
 import { DataTableToolbar } from "@/components/ui/data-table";
 import { UserLembagaFilter } from "@/features/users/components/UserLembagaFilter";
-import { Link } from "react-router-dom";
 
 export function DonationsListPage() {
   const { user } = useAuth();
-  const { can } = usePermission();
   const [searchParams] = useSearchParams();
   const isSuperAdmin = user?.roleName === "SUPER_ADMIN";
 
@@ -47,13 +43,6 @@ export function DonationsListPage() {
       <PageHeader
         title="Data Donasi Masuk"
         description="Daftar semua transaksi donasi yang masuk ke platform."
-        action={
-          can(PERMISSIONS.DONATIONS_CREATE) ? (
-            <Link to="/dashboard/donations/new">
-              <Button intent="primary">Tambah Donasi</Button>
-            </Link>
-          ) : undefined
-        }
       />
 
       <DataTableToolbar

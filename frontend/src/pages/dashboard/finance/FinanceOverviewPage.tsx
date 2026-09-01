@@ -3,6 +3,7 @@ import { api } from "@/lib/api-client";
 import { useAuth } from "@/auth/AuthProvider";
 import { PageHeader } from "@/components/ui";
 import { Link } from "react-router-dom";
+import { LembagaFinanceOverviewPage } from "@/pages/dashboard/lembaga/finance/LembagaFinanceOverviewPage";
 import {
   Wallet,
   CreditCard,
@@ -225,7 +226,7 @@ function LembagaOverview() {
         <div className="rounded-2xl overflow-hidden border border-border/40 bg-surface flex flex-col md:flex-row">
           <div className="flex-1 p-8 bg-gradient-to-br from-brand-primary/10 to-transparent border-b md:border-b-0 md:border-r border-border/40">
             <p className="text-sm font-semibold text-secondary mb-1">
-              Total Saldo Lembaga
+              Total Saldo Payment Gateway
             </p>
             <h2 className="text-4xl font-bold text-primary mb-3">
               {fmt(
@@ -234,18 +235,28 @@ function LembagaOverview() {
               )}
             </h2>
             <span className="inline-flex items-center gap-1.5 rounded-full bg-success/10 text-success text-xs font-semibold px-3 py-1">
-              Hak Lembaga 87.5%
+              Tersedia dan sedang diproses
             </span>
           </div>
           <div className="flex-1 p-8 space-y-4">
             {[
               {
-                label: "Saldo Tersedia (dapat ditarik)",
-                value: fmt(metrics.availableBalance ?? 0),
+                label: "Saldo Mustahiq belum disalurkan",
+                value: fmt(metrics.mustahiqBalance ?? 0),
                 cls: "text-success",
               },
               {
-                label: "Saldo Tertunda (sedang ditarik)",
+                label: "Saldo Amil belum digunakan",
+                value: fmt(metrics.amilBalance ?? 0),
+                cls: "text-brand-primary",
+              },
+              {
+                label: "Saldo Penarikan Tersedia (gateway)",
+                value: fmt(metrics.availableBalance ?? 0),
+                cls: "text-info-token",
+              },
+              {
+                label: "Saldo Tertunda (sedang diproses)",
                 value: fmt(metrics.reservedBalance ?? 0),
                 cls: "text-warning",
               },
@@ -269,14 +280,26 @@ function LembagaOverview() {
 
       {/* KPI cards */}
       {isLoading ? (
-        <StatSkeleton count={4} />
+        <StatSkeleton count={6} />
       ) : metrics ? (
-        <dl className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+        <dl className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
           <StatCard
-            label="Saldo Tersedia"
-            value={fmt(metrics.availableBalance ?? 0)}
+            label="Saldo Mustahiq Belum Disalurkan"
+            value={fmt(metrics.mustahiqBalance ?? 0)}
             Icon={Wallet}
             colorClass="bg-success/10 text-success"
+          />
+          <StatCard
+            label="Saldo Amil Belum Digunakan"
+            value={fmt(metrics.amilBalance ?? 0)}
+            Icon={Coins}
+            colorClass="bg-brand-primary/10 text-brand-primary"
+          />
+          <StatCard
+            label="Saldo Penarikan Tersedia (Gateway)"
+            value={fmt(metrics.availableBalance ?? 0)}
+            Icon={ArrowDownToLine}
+            colorClass="bg-info-token/10 text-info-token"
           />
           <StatCard
             label="Pencairan Tertunda"
@@ -346,5 +369,5 @@ export function FinanceOverviewPage() {
   const { user } = useAuth();
   const isSuperAdmin = user?.roleName === "SUPER_ADMIN";
 
-  return isSuperAdmin ? <SuperAdminOverview /> : <LembagaOverview />;
+  return isSuperAdmin ? <SuperAdminOverview /> : <LembagaFinanceOverviewPage />;
 }

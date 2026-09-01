@@ -1,11 +1,12 @@
 import React, { useState } from "react";
-import { ChevronRight, ChevronDown, Layers, BookOpen } from "lucide-react";
+import { ChevronRight, ChevronDown, Layers, BookOpen, Pencil, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { provisionCoaAction } from "../actions/coa.actions";
 import { toast } from "@/stores/toast.store";
 import { useSearchParams } from "react-router-dom";
+import { api } from "@/lib/api-client";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -75,14 +76,40 @@ interface AccountRowProps {
   node: CoaTreeNode;
   depth: number;
   defaultOpen?: boolean;
+  lembagaId?: string;
 }
 
-function AccountRow({ node, depth, defaultOpen = false }: AccountRowProps) {
+function AccountRow({ node, depth, defaultOpen = false, lembagaId }: AccountRowProps) {
   const [open, setOpen] = useState(defaultOpen);
+  const queryClient = useQueryClient();
   const hasChildren = node.children.length > 0;
   const color = ACCOUNT_TYPE_COLOR[node.accountType];
 
   const indentPx = depth * 20;
+
+  const renameAccount = async () => {
+    const name = window.prompt("Nama akun baru", node.name)?.trim();
+    if (!name || name === node.name) return;
+    try {
+      await api.patch(`/coa/accounts/${node.id}`, { name, lembagaId });
+      toast.success("Nama akun berhasil diperbarui");
+      queryClient.invalidateQueries({ queryKey: ["coa"] });
+    } catch (error: any) {
+      toast.error(error?.message || "Gagal mengubah akun");
+    }
+  };
+
+  const deleteAccount = async () => {
+    if (!window.confirm(`Hapus akun ${node.code} — ${node.name}?`)) return;
+    try {
+      const query = lembagaId ? `?lembagaId=${encodeURIComponent(lembagaId)}` : "";
+      await api.delete(`/coa/accounts/${node.id}${query}`);
+      toast.success("Akun berhasil dihapus");
+      queryClient.invalidateQueries({ queryKey: ["coa"] });
+    } catch (error: any) {
+      toast.error(error?.message || "Akun tidak dapat dihapus");
+    }
+  };
 
   return (
     <div>
@@ -173,6 +200,16 @@ function AccountRow({ node, depth, defaultOpen = false }: AccountRowProps) {
               {node.normalBalance === "DEBIT" ? "D" : "K"}
             </Badge>
           )}
+          {node.isEditable && (
+            <button type="button" className="text-secondary hover:text-primary" onClick={renameAccount} title="Ubah nama">
+              <Pencil className="w-3.5 h-3.5" />
+            </button>
+          )}
+          {node.isDeletable && (
+            <button type="button" className="text-secondary hover:text-destructive" onClick={deleteAccount} title="Hapus akun">
+              <Trash2 className="w-3.5 h-3.5" />
+            </button>
+          )}
         </div>
       </div>
 
@@ -185,6 +222,7 @@ function AccountRow({ node, depth, defaultOpen = false }: AccountRowProps) {
               node={child}
               depth={depth + 1}
               defaultOpen={child.level <= 2}
+              lembagaId={lembagaId}
             />
           ))}
         </div>
@@ -250,6 +288,7 @@ export function CoaTree({ accounts }: CoaTreeProps) {
             node={root}
             depth={0}
             defaultOpen={true}
+            lembagaId={lembagaId}
           />
         ))}
       </div>

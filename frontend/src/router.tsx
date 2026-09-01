@@ -45,7 +45,6 @@ import { NewProgramPage } from "@/pages/dashboard/programs/NewProgramPage";
 import { EditProgramPage } from "@/pages/dashboard/programs/EditProgramPage";
 import { NewDistributionForProgramPage } from "@/pages/dashboard/programs/NewDistributionForProgramPage";
 import { DonationsListPage } from "@/pages/dashboard/donations/DonationsListPage";
-import { NewDonationPage } from "@/pages/dashboard/donations/NewDonationPage";
 import { DistributionsListPage } from "@/pages/dashboard/distributions/DistributionsListPage";
 import { PaymentsListPage } from "@/pages/dashboard/payments/PaymentsListPage";
 import { UsersListPage } from "@/pages/dashboard/users/UsersListPage";
@@ -178,14 +177,6 @@ export const router = createBrowserRouter([
             element: (
               <RequirePermission permission={PERMISSIONS.DONATIONS_READ}>
                 <DonationsListPage />
-              </RequirePermission>
-            ),
-          },
-          {
-            path: "donations/new",
-            element: (
-              <RequirePermission permission={PERMISSIONS.DONATIONS_CREATE}>
-                <NewDonationPage />
               </RequirePermission>
             ),
           },

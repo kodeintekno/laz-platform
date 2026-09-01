@@ -23,6 +23,7 @@ import { PrismaClient } from "@prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 import bcrypt from "bcryptjs";
 import "dotenv/config";
+import { coaTemplateFor } from "../src/modules/coa/coa.template";
 
 const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL! });
 const prisma = new PrismaClient({ adapter });
@@ -259,7 +260,7 @@ async function main() {
 
   console.log("\n🧾 Seeding COA template for approved lembaga...");
   await seedCoaForLembaga(approvedLembaga.id);
-  console.log(` ✓ ${COA_TEMPLATE.length} accounts seeded\n`);
+  console.log(` ✓ ${coaTemplateFor("LEMBAGA").length} active Lembaga accounts seeded\n`);
 
   const lembagaAdminUser = await prisma.user.upsert({
     where: { email: "admin@yayasan-peduli-umat.id" },
@@ -300,7 +301,7 @@ async function main() {
         donations: [
           { amount: 5000000, status: "PAID", method: "BCA_VA", anon: false, name: "Budi Santoso", phone: "081211110001", msg: "Bismillah untuk masjid" },
           { amount: 2500000, status: "PAID", method: "GOPAY", anon: true, name: "Hamba Allah", phone: "081211110002", msg: "Semoga cepat selesai pembangunannya" },
-          { amount: 5000000, status: "PAID", method: "MANUAL", anon: true, name: "Hamba Allah", phone: "081211110003", msg: "Titip Infak/Sedekah via kantor lembaga" },
+          { amount: 5000000, status: "PAID", method: "QRIS", anon: true, name: "Hamba Allah", phone: "081211110003", msg: "Titip Infak/Sedekah" },
           { amount: 1000000, status: "PENDING", method: "MANDIRI_VA", anon: false, name: "Budi Santoso", phone: "081211110001", msg: "" },
         ],
       },
@@ -317,7 +318,7 @@ async function main() {
         createdById: lembagaAdminUser.id,
         donations: [
           { amount: 25000000, status: "PAID", method: "BNI_VA", anon: true, name: "Hamba Allah", phone: "081211110004", msg: "Zakat Maal keluarga hamba Allah" },
-          { amount: 20000000, status: "PAID", method: "MANUAL", anon: false, name: "Siti Aminah", phone: "081211110005", msg: "Pembayaran zakat tunai di posko" },
+          { amount: 20000000, status: "PAID", method: "BRI_VA", anon: false, name: "Siti Aminah", phone: "081211110005", msg: "Pembayaran zakat" },
         ],
       },
       {
@@ -478,18 +479,52 @@ async function main() {
           });
         }
       }
+
+      const [programFundAgg, distributionAgg] = await Promise.all([
+        prisma.donation.aggregate({
+          where: { programId: createdProgram.id, status: "PAID" },
+          _sum: { netAmount: true },
+        }),
+        prisma.distribution.aggregate({
+          where: { programId: createdProgram.id, status: "COMPLETED" },
+          _sum: { amount: true },
+        }),
+      ]);
+      const programFundAmount = Number(programFundAgg._sum.netAmount || 0);
+      const mustahiqDistributedAmount = Number(distributionAgg._sum.amount || 0);
+      await prisma.program.update({
+        where: { id: createdProgram.id },
+        data: {
+          programFundAmount,
+          distributedAmount: mustahiqDistributedAmount,
+          mustahiqDistributedAmount,
+          amilDistributedAmount: 0,
+        },
+      });
     }
 
     // Hitung total institutionAmount (87.5%) dari semua donasi PAID & update InstitutionBalance
     const balanceAgg = await prisma.donation.aggregate({
       where: { lembagaId: approvedLembaga.id, status: "PAID" },
-      _sum: { institutionAmount: true },
+      _sum: { institutionAmount: true, netAmount: true, amilInstitutionAmount: true },
     });
     const totalInstitutionAmount = Number(balanceAgg._sum.institutionAmount || 0);
+    const totalMustahiqAmount = Number(balanceAgg._sum.netAmount || 0);
+    const totalAmilInstitutionAmount = Number(balanceAgg._sum.amilInstitutionAmount || 0);
     await prisma.institutionBalance.upsert({
       where: { lembagaId: approvedLembaga.id },
-      update: { balance: totalInstitutionAmount },
-      create: { lembagaId: approvedLembaga.id, balance: totalInstitutionAmount, reservedBalance: 0 },
+      update: {
+        balance: totalInstitutionAmount,
+        mustahiqBalance: totalMustahiqAmount,
+        amilBalance: totalAmilInstitutionAmount,
+      },
+      create: {
+        lembagaId: approvedLembaga.id,
+        balance: totalInstitutionAmount,
+        mustahiqBalance: totalMustahiqAmount,
+        amilBalance: totalAmilInstitutionAmount,
+        reservedBalance: 0,
+      },
     });
     console.log(` ✓ InstitutionBalance seeded: Rp ${totalInstitutionAmount.toLocaleString("id-ID")}`);
     console.log(" ✓ Dummy programs, donations, and distributions seeded");
@@ -718,120 +753,58 @@ async function main() {
   console.log("\n✅ Seeding complete!\n");
 }
 
-// ─── COA Template Seeder ──────────────────────────────────────────────────────────
-
-type CsvCoaRow = {
-  code: string;
-  name: string;
-  accountType: "ASSET" | "LIABILITY" | "FUND" | "REVENUE" | "EXPENSE";
-  normalBalance: "DEBIT" | "CREDIT";
-  isHeader: boolean;
-  parentCode: string | null;
-  level: number;
-};
-
-/** Template COA standar — digunakan untuk semua lembaga. */
-const COA_TEMPLATE: CsvCoaRow[] = [
-  // ─── 1000 ASSET ───
-  { code: "1000", name: "Aset", accountType: "ASSET", normalBalance: "DEBIT", isHeader: true, parentCode: null, level: 1 },
-  { code: "1100", name: "Kas dan Bank", accountType: "ASSET", normalBalance: "DEBIT", isHeader: true, parentCode: "1000", level: 2 },
-  { code: "1101", name: "Kas", accountType: "ASSET", normalBalance: "DEBIT", isHeader: false, parentCode: "1100", level: 3 },
-  { code: "1102", name: "Kas Kecil", accountType: "ASSET", normalBalance: "DEBIT", isHeader: false, parentCode: "1100", level: 3 },
-  { code: "1103", name: "Bank", accountType: "ASSET", normalBalance: "DEBIT", isHeader: false, parentCode: "1100", level: 3 },
-  { code: "1104", name: "Kas Dalam Perjalanan", accountType: "ASSET", normalBalance: "DEBIT", isHeader: false, parentCode: "1100", level: 3 },
-  { code: "1110", name: "Piutang", accountType: "ASSET", normalBalance: "DEBIT", isHeader: true, parentCode: "1000", level: 2 },
-  { code: "1111", name: "Piutang Lain-lain", accountType: "ASSET", normalBalance: "DEBIT", isHeader: false, parentCode: "1110", level: 3 },
-  { code: "1120", name: "Persediaan", accountType: "ASSET", normalBalance: "DEBIT", isHeader: true, parentCode: "1000", level: 2 },
-  { code: "1121", name: "Persediaan", accountType: "ASSET", normalBalance: "DEBIT", isHeader: false, parentCode: "1120", level: 3 },
-  { code: "1200", name: "Aset Tetap", accountType: "ASSET", normalBalance: "DEBIT", isHeader: true, parentCode: "1000", level: 2 },
-  { code: "1201", name: "Peralatan", accountType: "ASSET", normalBalance: "DEBIT", isHeader: false, parentCode: "1200", level: 3 },
-  { code: "1202", name: "Kendaraan", accountType: "ASSET", normalBalance: "DEBIT", isHeader: false, parentCode: "1200", level: 3 },
-  { code: "1203", name: "Gedung", accountType: "ASSET", normalBalance: "DEBIT", isHeader: false, parentCode: "1200", level: 3 },
-  { code: "1290", name: "Akumulasi Penyusutan", accountType: "ASSET", normalBalance: "CREDIT", isHeader: true, parentCode: "1000", level: 2 },
-  { code: "1291", name: "Akumulasi Penyusutan Peralatan", accountType: "ASSET", normalBalance: "CREDIT", isHeader: false, parentCode: "1290", level: 3 },
-  { code: "1292", name: "Akumulasi Penyusutan Kendaraan", accountType: "ASSET", normalBalance: "CREDIT", isHeader: false, parentCode: "1290", level: 3 },
-  { code: "1293", name: "Akumulasi Penyusutan Gedung", accountType: "ASSET", normalBalance: "CREDIT", isHeader: false, parentCode: "1290", level: 3 },
-  // ─── 2000 LIABILITY ───
-  { code: "2000", name: "Kewajiban", accountType: "LIABILITY", normalBalance: "CREDIT", isHeader: true, parentCode: null, level: 1 },
-  { code: "2100", name: "Utang", accountType: "LIABILITY", normalBalance: "CREDIT", isHeader: true, parentCode: "2000", level: 2 },
-  { code: "2101", name: "Utang Operasional", accountType: "LIABILITY", normalBalance: "CREDIT", isHeader: false, parentCode: "2100", level: 3 },
-  { code: "2102", name: "Utang Gaji", accountType: "LIABILITY", normalBalance: "CREDIT", isHeader: false, parentCode: "2100", level: 3 },
-  { code: "2103", name: "Utang Pajak", accountType: "LIABILITY", normalBalance: "CREDIT", isHeader: false, parentCode: "2100", level: 3 },
-  { code: "2104", name: "Utang Lain-lain", accountType: "LIABILITY", normalBalance: "CREDIT", isHeader: false, parentCode: "2100", level: 3 },
-  // ─── 3000 FUND ───
-  { code: "3000", name: "Dana", accountType: "FUND", normalBalance: "CREDIT", isHeader: true, parentCode: null, level: 1 },
-  { code: "3100", name: "Dana", accountType: "FUND", normalBalance: "CREDIT", isHeader: true, parentCode: "3000", level: 2 },
-  { code: "3101", name: "Dana Zakat", accountType: "FUND", normalBalance: "CREDIT", isHeader: false, parentCode: "3100", level: 3 },
-  { code: "3102", name: "Dana Infak/Sedekah", accountType: "FUND", normalBalance: "CREDIT", isHeader: false, parentCode: "3100", level: 3 },
-  { code: "3104", name: "Dana Wakaf", accountType: "FUND", normalBalance: "CREDIT", isHeader: false, parentCode: "3100", level: 3 },
-  { code: "3105", name: "Dana Amil", accountType: "FUND", normalBalance: "CREDIT", isHeader: false, parentCode: "3100", level: 3 },
-  { code: "3106", name: "Dana Nonhalal", accountType: "FUND", normalBalance: "CREDIT", isHeader: false, parentCode: "3100", level: 3 },
-  // ─── 4000 PENERIMAAN DANA ───
-  { code: "4000", name: "Penerimaan Dana", accountType: "REVENUE", normalBalance: "CREDIT", isHeader: true, parentCode: null, level: 1 },
-  { code: "4100", name: "Penerimaan", accountType: "REVENUE", normalBalance: "CREDIT", isHeader: true, parentCode: "4000", level: 2 },
-  { code: "4101", name: "Penerimaan Zakat", accountType: "REVENUE", normalBalance: "CREDIT", isHeader: false, parentCode: "4100", level: 3 },
-  { code: "4102", name: "Penerimaan Infak/Sedekah", accountType: "REVENUE", normalBalance: "CREDIT", isHeader: false, parentCode: "4100", level: 3 },
-  { code: "4104", name: "Penerimaan Wakaf", accountType: "REVENUE", normalBalance: "CREDIT", isHeader: false, parentCode: "4100", level: 3 },
-  { code: "4105", name: "Penerimaan Dana Amil", accountType: "REVENUE", normalBalance: "CREDIT", isHeader: false, parentCode: "4100", level: 3 },
-  { code: "4106", name: "Penerimaan Hibah", accountType: "REVENUE", normalBalance: "CREDIT", isHeader: false, parentCode: "4100", level: 3 },
-  { code: "4107", name: "Pendapatan Lainnya", accountType: "REVENUE", normalBalance: "CREDIT", isHeader: false, parentCode: "4100", level: 3 },
-  // ─── 5000 PENYALURAN DANA ───
-  { code: "5000", name: "Penyaluran Dana", accountType: "EXPENSE", normalBalance: "DEBIT", isHeader: true, parentCode: null, level: 1 },
-  { code: "5100", name: "Penyaluran", accountType: "EXPENSE", normalBalance: "DEBIT", isHeader: true, parentCode: "5000", level: 2 },
-  { code: "5101", name: "Penyaluran Zakat", accountType: "EXPENSE", normalBalance: "DEBIT", isHeader: false, parentCode: "5100", level: 3 },
-  { code: "5102", name: "Penyaluran Infak/Sedekah", accountType: "EXPENSE", normalBalance: "DEBIT", isHeader: false, parentCode: "5100", level: 3 },
-  { code: "5104", name: "Penyaluran Wakaf", accountType: "EXPENSE", normalBalance: "DEBIT", isHeader: false, parentCode: "5100", level: 3 },
-  // ─── 6000 BEBAN OPERASIONAL ───
-  { code: "6000", name: "Beban Operasional", accountType: "EXPENSE", normalBalance: "DEBIT", isHeader: true, parentCode: null, level: 1 },
-  { code: "6100", name: "Beban Operasional", accountType: "EXPENSE", normalBalance: "DEBIT", isHeader: true, parentCode: "6000", level: 2 },
-  { code: "6101", name: "Beban Gaji", accountType: "EXPENSE", normalBalance: "DEBIT", isHeader: false, parentCode: "6100", level: 3 },
-  { code: "6102", name: "Beban Listrik", accountType: "EXPENSE", normalBalance: "DEBIT", isHeader: false, parentCode: "6100", level: 3 },
-  { code: "6103", name: "Beban Air", accountType: "EXPENSE", normalBalance: "DEBIT", isHeader: false, parentCode: "6100", level: 3 },
-  { code: "6104", name: "Beban Internet", accountType: "EXPENSE", normalBalance: "DEBIT", isHeader: false, parentCode: "6100", level: 3 },
-  { code: "6105", name: "Beban ATK", accountType: "EXPENSE", normalBalance: "DEBIT", isHeader: false, parentCode: "6100", level: 3 },
-  { code: "6106", name: "Beban Transportasi", accountType: "EXPENSE", normalBalance: "DEBIT", isHeader: false, parentCode: "6100", level: 3 },
-  { code: "6107", name: "Beban Administrasi Bank", accountType: "EXPENSE", normalBalance: "DEBIT", isHeader: false, parentCode: "6100", level: 3 },
-  { code: "6108", name: "Beban Konsumsi", accountType: "EXPENSE", normalBalance: "DEBIT", isHeader: false, parentCode: "6100", level: 3 },
-  { code: "6109", name: "Beban Pemeliharaan", accountType: "EXPENSE", normalBalance: "DEBIT", isHeader: false, parentCode: "6100", level: 3 },
-  { code: "6110", name: "Beban Penyusutan Peralatan", accountType: "EXPENSE", normalBalance: "DEBIT", isHeader: false, parentCode: "6100", level: 3 },
-  { code: "6111", name: "Beban Penyusutan Kendaraan", accountType: "EXPENSE", normalBalance: "DEBIT", isHeader: false, parentCode: "6100", level: 3 },
-  { code: "6112", name: "Beban Penyusutan Gedung", accountType: "EXPENSE", normalBalance: "DEBIT", isHeader: false, parentCode: "6100", level: 3 },
-  { code: "6113", name: "Beban Operasional Lainnya", accountType: "EXPENSE", normalBalance: "DEBIT", isHeader: false, parentCode: "6100", level: 3 },
-  { code: "6114", name: "Beban Platform", accountType: "EXPENSE", normalBalance: "DEBIT", isHeader: false, parentCode: "6100", level: 3 },
-];
+// ─── COA Seeder ────────────────────────────────────────────────────────────────
+// Sumber tunggal template berada di src/modules/coa/coa.template.ts.
 
 /**
  * Seed COA template untuk satu lembaga.
  * Aman di-run berulang — menggunakan upsert berdasarkan [lembagaId, code].
  */
 async function seedCoaForLembaga(lembagaId: string): Promise<void> {
-  for (const row of COA_TEMPLATE) {
-    await prisma.chartOfAccount.upsert({
-      where: { lembagaId_code: { lembagaId, code: row.code } },
-      update: {
-        name: row.name,
-        accountType: row.accountType,
-        normalBalance: row.normalBalance,
-        isHeader: row.isHeader,
-        parentCode: row.parentCode,
-        level: row.level,
-      },
-      create: {
-        lembagaId,
-        code: row.code,
-        name: row.name,
-        accountType: row.accountType,
-        normalBalance: row.normalBalance,
-        isHeader: row.isHeader,
-        parentCode: row.parentCode,
-        level: row.level,
-        isSystem: true,
-        isEditable: false,
-        isDeletable: false,
-        isActive: true,
-      },
-    });
-    process.stdout.write(".");
+  const lembagaBook = await prisma.accountingBook.upsert({
+    where: { lembagaId },
+    update: {},
+    create: { ownerType: "LEMBAGA", lembagaId, name: `Buku Lembaga ${lembagaId}` },
+  });
+  const platformBook = (await prisma.accountingBook.findFirst({ where: { ownerType: "PLATFORM" } }))
+    ?? await prisma.accountingBook.create({ data: { ownerType: "PLATFORM", name: "Buku Platform" } });
+
+  for (const [book, ownerType, ownerLembagaId] of [
+    [lembagaBook, "LEMBAGA", lembagaId],
+    [platformBook, "PLATFORM", null],
+  ] as const) {
+    for (const row of coaTemplateFor(ownerType)) {
+      await prisma.chartOfAccount.upsert({
+        where: { accountingBookId_code: { accountingBookId: book.id, code: row.code } },
+        update: {
+          key: row.key,
+          name: row.name,
+          accountType: row.accountType,
+          normalBalance: row.normalBalance,
+          isHeader: row.isHeader,
+          parentCode: row.parentCode,
+          level: row.level,
+          isActive: true,
+        },
+        create: {
+          accountingBookId: book.id,
+          lembagaId: ownerLembagaId,
+          key: row.key,
+          code: row.code,
+          name: row.name,
+          accountType: row.accountType,
+          normalBalance: row.normalBalance,
+          isHeader: row.isHeader,
+          parentCode: row.parentCode,
+          level: row.level,
+          isSystem: true,
+          isEditable: false,
+          isDeletable: false,
+          isActive: true,
+        },
+      });
+      process.stdout.write(".");
+    }
   }
 }
 

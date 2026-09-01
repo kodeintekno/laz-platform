@@ -10,6 +10,7 @@ import { SelectProgramForDistributionModal } from "@/features/distributions/comp
 import { PageHeader, Button, TableSkeleton } from "@/components/ui";
 import { DataTableToolbar } from "@/components/ui/data-table";
 import { UserLembagaFilter } from "@/features/users/components/UserLembagaFilter";
+import { HandCoins, CircleDollarSign } from "lucide-react";
 
 export function DistributionsListPage() {
   const { user } = useAuth();
@@ -34,6 +35,19 @@ export function DistributionsListPage() {
     enabled: isSuperAdmin,
   });
 
+  const { data: overviewResult, isLoading: isBalanceLoading } = useQuery({
+    queryKey: ["dashboard", "overview"],
+    queryFn: () => api.get<any>("/dashboard/overview"),
+    enabled: !isSuperAdmin,
+  });
+
+  const metrics = overviewResult?.data?.metrics;
+  const formatBalance = (value: number) => new Intl.NumberFormat("id-ID", {
+    style: "currency",
+    currency: "IDR",
+    minimumFractionDigits: 0,
+  }).format(value);
+
   const pagination = result?.meta
     ? { currentPage: result.meta.page, totalPages: result.meta.totalPages, totalCount: result.meta.total, pageSize: result.meta.limit }
     : undefined;
@@ -55,6 +69,40 @@ export function DistributionsListPage() {
         }
       />
 
+      {!isSuperAdmin && (
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          {[
+            {
+              label: "Saldo Utama / Mustahiq",
+              value: metrics?.mustahiqBalance,
+              description: "Dana utama lembaga yang tersedia untuk penyaluran program",
+              Icon: HandCoins,
+              colorClass: "bg-success/10 text-success",
+            },
+            {
+              label: "Saldo Amil Lembaga",
+              value: metrics?.amilBalance,
+              description: "Dana operasional amil lembaga yang tersedia",
+              Icon: CircleDollarSign,
+              colorClass: "bg-brand-primary/10 text-brand-primary",
+            },
+          ].map(({ label, value, description, Icon, colorClass }) => (
+            <div key={label} className="rounded-2xl border border-border/40 bg-surface p-5">
+              <div className="flex items-start gap-4">
+                <div className={`rounded-xl p-3 ${colorClass}`}><Icon className="h-6 w-6" /></div>
+                <div>
+                  <p className="text-sm font-medium text-secondary">{label}</p>
+                  <p className="mt-1 text-2xl font-semibold text-primary">
+                    {isBalanceLoading || value === undefined ? "—" : formatBalance(value)}
+                  </p>
+                  <p className="mt-1 text-xs text-secondary">{description}</p>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
       <DataTableToolbar
         searchValue={search}
         searchPlaceholder="Cari rincian penyaluran atau nama program..."
@@ -67,9 +115,9 @@ export function DistributionsListPage() {
 
       {isLoading ? (
         <TableSkeleton
-          headers={["Program", "Rincian Penyaluran", "Nominal", "Pemohon", "Status", "Aksi"]}
+          headers={["Program", "Rincian Penyaluran", "Nominal", "Sumber Dana", "Dicatat Oleh", "Status"]}
           rowCount={limit}
-          columnTypes={["text", "text", "text", "text", "text", "action"]}
+          columnTypes={["text", "text", "text", "text", "text", "text"]}
         />
       ) : (
         <DistributionTable distributions={result?.data ?? []} pagination={pagination} />

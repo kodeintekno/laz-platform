@@ -2,8 +2,7 @@ import { describe, it, expect, beforeEach, vi } from "vitest";
 import { Test, TestingModule } from "@nestjs/testing";
 import { CoaService } from "../../src/modules/coa/coa.service";
 import { CoaRepository } from "../../src/modules/coa/coa.repository";
-import { AppError } from "../../src/common/errors/app.error";
-import { COA_TEMPLATE } from "../../src/modules/coa/coa.template";
+import { COA_TEMPLATE, coaTemplateFor } from "../../src/modules/coa/coa.template";
 
 describe("CoaService", () => {
   let service: CoaService;
@@ -12,7 +11,9 @@ describe("CoaService", () => {
   beforeEach(async () => {
     const mockRepo = {
       countByLembaga: vi.fn(),
-      seedCoaForLembaga: vi.fn(),
+      syncPlatformCoa: vi.fn(),
+      syncAllApprovedLembagaCoas: vi.fn(),
+      syncCoaForLembaga: vi.fn(),
       findByLembaga: vi.fn(),
     };
 
@@ -28,20 +29,18 @@ describe("CoaService", () => {
   });
 
   it("should provision COA if institution has no COA", async () => {
-    repo.countByLembaga.mockResolvedValueOnce(0); // Before seed
-    repo.countByLembaga.mockResolvedValueOnce(COA_TEMPLATE.length); // After seed
+    repo.countByLembaga.mockResolvedValueOnce(coaTemplateFor("LEMBAGA").length);
 
     await service.seedCoaForLembaga("lembaga-1");
 
-    expect(repo.seedCoaForLembaga).toHaveBeenCalledWith("lembaga-1");
+    expect(repo.syncPlatformCoa).toHaveBeenCalledOnce();
+    expect(repo.syncCoaForLembaga).toHaveBeenCalledWith("lembaga-1");
   });
 
-  it("should throw error if institution already has COA (no duplicate)", async () => {
-    repo.countByLembaga.mockResolvedValue(COA_TEMPLATE.length); // Already exists
-
-    await expect(service.seedCoaForLembaga("lembaga-1")).rejects.toThrow(AppError);
-    
-    expect(repo.seedCoaForLembaga).not.toHaveBeenCalled();
+  it("should safely re-sync an existing COA", async () => {
+    repo.countByLembaga.mockResolvedValue(coaTemplateFor("LEMBAGA").length);
+    await expect(service.seedCoaForLembaga("lembaga-1")).resolves.toBeUndefined();
+    expect(repo.syncCoaForLembaga).toHaveBeenCalledWith("lembaga-1");
   });
 
   it("COA Template should have valid parent-child relationships", () => {

@@ -27,6 +27,7 @@ export { TableSkeleton } from "./TableSkeleton";
 export { DateRangeFilter } from "./DateRangeFilter";
 export { StepIndicator } from "./StepIndicator";
 export { DatePicker } from "./DatePicker";
+export { AmilBalanceBadge } from "./AmilBalanceBadge";
 export * from "./form";
 
 

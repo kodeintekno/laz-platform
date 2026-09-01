@@ -21,7 +21,12 @@ export class JournalController {
     @Query("page") page = "1",
     @Query("limit") limit = "10",
     @Query("search") search?: string,
+    @Query("scope") scope?: string,
   ) {
+    if (scope === "platform") {
+      if (user.roleName !== "SUPER_ADMIN") throw new AppError("FORBIDDEN", "Buku Platform hanya untuk SUPER_ADMIN", 403);
+      return this.journalService.getJournals(null, Number(page), Number(limit), search);
+    }
     const lembagaId = resolveLembagaScope(user, queryLembagaId);
     if (!lembagaId) {
       throw new AppError("LEMBAGA_REQUIRED", "Parameter lembagaId diperlukan untuk SUPER_ADMIN", 400);
@@ -36,7 +41,12 @@ export class JournalController {
     @Param("id") id: string,
     @CurrentUser() user: RBACSessionUser,
     @Query("lembagaId") queryLembagaId?: string,
+    @Query("scope") scope?: string,
   ) {
+    if (scope === "platform") {
+      if (user.roleName !== "SUPER_ADMIN") throw new AppError("FORBIDDEN", "Buku Platform hanya untuk SUPER_ADMIN", 403);
+      return this.journalService.getJournalById(id, null);
+    }
     const lembagaId = resolveLembagaScope(user, queryLembagaId);
     if (!lembagaId) {
       throw new AppError("LEMBAGA_REQUIRED", "Parameter lembagaId diperlukan", 400);

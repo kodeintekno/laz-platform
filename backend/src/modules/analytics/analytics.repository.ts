@@ -17,6 +17,8 @@ export class AnalyticsRepository {
       activeProgramsCount,
       totalUsersCount,
       totalReceivedAgg,
+      mustahiqDistributedAgg,
+      amilDistributedAgg,
       totalWithdrawnAgg,
       lembagaBalance
     ] = await Promise.all([
@@ -36,7 +38,15 @@ export class AnalyticsRepository {
       }),
       this.prisma.donation.aggregate({
         where: { status: "PAID", ...whereLembaga },
-        _sum: { institutionAmount: true },
+        _sum: { institutionAmount: true, netAmount: true, amilInstitutionAmount: true },
+      }),
+      this.prisma.distribution.aggregate({
+        where: { status: "COMPLETED", fundSource: "MUSTAHIQ", ...whereLembaga },
+        _sum: { amount: true },
+      }),
+      this.prisma.distribution.aggregate({
+        where: { status: "COMPLETED", fundSource: "AMIL", ...whereLembaga },
+        _sum: { amount: true },
       }),
       this.prisma.withdrawal.aggregate({
         where: { status: "COMPLETED", ...whereLembaga },
@@ -55,7 +65,21 @@ export class AnalyticsRepository {
       totalReceived: Number(totalReceivedAgg._sum.institutionAmount || 0),
       totalWithdrawn: Number(totalWithdrawnAgg._sum.amount || 0),
       availableBalance: lembagaBalance ? Number(lembagaBalance.balance || 0) : 0,
+      // Saldo dana pelaporan tidak berubah saat withdrawal. Keduanya hanya
+      // berkurang ketika distribution dengan sumber terkait dicatat.
+      mustahiqBalance: Math.max(
+        0,
+        Number(totalReceivedAgg._sum.netAmount || 0) - Number(mustahiqDistributedAgg._sum.amount || 0),
+      ),
+      amilBalance: Math.max(
+        0,
+        Number(totalReceivedAgg._sum.amilInstitutionAmount || 0) - Number(amilDistributedAgg._sum.amount || 0),
+      ),
+      gatewayMustahiqBalance: lembagaBalance ? Number(lembagaBalance.mustahiqBalance || 0) : 0,
+      gatewayAmilBalance: lembagaBalance ? Number(lembagaBalance.amilBalance || 0) : 0,
       reservedBalance: lembagaBalance ? Number(lembagaBalance.reservedBalance || 0) : 0,
+      reservedMustahiqBalance: lembagaBalance ? Number(lembagaBalance.reservedMustahiqBalance || 0) : 0,
+      reservedAmilBalance: lembagaBalance ? Number(lembagaBalance.reservedAmilBalance || 0) : 0,
     };
   }
 

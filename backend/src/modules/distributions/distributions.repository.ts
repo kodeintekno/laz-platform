@@ -1,7 +1,7 @@
 import { Injectable } from "@nestjs/common";
 import { PrismaService } from "../../prisma/prisma.service";
 import { AutoJournalService } from "../journal/auto-journal.service";
-import type { Prisma } from "@prisma/client";
+import { Prisma } from "@prisma/client";
 import { AppError } from "../../common/errors/app.error";
 import type { DistributionInput } from "../../../../shared/validations/distributions.schema";
 
@@ -36,7 +36,16 @@ export class DistributionsRepository {
         take: limit,
         orderBy: { createdAt: "desc" },
         include: {
-          program: { select: { title: true, currentAmount: true, distributedAmount: true } },
+          program: {
+            select: {
+              title: true,
+              currentAmount: true,
+              programFundAmount: true,
+              distributedAmount: true,
+              mustahiqDistributedAmount: true,
+              amilDistributedAmount: true,
+            },
+          },
           createdBy: { select: { name: true, email: true } },
           approvedBy: { select: { name: true } },
         },
@@ -74,24 +83,65 @@ export class DistributionsRepository {
         throw new AppError("PROGRAM_NOT_FOUND", "Program tidak ditemukan", 404);
       }
 
-      const affected = await tx.$executeRaw`
-        UPDATE "programs"
-        SET "distributedAmount" = "distributedAmount" + ${data.amount}
-        WHERE "id" = ${data.programId}
-          AND "currentAmount" - "distributedAmount" >= ${data.amount}
-      `;
+      if (data.fundSource === "MUSTAHIQ") {
+        const affected = await tx.$executeRaw`
+          UPDATE "programs"
+          SET
+            "distributedAmount" = "distributedAmount" + ${data.amount},
+            "mustahiqDistributedAmount" = "mustahiqDistributedAmount" + ${data.amount}
+          WHERE "id" = ${data.programId}
+            AND "programFundAmount" - "mustahiqDistributedAmount" >= ${data.amount}
+        `;
+        if (affected === 0) {
+          throw new AppError(
+            "INSUFFICIENT_PROGRAM_BALANCE",
+            "Saldo utama program tidak mencukupi untuk penyaluran ini",
+            409,
+          );
+        }
+      } else {
+        // Saldo amil untuk pelaporan berbeda dari saldo payment gateway.
+        // Baris lembaga hanya dikunci sebagai mutex agar dua penyaluran amil
+        // paralel tidak sama-sama lolos dari saldo pelaporan yang sama.
+        await tx.$queryRaw(Prisma.sql`
+          SELECT "id"
+          FROM "institution_balances"
+          WHERE "lembagaId" = ${program.lembagaId}
+          FOR UPDATE
+        `);
+        const [received, distributed] = await Promise.all([
+          tx.donation.aggregate({
+            where: { lembagaId: program.lembagaId, status: "PAID" },
+            _sum: { amilInstitutionAmount: true },
+          }),
+          tx.distribution.aggregate({
+            where: { lembagaId: program.lembagaId, status: "COMPLETED", fundSource: "AMIL" },
+            _sum: { amount: true },
+          }),
+        ]);
+        const availableAmilBalance = Number(received._sum.amilInstitutionAmount || 0)
+          - Number(distributed._sum.amount || 0);
+        if (availableAmilBalance < data.amount) {
+          throw new AppError(
+            "INSUFFICIENT_AMIL_BALANCE",
+            "Saldo amil lembaga tidak mencukupi untuk penyaluran ini",
+            409,
+          );
+        }
 
-      if (affected === 0) {
-        throw new AppError(
-          "INSUFFICIENT_BALANCE",
-          "Saldo program tidak mencukupi untuk penyaluran ini",
-          409,
-        );
+        await tx.program.update({
+          where: { id: data.programId },
+          data: {
+            distributedAmount: { increment: data.amount },
+            amilDistributedAmount: { increment: data.amount },
+          },
+        });
       }
 
       const distribution = await tx.distribution.create({
         data: {
           amount: data.amount,
+          fundSource: data.fundSource,
           title: data.title,
           description: data.description,
           receiptImageUrl: data.receiptImageUrl,
@@ -109,6 +159,7 @@ export class DistributionsRepository {
         data.programId,
         program.lembagaId,
         program.category,
+        data.fundSource,
         userId
       );
 

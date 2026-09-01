@@ -1,7 +1,8 @@
-import { Controller, Post, Get, Body, Param, UseGuards, Req, Query, HttpCode, ParseIntPipe } from "@nestjs/common";
+import { Controller, Post, Get, Patch, Body, Param, UseGuards, Req, Query, HttpCode } from "@nestjs/common";
 import { WithdrawalsService } from "./withdrawals.service";
 import { AuthGuard } from "../../common/guards/auth.guard";
 import { RequirePermission } from "../../common/decorators/require-permission.decorator";
+import { AppError } from "../../common/errors/app.error";
 import { Request } from "express";
 
 @Controller("api/withdrawals")
@@ -15,18 +16,52 @@ export class WithdrawalsController {
 
   @Post()
   @RequirePermission("withdrawals.create")
-  async createWithdrawal(@Req() req: Request, @Body() body: { amount: number }) {
+  async createWithdrawal(@Req() req: Request, @Body() body: { amount: number; bankAccountId: string }) {
     const user = req.user!;
     // Must be part of a lembaga to request withdrawal
     if (!user.lembagaId) {
-      throw new Error("User does not belong to an institution.");
+      throw new AppError("FORBIDDEN", "User does not belong to an institution.", 403);
     }
 
     return this.withdrawalsService.createWithdrawal(
       user.lembagaId,
       user.id,
-      body.amount
+      body.amount,
+      body.bankAccountId,
     );
+  }
+
+  @Get("bank-accounts")
+  @RequirePermission("withdrawals.read")
+  async listBankAccounts(@Req() req: Request) {
+    if (!req.user!.lembagaId) throw new AppError("FORBIDDEN", "User tidak memiliki Lembaga", 403);
+    return this.withdrawalsService.listBankAccounts(req.user!.lembagaId);
+  }
+
+  @Post("bank-accounts")
+  @RequirePermission("withdrawals.create")
+  async createBankAccount(@Req() req: Request, @Body() body: {
+    bankCode: string; accountNumber: string; accountHolder: string; label?: string; isDefault?: boolean;
+  }) {
+    if (!req.user!.lembagaId) throw new AppError("FORBIDDEN", "User tidak memiliki Lembaga", 403);
+    return this.withdrawalsService.createBankAccount(req.user!.lembagaId, body);
+  }
+
+  @Patch("bank-accounts/:id")
+  @RequirePermission("withdrawals.create")
+  async updateBankAccount(@Req() req: Request, @Param("id") id: string, @Body() body: {
+    bankCode: string; accountNumber: string; accountHolder: string; label?: string; isDefault?: boolean;
+  }) {
+    if (!req.user!.lembagaId) throw new AppError("FORBIDDEN", "User tidak memiliki Lembaga", 403);
+    return this.withdrawalsService.updateBankAccount(req.user!.lembagaId, id, body);
+  }
+
+  @Post("bank-accounts/:id/deactivate")
+  @HttpCode(200)
+  @RequirePermission("withdrawals.create")
+  async deleteBankAccount(@Req() req: Request, @Param("id") id: string) {
+    if (!req.user!.lembagaId) throw new AppError("FORBIDDEN", "User tidak memiliki Lembaga", 403);
+    return this.withdrawalsService.deleteBankAccount(req.user!.lembagaId, id);
   }
 
   @Get("mine")
@@ -38,7 +73,7 @@ export class WithdrawalsController {
   ) {
     const user = req.user!;
     if (!user.lembagaId) {
-      throw new Error("User does not belong to an institution.");
+      throw new AppError("FORBIDDEN", "User does not belong to an institution.", 403);
     }
 
     return this.withdrawalsService.getLembagaWithdrawals(
@@ -51,6 +86,27 @@ export class WithdrawalsController {
   // ==========================================
   // SUPER ADMIN ENDPOINTS
   // ==========================================
+
+  @Post("platform")
+  @RequirePermission("withdrawals.manage")
+  async createPlatformWithdrawal(@Req() req: Request, @Body() body: { amount: number }) {
+    return this.withdrawalsService.createPlatformWithdrawal(req.user!.id, body.amount);
+  }
+
+  @Get("platform/balance")
+  @RequirePermission("withdrawals.manage")
+  async getPlatformBalance() {
+    return this.withdrawalsService.getPlatformBalance();
+  }
+
+  @Patch("platform/bank")
+  @RequirePermission("withdrawals.manage")
+  async updatePlatformBank(
+    @Req() req: Request,
+    @Body() body: { bankCode: string; accountNumber: string; accountHolder: string },
+  ) {
+    return this.withdrawalsService.updatePlatformBankAccount(req.user!.id, body);
+  }
 
   @Get()
   @RequirePermission("withdrawals.manage")

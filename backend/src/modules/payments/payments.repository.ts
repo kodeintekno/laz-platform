@@ -122,6 +122,9 @@ export class PaymentsRepository {
             currentAmount: {
               increment: params.amount,
             },
+            programFundAmount: {
+              increment: netAmount,
+            },
           },
         });
 
@@ -145,10 +148,18 @@ export class PaymentsRepository {
             balance: {
               increment: institutionAmount,
             },
+            mustahiqBalance: {
+              increment: netAmount,
+            },
+            amilBalance: {
+              increment: amilInstitutionAmount,
+            },
           },
           create: {
             lembagaId: program.lembagaId,
             balance: institutionAmount,
+            mustahiqBalance: netAmount,
+            amilBalance: amilInstitutionAmount,
           },
         });
       }

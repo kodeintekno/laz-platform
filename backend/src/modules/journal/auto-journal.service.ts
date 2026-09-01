@@ -1,71 +1,143 @@
 import { Injectable, Logger } from "@nestjs/common";
 import { Prisma } from "@prisma/client";
 import { AppError } from "../../common/errors/app.error";
+import { COA_KEYS, type CoaKey } from "../coa/coa.template";
+
+type Tx = Prisma.TransactionClient;
+type OwnerType = "LEMBAGA" | "PLATFORM";
+
+interface JournalLine {
+  key?: CoaKey;
+  accountId?: string;
+  debit?: number;
+  credit?: number;
+  description: string;
+}
 
 @Injectable()
 export class AutoJournalService {
   private readonly logger = new Logger(AutoJournalService.name);
 
-  // Generate journal number using existing transaction client
-  async generateJournalNo(tx: Prisma.TransactionClient, lembagaId: string, date: Date): Promise<string> {
-    const yearMonth = `${date.getFullYear()}${(date.getMonth() + 1).toString().padStart(2, '0')}`;
-    const prefix = `JU-${yearMonth}-`;
-
-    const lastJournal = await tx.journal.findFirst({
-      where: { 
-        lembagaId, 
-        journalNo: { startsWith: prefix } 
-      },
-      orderBy: { journalNo: "desc" },
-      select: { journalNo: true }
-    });
-
-    let nextSequence = 1;
-    if (lastJournal) {
-      const lastSeq = parseInt(lastJournal.journalNo.replace(prefix, ""), 10);
-      if (!isNaN(lastSeq)) {
-        nextSequence = lastSeq + 1;
-      }
-    }
-
-    return `${prefix}${nextSequence.toString().padStart(6, '0')}`;
-  }
-
-  private async getCoaId(tx: Prisma.TransactionClient, lembagaId: string, code: string): Promise<string> {
-    const coa = await tx.chartOfAccount.findUnique({
-      where: { lembagaId_code: { lembagaId, code } },
+  private async getBook(tx: Tx, ownerType: OwnerType, lembagaId?: string) {
+    const book = await tx.accountingBook.findFirst({
+      where: ownerType === "PLATFORM" ? { ownerType } : { ownerType, lembagaId },
       select: { id: true },
     });
-    if (!coa) {
-      throw new AppError("COA_NOT_FOUND", `Chart of Account code ${code} is missing for this tenant`, 500);
+    if (!book) {
+      throw new AppError("ACCOUNTING_BOOK_NOT_FOUND", `Buku akuntansi ${ownerType} belum tersedia`, 500);
     }
-    return coa.id;
+    return book;
   }
 
-  private getDonationCreditCode(category: string): string {
-    switch(category) {
-      case "ZAKAT": return "4101";
-      case "INFAK_SEDEKAH": return "4102";
-      case "WAKAF": return "4104";
-      case "CSR": return "4108";
-      case "DSKL": return "4109";
-      default: return "4102";
+  private async getAccountMap(tx: Tx, accountingBookId: string, keys: CoaKey[]) {
+    const uniqueKeys = [...new Set(keys)];
+    const accounts = await tx.chartOfAccount.findMany({
+      where: { accountingBookId, key: { in: uniqueKeys }, isActive: true, isHeader: false },
+      select: { id: true, key: true },
+    });
+    if (accounts.length !== uniqueKeys.length) {
+      const found = new Set(accounts.map((account) => account.key));
+      const missing = uniqueKeys.filter((key) => !found.has(key));
+      throw new AppError("COA_NOT_FOUND", `Akun COA belum tersedia: ${missing.join(", ")}`, 500);
+    }
+    return new Map(accounts.map((account) => [account.key, account.id]));
+  }
+
+  async generateJournalNo(tx: Tx, accountingBookId: string, date: Date): Promise<string> {
+    const yearMonth = `${date.getFullYear()}${(date.getMonth() + 1).toString().padStart(2, "0")}`;
+    const prefix = `JU-${yearMonth}-`;
+    const lastJournal = await tx.journal.findFirst({
+      where: { accountingBookId, journalNo: { startsWith: prefix } },
+      orderBy: { journalNo: "desc" },
+      select: { journalNo: true },
+    });
+    const lastSequence = lastJournal ? Number.parseInt(lastJournal.journalNo.replace(prefix, ""), 10) : 0;
+    const nextSequence = Number.isFinite(lastSequence) ? lastSequence + 1 : 1;
+    return `${prefix}${nextSequence.toString().padStart(6, "0")}`;
+  }
+
+  private async postJournal(tx: Tx, input: {
+    accountingBookId: string;
+    lembagaId: string | null;
+    description: string;
+    sourceType: "DONATION" | "DISTRIBUTION" | "REFUND" | "EXPENSE" | "ASSET_PURCHASE" | "WITHDRAWAL";
+    sourceId: string;
+    sourceEvent: string;
+    programId?: string | null;
+    userId?: string | null;
+    lines: JournalLine[];
+  }) {
+    const totalDebit = input.lines.reduce((sum, line) => sum + (line.debit ?? 0), 0);
+    const totalCredit = input.lines.reduce((sum, line) => sum + (line.credit ?? 0), 0);
+    if (Math.abs(totalDebit - totalCredit) >= 0.01) {
+      throw new AppError("UNBALANCED_AUTO_JOURNAL", `Jurnal otomatis tidak balance: ${totalDebit} != ${totalCredit}`, 500);
+    }
+
+    const keys = input.lines.flatMap((line) => line.key ? [line.key] : []);
+    const accounts = await this.getAccountMap(tx, input.accountingBookId, keys);
+    const directIds = [...new Set(input.lines.flatMap((line) => line.accountId ? [line.accountId] : []))];
+    if (directIds.length) {
+      const validDirectAccounts = await tx.chartOfAccount.count({
+        where: { id: { in: directIds }, accountingBookId: input.accountingBookId, isActive: true, isHeader: false },
+      });
+      if (validDirectAccounts !== directIds.length) {
+        throw new AppError("INVALID_JOURNAL_ACCOUNT", "Akun jurnal dinamis tidak valid untuk buku ini", 500);
+      }
+    }
+    const date = new Date();
+    const journalNo = await this.generateJournalNo(tx, input.accountingBookId, date);
+
+    return tx.journal.create({
+      data: {
+        accountingBookId: input.accountingBookId,
+        lembagaId: input.lembagaId,
+        journalNo,
+        journalDate: date,
+        description: input.description,
+        sourceType: input.sourceType,
+        sourceId: input.sourceId,
+        sourceEvent: input.sourceEvent,
+        programId: input.programId ?? null,
+        status: "POSTED",
+        createdById: input.userId ?? null,
+        postedById: input.userId ?? null,
+        postedAt: date,
+        details: {
+          create: input.lines.map((line) => ({
+            accountId: line.accountId ?? accounts.get(line.key!)!,
+            debit: line.debit ?? 0,
+            credit: line.credit ?? 0,
+            description: line.description,
+          })),
+        },
+      },
+    });
+  }
+
+  private getDonationRevenueKey(category: string): CoaKey {
+    switch (category) {
+      case "ZAKAT": return COA_KEYS.ZAKAT_REVENUE;
+      case "INFAK_SEDEKAH": return COA_KEYS.INFAK_SEDEKAH_REVENUE;
+      case "WAKAF": return COA_KEYS.WAKAF_REVENUE;
+      case "CSR": return COA_KEYS.CSR_REVENUE;
+      case "DSKL": return COA_KEYS.DSKL_REVENUE;
+      default: throw new AppError("UNSUPPORTED_PROGRAM_CATEGORY", `Kategori program tidak didukung: ${category}`, 500);
     }
   }
 
-  private getDistributionDebitCode(category: string): string {
-    switch(category) {
-      case "ZAKAT": return "5101";
-      case "INFAK_SEDEKAH": return "5102";
-      case "WAKAF": return "5104";
-      case "CSR": return "5105";
-      case "DSKL": return "5106";
-      default: return "5102";
+  private getDistributionKey(category: string): CoaKey {
+    switch (category) {
+      case "ZAKAT": return COA_KEYS.ZAKAT_DISTRIBUTION;
+      case "INFAK_SEDEKAH": return COA_KEYS.INFAK_SEDEKAH_DISTRIBUTION;
+      case "WAKAF": return COA_KEYS.WAKAF_DISTRIBUTION;
+      case "CSR": return COA_KEYS.CSR_DISTRIBUTION;
+      case "DSKL": return COA_KEYS.DSKL_DISTRIBUTION;
+      default: throw new AppError("UNSUPPORTED_PROGRAM_CATEGORY", `Kategori program tidak didukung: ${category}`, 500);
     }
   }
 
   async createDonationJournal(
-    tx: Prisma.TransactionClient,
+    tx: Tx,
     donationId: string,
     amount: number,
     amilPlatformAmount: number,
@@ -73,196 +145,156 @@ export class AutoJournalService {
     netAmount: number,
     programId: string,
     lembagaId: string,
-    programCategory: string
-  ) {
-    const existing = await tx.journal.findUnique({
-      where: { sourceType_sourceId: { sourceType: "DONATION", sourceId: donationId } }
-    });
-    
-    if (existing) {
-      this.logger.warn(`Auto-journal for DONATION ${donationId} already exists, skipping.`);
-      return;
-    }
-
-    const journalNo = await this.generateJournalNo(tx, lembagaId, new Date());
-    const debitCoaId = await this.getCoaId(tx, lembagaId, "1101");
-    const creditCoaId = await this.getCoaId(tx, lembagaId, this.getDonationCreditCode(programCategory));
-    const amilCreditCoaId = await this.getCoaId(tx, lembagaId, "4105");
-    const amilPlatformDebitCoaId = await this.getCoaId(tx, lembagaId, "6114"); // Beban Platform
-
-    const netAmountToInstitution = netAmount + amilInstitutionAmount;
-    const totalAmilRevenue = amilInstitutionAmount + amilPlatformAmount;
-
-    await tx.journal.create({
-      data: {
-        lembagaId,
-        journalNo,
-        journalDate: new Date(),
-        description: `Penerimaan Donasi #${donationId.slice(-6).toUpperCase()}`,
-        sourceType: "DONATION",
-        sourceId: donationId,
-        programId,
-        status: "POSTED",
-        postedAt: new Date(),
-        details: {
-          create: [
-            { accountId: debitCoaId, debit: netAmountToInstitution, credit: 0, description: "Penerimaan Kas Bersih (Nett)" },
-            ...(amilPlatformAmount > 0 ? [{ accountId: amilPlatformDebitCoaId, debit: amilPlatformAmount, credit: 0, description: "Beban Platform" }] : []),
-            { accountId: creditCoaId, debit: 0, credit: netAmount, description: "Penerimaan Donasi (Dana Wajib)" },
-            ...(totalAmilRevenue > 0 ? [{ accountId: amilCreditCoaId, debit: 0, credit: totalAmilRevenue, description: "Hak Amil (Lembaga & Beban Platform)" }] : []),
-          ]
-        }
-      }
-    });
-    this.logger.log(`Created donation auto-journal ${journalNo}`);
-  }
-
-  async createDistributionJournal(
-    tx: Prisma.TransactionClient,
-    distributionId: string,
-    amount: number,
-    programId: string,
-    lembagaId: string,
     programCategory: string,
-    userId: string
   ) {
-    const existing = await tx.journal.findUnique({
-      where: { sourceType_sourceId: { sourceType: "DISTRIBUTION", sourceId: distributionId } }
-    });
-    
-    if (existing) {
-      this.logger.warn(`Auto-journal for DISTRIBUTION ${distributionId} already exists, skipping.`);
-      return;
+    const institutionAmount = netAmount + amilInstitutionAmount;
+    const totalAmilRevenue = amilInstitutionAmount + amilPlatformAmount;
+    if (Math.abs(amount - (netAmount + totalAmilRevenue)) >= 0.01) {
+      throw new AppError("INVALID_DONATION_SPLIT", "Pembagian donasi tidak sama dengan nilai bruto", 500);
     }
 
-    const journalNo = await this.generateJournalNo(tx, lembagaId, new Date());
-    const debitCoaId = await this.getCoaId(tx, lembagaId, this.getDistributionDebitCode(programCategory));
-    const creditCoaId = await this.getCoaId(tx, lembagaId, "1101");
+    const [lembagaBook, platformBook] = await Promise.all([
+      this.getBook(tx, "LEMBAGA", lembagaId),
+      this.getBook(tx, "PLATFORM"),
+    ]);
 
-    await tx.journal.create({
-      data: {
-        lembagaId,
-        journalNo,
-        journalDate: new Date(),
-        description: `Penyaluran #${distributionId.slice(-6).toUpperCase()}`,
-        sourceType: "DISTRIBUTION",
-        sourceId: distributionId,
-        programId,
-        status: "POSTED",
-        createdById: userId,
-        postedById: userId,
-        postedAt: new Date(),
-        details: {
-          create: [
-            { accountId: debitCoaId, debit: amount, credit: 0, description: "Penyaluran Dana Program" },
-            { accountId: creditCoaId, debit: 0, credit: amount, description: "Penyaluran Dana Program" },
-          ]
-        }
-      }
+    await this.postJournal(tx, {
+      accountingBookId: lembagaBook.id,
+      lembagaId,
+      description: `Penerimaan Donasi #${donationId.slice(-6).toUpperCase()}`,
+      sourceType: "DONATION",
+      sourceId: donationId,
+      sourceEvent: "PAYMENT_SUCCEEDED",
+      programId,
+      lines: [
+        { key: COA_KEYS.PAYMENT_GATEWAY_RECEIVABLE, debit: institutionAmount, description: "Hak bersih Lembaga di payment gateway" },
+        ...(amilPlatformAmount > 0 ? [{ key: COA_KEYS.PLATFORM_AMIL_EXPENSE, debit: amilPlatformAmount, description: "Bagian amil Platform" } as JournalLine] : []),
+        { key: this.getDonationRevenueKey(programCategory), credit: netAmount, description: "Penerimaan dana program" },
+        ...(totalAmilRevenue > 0 ? [{ key: COA_KEYS.AMIL_REVENUE, credit: totalAmilRevenue, description: "Penerimaan dana amil bruto" } as JournalLine] : []),
+      ],
     });
-    this.logger.log(`Created distribution auto-journal ${journalNo}`);
+
+    await this.postJournal(tx, {
+      accountingBookId: platformBook.id,
+      lembagaId: null,
+      description: `Penerimaan Payment Gateway #${donationId.slice(-6).toUpperCase()}`,
+      sourceType: "DONATION",
+      sourceId: donationId,
+      sourceEvent: "PAYMENT_SUCCEEDED",
+      programId,
+      lines: [
+        { key: COA_KEYS.PAYMENT_GATEWAY_RECEIVABLE, debit: amount, description: "Dana bruto di payment gateway" },
+        { key: COA_KEYS.INSTITUTION_FUNDS_PAYABLE, credit: institutionAmount, description: `Hak Lembaga ${lembagaId}` },
+        ...(amilPlatformAmount > 0 ? [{ key: COA_KEYS.AMIL_REVENUE, credit: amilPlatformAmount, description: "Pendapatan amil Platform" } as JournalLine] : []),
+      ],
+    });
+
+    await tx.platformBalance.upsert({
+      where: { id: "platform" },
+      update: { balance: { increment: amilPlatformAmount } },
+      create: { id: "platform", balance: amilPlatformAmount },
+    });
+    this.logger.log(`Created Lembaga and Platform donation journals for ${donationId}`);
   }
 
-  async createWithdrawalReservationJournal(
-    tx: Prisma.TransactionClient,
-    withdrawalId: string,
-    amount: number,
-    lembagaId: string,
-    userId: string
-  ) {
-    const journalNo = await this.generateJournalNo(tx, lembagaId, new Date());
-    const debitCoaId = await this.getCoaId(tx, lembagaId, "1104"); // Kas Dalam Perjalanan
-    const creditCoaId = await this.getCoaId(tx, lembagaId, "1101"); // Kas
-
-    await tx.journal.create({
-      data: {
-        lembagaId,
-        journalNo,
-        journalDate: new Date(),
-        description: `Pencairan Dana (Withdrawal) #${withdrawalId.slice(-6).toUpperCase()}`,
-        sourceType: "WITHDRAWAL",
-        sourceId: withdrawalId,
-        status: "POSTED",
-        createdById: userId,
-        postedById: userId,
-        postedAt: new Date(),
-        details: {
-          create: [
-            { accountId: debitCoaId, debit: amount, credit: 0, description: "Kas Dalam Perjalanan (Pencairan)" },
-            { accountId: creditCoaId, debit: 0, credit: amount, description: "Pengeluaran Kas untuk Pencairan" },
-          ]
-        }
-      }
+  async createDistributionJournal(tx: Tx, distributionId: string, amount: number,
+    programId: string, lembagaId: string, programCategory: string,
+    fundSource: "MUSTAHIQ" | "AMIL", userId: string) {
+    const lembagaBook = await this.getBook(tx, "LEMBAGA", lembagaId);
+    const defaultBank = await tx.lembagaBankAccount.findFirst({
+      where: { lembagaId, isActive: true, isDefault: true },
+      select: { chartOfAccountId: true },
     });
-    this.logger.log(`Created withdrawal reservation auto-journal ${journalNo}`);
+    const sourceLabel = fundSource === "AMIL" ? "saldo amil lembaga" : "saldo utama/mustahiq";
+    await this.postJournal(tx, {
+      accountingBookId: lembagaBook.id,
+      lembagaId,
+      description: `Penyaluran #${distributionId.slice(-6).toUpperCase()}`,
+      sourceType: "DISTRIBUTION",
+      sourceId: distributionId,
+      sourceEvent: "DISTRIBUTION_COMPLETED",
+      programId,
+      userId,
+      lines: [
+        {
+          key: fundSource === "AMIL" ? COA_KEYS.OTHER_OPERATING_EXPENSE : this.getDistributionKey(programCategory),
+          debit: amount,
+          description: fundSource === "AMIL" ? "Penyaluran dari dana amil" : "Penyaluran dana program",
+        },
+        defaultBank
+          ? { accountId: defaultBank.chartOfAccountId, credit: amount, description: `Pelaporan ${sourceLabel} dari rekening Bank utama` }
+          : { key: COA_KEYS.BANK, credit: amount, description: `Pelaporan ${sourceLabel} dari Bank Operasional` },
+      ],
+    });
   }
 
-  async createWithdrawalRejectionJournal(
-    tx: Prisma.TransactionClient,
-    withdrawalId: string,
-    amount: number,
-    lembagaId: string,
-    userId: string | null,
-    reason: string
-  ) {
-    const journalNo = await this.generateJournalNo(tx, lembagaId, new Date());
-    const debitCoaId = await this.getCoaId(tx, lembagaId, "1101"); // Kas
-    const creditCoaId = await this.getCoaId(tx, lembagaId, "1104"); // Kas Dalam Perjalanan
-
-    await tx.journal.create({
-      data: {
-        lembagaId,
-        journalNo,
-        journalDate: new Date(),
-        description: `Pembatalan Pencairan Dana #${withdrawalId.slice(-6).toUpperCase()} - ${reason}`,
-        sourceType: "WITHDRAWAL",
-        sourceId: `${withdrawalId}-REJECT`,
-        status: "POSTED",
-        createdById: userId,
-        postedById: userId,
-        postedAt: new Date(),
-        details: {
-          create: [
-            { accountId: debitCoaId, debit: amount, credit: 0, description: "Pengembalian Dana Kas (Pencairan Ditolak)" },
-            { accountId: creditCoaId, debit: 0, credit: amount, description: "Pembatalan Kas Dalam Perjalanan" },
-          ]
-        }
-      }
+  async createWithdrawalCompletionJournal(tx: Tx, withdrawalId: string, amount: number,
+    lembagaId: string, userId: string | null, bankChartOfAccountId?: string | null) {
+    const [lembagaBook, platformBook] = await Promise.all([
+      this.getBook(tx, "LEMBAGA", lembagaId),
+      this.getBook(tx, "PLATFORM"),
+    ]);
+    await this.postJournal(tx, {
+      accountingBookId: lembagaBook.id,
+      lembagaId,
+      description: `Payout Lembaga berhasil #${withdrawalId.slice(-6).toUpperCase()}`,
+      sourceType: "WITHDRAWAL",
+      sourceId: withdrawalId,
+      sourceEvent: "PAYOUT_SUCCEEDED",
+      userId,
+      lines: [
+        bankChartOfAccountId
+          ? { accountId: bankChartOfAccountId, debit: amount, description: "Dana masuk rekening Bank tujuan" }
+          : { key: COA_KEYS.BANK, debit: amount, description: "Dana masuk Bank Operasional" },
+        { key: COA_KEYS.PAYMENT_GATEWAY_RECEIVABLE, credit: amount, description: "Pengurangan piutang payment gateway" },
+      ],
     });
-    this.logger.log(`Created withdrawal rejection auto-journal ${journalNo}`);
+    await this.postJournal(tx, {
+      accountingBookId: platformBook.id,
+      lembagaId: null,
+      description: `Payout Lembaga berhasil #${withdrawalId.slice(-6).toUpperCase()}`,
+      sourceType: "WITHDRAWAL",
+      sourceId: withdrawalId,
+      sourceEvent: "PAYOUT_SUCCEEDED",
+      userId,
+      lines: [
+        { key: COA_KEYS.INSTITUTION_FUNDS_PAYABLE, debit: amount, description: `Pelunasan hak Lembaga ${lembagaId}` },
+        { key: COA_KEYS.PAYMENT_GATEWAY_RECEIVABLE, credit: amount, description: "Dana keluar dari payment gateway" },
+      ],
+    });
   }
 
-  async createWithdrawalCompletionJournal(
-    tx: Prisma.TransactionClient,
-    withdrawalId: string,
-    amount: number,
-    lembagaId: string,
-    userId: string | null
-  ) {
-    const journalNo = await this.generateJournalNo(tx, lembagaId, new Date());
-    const debitCoaId = await this.getCoaId(tx, lembagaId, "1103"); // Bank (Lembaga)
-    const creditCoaId = await this.getCoaId(tx, lembagaId, "1104"); // Kas Dalam Perjalanan
-
-    await tx.journal.create({
-      data: {
-        lembagaId,
-        journalNo,
-        journalDate: new Date(),
-        description: `Pencairan Dana Selesai #${withdrawalId.slice(-6).toUpperCase()}`,
-        sourceType: "WITHDRAWAL",
-        sourceId: `${withdrawalId}-SUCCESS`,
-        status: "POSTED",
-        createdById: userId, // Can be null if system
-        postedById: userId, // Can be null if system
-        postedAt: new Date(),
-        details: {
-          create: [
-            { accountId: debitCoaId, debit: amount, credit: 0, description: "Penerimaan Kas di Bank Lembaga" },
-            { accountId: creditCoaId, debit: 0, credit: amount, description: "Penyelesaian Kas Dalam Perjalanan" },
-          ]
-        }
-      }
+  async createPlatformWithdrawalCompletionJournal(tx: Tx, withdrawalId: string, amount: number, userId: string | null) {
+    const book = await this.getBook(tx, "PLATFORM");
+    await this.postJournal(tx, {
+      accountingBookId: book.id,
+      lembagaId: null,
+      description: `Payout Platform berhasil #${withdrawalId.slice(-6).toUpperCase()}`,
+      sourceType: "WITHDRAWAL",
+      sourceId: withdrawalId,
+      sourceEvent: "PLATFORM_PAYOUT_SUCCEEDED",
+      userId,
+      lines: [
+        { key: COA_KEYS.BANK, debit: amount, description: "Dana Platform masuk Bank" },
+        { key: COA_KEYS.PAYMENT_GATEWAY_RECEIVABLE, credit: amount, description: "Dana Platform keluar dari payment gateway" },
+      ],
     });
-    this.logger.log(`Created withdrawal completion auto-journal ${journalNo}`);
+  }
+
+  async createGatewayFeeJournal(tx: Tx, sourceId: string, amount: number) {
+    const book = await this.getBook(tx, "PLATFORM");
+    await this.postJournal(tx, {
+      accountingBookId: book.id,
+      lembagaId: null,
+      description: `Biaya payment gateway #${sourceId.slice(-6).toUpperCase()}`,
+      sourceType: "EXPENSE",
+      sourceId,
+      sourceEvent: "GATEWAY_FEE_POSTED",
+      lines: [
+        { key: COA_KEYS.BANK_GATEWAY_EXPENSE, debit: amount, description: "Biaya payment gateway" },
+        { key: COA_KEYS.PAYMENT_GATEWAY_RECEIVABLE, credit: amount, description: "Potongan saldo payment gateway" },
+      ],
+    });
+    await tx.platformBalance.update({ where: { id: "platform" }, data: { balance: { decrement: amount } } });
   }
 }

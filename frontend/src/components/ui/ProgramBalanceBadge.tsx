@@ -3,13 +3,14 @@ import React from "react";
 interface ProgramBalanceBadgeProps {
   programTitle: string;
   availableBalance: number;
+  children?: React.ReactNode;
 }
 
 function formatRupiah(amount: number): string {
   return `Rp ${amount.toLocaleString("id-ID")}`;
 }
 
-export function ProgramBalanceBadge({ programTitle, availableBalance }: ProgramBalanceBadgeProps) {
+export function ProgramBalanceBadge({ programTitle, availableBalance, children }: ProgramBalanceBadgeProps) {
   const isLow = availableBalance < 500_000;
   const isEmpty = availableBalance <= 0;
 
@@ -112,12 +113,14 @@ export function ProgramBalanceBadge({ programTitle, availableBalance }: ProgramB
         </svg>
 
         <span>
-          Sisa Saldo:{" "}
+          Sisa Saldo Utama / Mustahiq:{" "}
           <span style={{ letterSpacing: "0.01em" }}>
             {isEmpty ? "Habis" : formatRupiah(availableBalance)}
           </span>
         </span>
       </div>
+
+      {children}
     </div>
   );
 }

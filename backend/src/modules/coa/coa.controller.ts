@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Query, Body, HttpCode } from "@nestjs/common";
+import { Controller, Get, Post, Patch, Delete, Param, Query, Body, HttpCode } from "@nestjs/common";
 import { CoaService } from "./coa.service";
 import { RequirePermission } from "../../common/decorators/require-permission.decorator";
 import { CurrentUser } from "../../common/decorators/current-user.decorator";
@@ -24,7 +24,12 @@ export class CoaController {
   async list(
     @CurrentUser() user: RBACSessionUser,
     @Query("lembagaId") queryLembagaId?: string,
+    @Query("scope") scope?: string,
   ) {
+    if (scope === "platform") {
+      if (user.roleName !== "SUPER_ADMIN") throw new AppError("FORBIDDEN", "Buku Platform hanya untuk SUPER_ADMIN", 403);
+      return this.coaService.getPlatformCoa();
+    }
     const lembagaId = resolveLembagaScope(user, queryLembagaId);
 
     if (!lembagaId) {
@@ -62,5 +67,40 @@ export class CoaController {
 
     await this.coaService.seedCoaForLembaga(lembagaId);
     return { message: "COA berhasil diprovision" };
+  }
+
+  @Post("accounts")
+  @RequirePermission(PERMISSIONS.COA_READ)
+  async createAccount(
+    @CurrentUser() user: RBACSessionUser,
+    @Body() body: { lembagaId?: string; parentId: string; code: string; name: string },
+  ) {
+    const lembagaId = resolveLembagaScope(user, body.lembagaId);
+    if (!lembagaId) throw new AppError("LEMBAGA_REQUIRED", "Lembaga wajib dipilih", 400);
+    return this.coaService.createCustomAccount(lembagaId, body);
+  }
+
+  @Patch("accounts/:id")
+  @RequirePermission(PERMISSIONS.COA_READ)
+  async updateAccount(
+    @CurrentUser() user: RBACSessionUser,
+    @Param("id") id: string,
+    @Body() body: { lembagaId?: string; name: string },
+  ) {
+    const lembagaId = resolveLembagaScope(user, body.lembagaId);
+    if (!lembagaId) throw new AppError("LEMBAGA_REQUIRED", "Lembaga wajib dipilih", 400);
+    return this.coaService.updateCustomAccount(lembagaId, id, body.name);
+  }
+
+  @Delete("accounts/:id")
+  @RequirePermission(PERMISSIONS.COA_READ)
+  async deleteAccount(
+    @CurrentUser() user: RBACSessionUser,
+    @Param("id") id: string,
+    @Query("lembagaId") queryLembagaId?: string,
+  ) {
+    const lembagaId = resolveLembagaScope(user, queryLembagaId);
+    if (!lembagaId) throw new AppError("LEMBAGA_REQUIRED", "Lembaga wajib dipilih", 400);
+    return this.coaService.deleteCustomAccount(lembagaId, id);
   }
 }

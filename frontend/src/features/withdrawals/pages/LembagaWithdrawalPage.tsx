@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useGetMyWithdrawals, useCreateWithdrawal, Withdrawal } from "../api/withdrawals";
+import { useGetMyWithdrawals, useCreateWithdrawal, useBankAccounts, Withdrawal } from "../api/withdrawals";
 import { useAuth } from "@/auth/AuthProvider";
 import { api } from "@/lib/api-client";
 import { useQuery } from "@tanstack/react-query";
@@ -11,6 +11,7 @@ import {
   Button,
   Badge,
   Input,
+  Select,
 } from "@/components/ui";
 import { toast } from "@/stores/toast.store";
 import { formatCurrency } from "@/lib/utils";
@@ -19,6 +20,7 @@ export function LembagaWithdrawalPage() {
   const { user } = useAuth();
   const [page, setPage] = useState(1);
   const [amount, setAmount] = useState("");
+  const [bankAccountId, setBankAccountId] = useState("");
 
   const { data: myProfile, refetch: refetchProfile } = useQuery({
     queryKey: ["lembaga-me"],
@@ -30,11 +32,15 @@ export function LembagaWithdrawalPage() {
 
   const { data: withdrawals, isLoading, refetch: refetchWithdrawals } = useGetMyWithdrawals(page, 10);
   const createWithdrawal = useCreateWithdrawal();
+  const { data: bankAccounts = [] } = useBankAccounts();
 
   const balance = (myProfile as any)?.balance?.balance ? Number((myProfile as any).balance.balance) : 0;
   const reservedBalance = (myProfile as any)?.balance?.reservedBalance ? Number((myProfile as any).balance.reservedBalance) : 0;
 
-  const isBankConfigured = (myProfile as any)?.bankCode && (myProfile as any)?.accountNumber && (myProfile as any)?.accountHolder;
+  const selectedBank = bankAccounts.find((bank) => bank.id === bankAccountId)
+    ?? bankAccounts.find((bank) => bank.isDefault)
+    ?? bankAccounts[0];
+  const isBankConfigured = bankAccounts.length > 0;
 
   const handleWithdraw = async () => {
     const numAmount = parseInt(amount.replace(/\D/g, ""));
@@ -49,7 +55,11 @@ export function LembagaWithdrawalPage() {
     }
 
     try {
-      await createWithdrawal.mutateAsync(numAmount);
+      if (!selectedBank) {
+        toast.error("Pilih rekening Bank tujuan pencairan");
+        return;
+      }
+      await createWithdrawal.mutateAsync({ amount: numAmount, bankAccountId: selectedBank.id });
       toast.success("Pengajuan pencairan berhasil dibuat!");
       setAmount("");
       refetchProfile();
@@ -87,8 +97,8 @@ export function LembagaWithdrawalPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <Card>
           <CardHeader>
-            <CardTitle>Saldo Tersedia</CardTitle>
-            <p className="text-sm text-surface-strong">Dana yang dapat dicairkan saat ini</p>
+            <CardTitle>Saldo Penarikan Tersedia</CardTitle>
+            <p className="text-sm text-surface-strong">Total dana lembaga yang masih tersedia di payment gateway</p>
           </CardHeader>
           <CardContent>
             <div className="text-4xl font-bold text-primary">
@@ -113,10 +123,20 @@ export function LembagaWithdrawalPage() {
                 Anda belum mengatur informasi rekening bank. Silakan lengkapi di halaman Pengaturan terlebih dahulu.
               </div>
             ) : (
-              <div className="p-4 bg-surface-soft rounded-lg text-sm mb-4">
-                Pencairan akan dikirim ke: <br />
-                <span className="font-medium">{(myProfile as any).bankCode} - {(myProfile as any).accountNumber}</span> <br />
-                a.n. {(myProfile as any).accountHolder}
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Rekening Tujuan</label>
+                <Select value={selectedBank?.id ?? ""} onChange={(event) => setBankAccountId(event.target.value)}>
+                  {bankAccounts.map((bank) => (
+                    <option key={bank.id} value={bank.id}>
+                      {bank.label || bank.chartOfAccount.name} — {bank.accountNumber} a.n. {bank.accountHolder}
+                    </option>
+                  ))}
+                </Select>
+                {selectedBank && (
+                  <p className="text-xs text-secondary">
+                    Jurnal otomatis masuk ke COA {selectedBank.chartOfAccount.code} {selectedBank.chartOfAccount.name}.
+                  </p>
+                )}
               </div>
             )}
             <div className="space-y-2">

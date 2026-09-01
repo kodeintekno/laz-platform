@@ -22,14 +22,15 @@ export function JournalDetailPage() {
   const queryClient = useQueryClient();
   const isSuperAdmin = user?.roleName === "SUPER_ADMIN";
   const lembagaId = searchParams.get("lembagaId") ?? undefined;
+  const isPlatformBook = isSuperAdmin && searchParams.get("scope") === "platform";
 
   const [isPending, startTransition] = useTransition();
   const [isVoidModalOpen, setIsVoidModalOpen] = useState(false);
 
-  const params = isSuperAdmin && lembagaId ? { lembagaId } : undefined;
+  const params = isPlatformBook ? { scope: "platform" } : isSuperAdmin && lembagaId ? { lembagaId } : undefined;
 
   const { data: result, isLoading } = useQuery({
-    queryKey: ["journal", id, { lembagaId }],
+    queryKey: ["journal", id, { lembagaId, isPlatformBook }],
     queryFn: () => api.get<any>(`/journal/${id}`, params),
     enabled: !!id,
   });
@@ -77,7 +78,7 @@ export function JournalDetailPage() {
         <div className="flex flex-wrap gap-2 pt-1">
 
           
-          {journal.status === "POSTED" && can(PERMISSIONS.JOURNAL_VOID) && (
+          {!isPlatformBook && journal.status === "POSTED" && can(PERMISSIONS.JOURNAL_VOID) && (
             <Button intent="destructive" onClick={() => setIsVoidModalOpen(true)} disabled={isPending}>
               <Ban className="w-4 h-4 mr-2" />
               Void Jurnal

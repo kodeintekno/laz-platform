@@ -13,8 +13,8 @@ describe("WithdrawalsRepository", () => {
   beforeEach(async () => {
     prisma = {
       $transaction: vi.fn(async (cb) => cb(prisma)),
+      $queryRaw: vi.fn(),
       institutionBalance: {
-        updateMany: vi.fn(),
         update: vi.fn(),
       },
       withdrawal: {
@@ -29,8 +29,7 @@ describe("WithdrawalsRepository", () => {
     };
 
     autoJournalService = {
-      createWithdrawalReservationJournal: vi.fn(),
-      createWithdrawalRejectionJournal: vi.fn(),
+      createWithdrawalCompletionJournal: vi.fn(),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -45,32 +44,37 @@ describe("WithdrawalsRepository", () => {
   });
 
   describe("createWithdrawal", () => {
-    it("should throw error if balance is insufficient (updateMany count = 0)", async () => {
-      prisma.institutionBalance.updateMany.mockResolvedValue({ count: 0 });
+    it("should throw error if the combined balance is insufficient", async () => {
+      prisma.$queryRaw.mockResolvedValue([]);
 
       await expect(
-        repository.createWithdrawal("lembaga-1", 1000, "user-1", "BCA", "123", "John")
+        repository.createWithdrawal("lembaga-1", 1000, "user-1", "bank-1", "BCA", "123", "John")
       ).rejects.toThrow(AppError);
     });
 
     it("should atomic reserve balance and create withdrawal", async () => {
-      prisma.institutionBalance.updateMany.mockResolvedValue({ count: 1 });
+      prisma.$queryRaw.mockResolvedValue([{
+        balance: 1500,
+        mustahiqBalance: 800,
+        amilBalance: 700,
+      }]);
       prisma.withdrawal.create.mockResolvedValue({ id: "with-1" });
 
-      await repository.createWithdrawal("lembaga-1", 1000, "user-1", "BCA", "123", "John");
+      await repository.createWithdrawal("lembaga-1", 1000, "user-1", "bank-1", "BCA", "123", "John");
 
-      expect(prisma.institutionBalance.updateMany).toHaveBeenCalledWith({
-        where: { 
-          lembagaId: "lembaga-1",
-          balance: { gte: 1000 }
-        },
+      expect(prisma.institutionBalance.update).toHaveBeenCalledWith({
+        where: { lembagaId: "lembaga-1" },
         data: {
           balance: { decrement: 1000 },
+          mustahiqBalance: { decrement: 800 },
+          amilBalance: { decrement: 200 },
           reservedBalance: { increment: 1000 },
+          reservedMustahiqBalance: { increment: 800 },
+          reservedAmilBalance: { increment: 200 },
         },
       });
       expect(prisma.withdrawal.create).toHaveBeenCalled();
-      expect(autoJournalService.createWithdrawalReservationJournal).toHaveBeenCalled();
+      expect(autoJournalService.createWithdrawalCompletionJournal).not.toHaveBeenCalled();
       expect(prisma.auditLog.create).toHaveBeenCalled();
     });
   });
@@ -110,6 +114,11 @@ describe("WithdrawalsRepository", () => {
     it("should reject and reverse reserved balance", async () => {
       prisma.withdrawal.updateMany.mockResolvedValue({ count: 1 });
       prisma.withdrawal.findUniqueOrThrow.mockResolvedValue({ id: "with-1", lembagaId: "lembaga-1", amount: 1000 });
+      prisma.$queryRaw.mockResolvedValue([{
+        reservedBalance: 1000,
+        reservedMustahiqBalance: 800,
+        reservedAmilBalance: 200,
+      }]);
 
       await repository.rejectWithdrawal("with-1", "admin-1", "reason");
 
@@ -117,10 +126,14 @@ describe("WithdrawalsRepository", () => {
         where: { lembagaId: "lembaga-1" },
         data: {
           balance: { increment: 1000 },
+          mustahiqBalance: { increment: 800 },
+          amilBalance: { increment: 200 },
           reservedBalance: { decrement: 1000 },
+          reservedMustahiqBalance: { decrement: 800 },
+          reservedAmilBalance: { decrement: 200 },
         },
       });
-      expect(autoJournalService.createWithdrawalRejectionJournal).toHaveBeenCalled();
+      expect(autoJournalService.createWithdrawalCompletionJournal).not.toHaveBeenCalled();
     });
   });
 });

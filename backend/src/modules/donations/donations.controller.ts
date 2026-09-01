@@ -16,10 +16,8 @@ import { ZodValidationPipe } from "../../common/pipes/zod-validation.pipe";
 import { resolveLembagaScope } from "../../common/utils/lembaga-scope";
 import { PERMISSIONS } from "../../../../shared/constants/permissions";
 import {
-  adminDonationSchema,
   donationHistoryQuerySchema,
   donationSchema,
-  type AdminDonationInput,
   type DonationHistoryQuery,
   type DonationInput,
 } from "../../../../shared/validations/donations.schema";
@@ -113,13 +111,4 @@ export class DonationsController {
     return donation;
   }
 
-  @Post()
-  @RequirePermission(PERMISSIONS.DONATIONS_CREATE)
-  async createAdmin(
-    @Body(new ZodValidationPipe(adminDonationSchema)) body: AdminDonationInput,
-    @CurrentUser() user: RBACSessionUser,
-  ) {
-    const donation = await this.donationsService.createAdminDonation(body, user.id);
-    return { donationId: donation.id };
-  }
 }

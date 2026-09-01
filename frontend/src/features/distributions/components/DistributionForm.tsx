@@ -9,7 +9,15 @@ import { FileUpload } from "@/components/ui/FileUpload";
 import { toast } from "@/stores/toast.store";
 import { logger } from "@/lib/logger";
 
-export function DistributionForm({ programId, availableBalance }: { programId: string, availableBalance: number }) {
+export function DistributionForm({
+  programId,
+  mustahiqBalance,
+  amilBalance,
+}: {
+  programId: string;
+  mustahiqBalance: number;
+  amilBalance: number;
+}) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
@@ -20,8 +28,13 @@ export function DistributionForm({ programId, availableBalance }: { programId: s
 
   const onSubmit = (data: DistributionInput) => {
     setError(null);
-    if (data.amount > availableBalance) {
-      setError("Nominal tidak boleh melebihi saldo tersedia");
+    const selectedBalance = data.fundSource === "AMIL" ? amilBalance : mustahiqBalance;
+    if (data.amount > selectedBalance) {
+      setError(
+        data.fundSource === "AMIL"
+          ? "Nominal tidak boleh melebihi saldo amil lembaga"
+          : "Nominal tidak boleh melebihi saldo utama/mustahiq program",
+      );
       return;
     }
 
@@ -72,6 +85,7 @@ export function DistributionForm({ programId, availableBalance }: { programId: s
         onSubmit={onSubmit}
         defaultValues={{
           programId,
+          fundSource: "MUSTAHIQ",
           amount: 0,
           title: "",
           description: "",
@@ -80,6 +94,18 @@ export function DistributionForm({ programId, availableBalance }: { programId: s
         error={error}
       >
         <CardContent className="space-y-6">
+          <FormField
+            name="fundSource"
+            label="Sumber Dana Penyaluran"
+            type="select"
+            disabled={isPending}
+            options={[
+              { label: `Saldo Utama / Mustahiq — ${formatRupiah(mustahiqBalance)}`, value: "MUSTAHIQ" },
+              { label: `Saldo Amil Lembaga — ${formatRupiah(amilBalance)}`, value: "AMIL" },
+            ]}
+            description="Saldo yang dipilih akan dikurangi setelah penyaluran berhasil dicatat."
+          />
+
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <FormField
               name="title"
@@ -147,4 +173,12 @@ export function DistributionForm({ programId, availableBalance }: { programId: s
       </FormWrapper>
     </Card>
   );
+}
+
+function formatRupiah(value: number) {
+  return new Intl.NumberFormat("id-ID", {
+    style: "currency",
+    currency: "IDR",
+    minimumFractionDigits: 0,
+  }).format(value);
 }

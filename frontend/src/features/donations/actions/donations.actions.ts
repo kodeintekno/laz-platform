@@ -59,9 +59,3 @@ export async function getDonationStatusAction(
     return null;
   }
 }
-
-export async function createAdminDonationAction(formData: FormData): Promise<ActionResult> {
-  const result = await asAction(api.post("/donations", Object.fromEntries(formData.entries())));
-  if (result.success) queryClient.invalidateQueries({ queryKey: ["donations"] });
-  return result;
-}

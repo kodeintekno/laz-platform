@@ -19,6 +19,7 @@ describe("Withdrawals Security", () => {
   beforeEach(async () => {
     prisma = {
       lembaga: { findUnique: vi.fn() },
+      lembagaBankAccount: { findFirst: vi.fn() },
       withdrawal: { findUnique: vi.fn() },
     };
 
@@ -54,17 +55,17 @@ describe("Withdrawals Security", () => {
 
   describe("1. Frontend Amount Manipulation (Service Validation)", () => {
     it("should reject negative amount", async () => {
-      await expect(service.createWithdrawal("lembaga-1", "user-1", -5000)).rejects.toThrow(
+      await expect(service.createWithdrawal("lembaga-1", "user-1", -5000, "bank-1")).rejects.toThrow(
         new AppError("INVALID_AMOUNT", "Withdrawal amount must be a positive integer.", 400)
       );
     });
 
     it("should reject zero amount", async () => {
-      await expect(service.createWithdrawal("lembaga-1", "user-1", 0)).rejects.toThrow(AppError);
+      await expect(service.createWithdrawal("lembaga-1", "user-1", 0, "bank-1")).rejects.toThrow(AppError);
     });
 
     it("should reject floating point amount", async () => {
-      await expect(service.createWithdrawal("lembaga-1", "user-1", 10000.5)).rejects.toThrow(AppError);
+      await expect(service.createWithdrawal("lembaga-1", "user-1", 10000.5, "bank-1")).rejects.toThrow(AppError);
     });
   });
 
@@ -76,20 +77,20 @@ describe("Withdrawals Security", () => {
 
       prisma.lembaga.findUnique.mockResolvedValue({
         status: "APPROVED",
-        bankCode: "BCA",
-        accountNumber: "123",
-        accountHolder: "John"
+      });
+      prisma.lembagaBankAccount.findFirst.mockResolvedValue({
+        id: "bank-1", bankCode: "ID_BCA", accountNumber: "12345", accountHolder: "John",
       });
 
       // Even if attacker tries to pass a different lembagaId in body, 
       // the controller signature doesn't even accept it. It hardcodes user.lembagaId.
-      await controller.createWithdrawal(mockReq as any, { amount: 10000 });
+      await controller.createWithdrawal(mockReq as any, { amount: 10000, bankAccountId: "bank-1" });
 
       expect(repository.createWithdrawal).toHaveBeenCalledWith(
         "lembaga-1", 
         10000, 
-        "user-1", 
-        "BCA", "123", "John"
+        "user-1",
+        "bank-1", "ID_BCA", "12345", "John"
       );
     });
   });

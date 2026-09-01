@@ -1,17 +1,11 @@
 import { Injectable } from "@nestjs/common";
 import { PrismaService } from "../../prisma/prisma.service";
-import type { DonationStatus, Prisma } from "@prisma/client";
+import type { Prisma } from "@prisma/client";
 import { AppError } from "../../common/errors/app.error";
-import { AutoJournalService } from "../journal/auto-journal.service";
-import { AmilService } from "../amil/amil.service";
 
 @Injectable()
 export class DonationsRepository {
-  constructor(
-    private readonly prisma: PrismaService,
-    private readonly autoJournalService: AutoJournalService,
-    private readonly amilService: AmilService
-  ) {}
+  constructor(private readonly prisma: PrismaService) {}
 
   /**
    * Fetch all donations for the admin dashboard.
@@ -224,132 +218,6 @@ export class DonationsRepository {
   async getDonationById(id: string) {
     return this.prisma.donation.findUnique({
       where: { id },
-    });
-  }
-
-  /**
-   * Create a manual offline donation by Admin
-   */
-  async createAdminDonation(data: {
-    amount: number;
-    message?: string;
-    isAnonymous: boolean;
-    donorName?: string;
-    programId: string;
-    status: DonationStatus;
-  }) {
-    return this.prisma.$transaction(async (tx) => {
-      const program = await tx.program.findUnique({
-        where: { id: data.programId },
-        select: {
-          lembagaId: true,
-          status: true,
-          category: true,
-          amilPlatformPercentage: true,
-          amilInstitutionPercentage: true,
-        },
-      });
-      if (!program) throw new AppError("PROGRAM_NOT_FOUND", "Program tidak ditemukan", 404);
-      if (program.status === "PENDING_REVIEW") {
-        throw new AppError(
-          "PROGRAM_PENDING_REVIEW",
-          "Program masih menunggu persetujuan, donasi manual belum bisa ditambahkan",
-          400,
-        );
-      }
-
-      // Hitung Revenue Split jika PAID sebelum membuat donation record
-      let platformPercentage = 0;
-      let institutionPercentage = 0;
-      let amilPlatformAmount = 0;
-      let amilInstitutionAmount = 0;
-      let netAmount = 0;
-      let platformFee = 0;
-      let institutionAmount = 0;
-
-      if (data.status === "PAID") {
-        const split = this.amilService.calculateSplitFromProgramSnapshot(
-          data.amount,
-          Number(program.amilPlatformPercentage),
-          Number(program.amilInstitutionPercentage),
-        );
-        platformPercentage = split.platformPercentage;
-        institutionPercentage = split.institutionPercentage;
-        amilPlatformAmount = split.amilPlatformAmount;
-        amilInstitutionAmount = split.amilInstitutionAmount;
-        netAmount = split.netAmount;
-        
-        platformFee = amilPlatformAmount;
-        institutionAmount = amilInstitutionAmount + netAmount;
-      }
-
-      const donation = await tx.donation.create({
-        data: {
-          amount: data.amount,
-          message: data.message,
-          isAnonymous: data.isAnonymous,
-          donorName: data.donorName,
-          programId: data.programId,
-          lembagaId: program.lembagaId,
-          status: data.status,
-          platformFee,
-          institutionAmount,
-          platformPercentage,
-          institutionPercentage,
-          amilPlatformAmount,
-          amilInstitutionAmount,
-          netAmount,
-        },
-      });
-
-      // Also create a dummy payment record for offline
-      await tx.payment.create({
-        data: {
-          donationId: donation.id,
-          amount: data.amount,
-          paymentMethod: "OFFLINE",
-          status: data.status === "PAID" ? "SUCCESS" : "PENDING",
-          gatewayRef: `MANUAL-${Date.now()}`,
-          lembagaId: program.lembagaId,
-        },
-      });
-
-      // Update program currentAmount if PAID
-      if (data.status === "PAID") {
-        await tx.program.update({
-          where: { id: donation.programId },
-          data: { currentAmount: { increment: data.amount } },
-        });
-
-        // Buat Auto Journal untuk Donasi
-        await this.autoJournalService.createDonationJournal(
-          tx,
-          donation.id,
-          data.amount,
-          amilPlatformAmount,
-          amilInstitutionAmount,
-          netAmount,
-          donation.programId,
-          program.lembagaId,
-          program.category
-        );
-
-        // Update Saldo Lembaga secara Atomic
-        await tx.institutionBalance.upsert({
-          where: { lembagaId: program.lembagaId },
-          update: {
-            balance: {
-              increment: institutionAmount,
-            },
-          },
-          create: {
-            lembagaId: program.lembagaId,
-            balance: institutionAmount,
-          },
-        });
-      }
-
-      return donation;
     });
   }
 

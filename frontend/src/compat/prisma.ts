@@ -96,6 +96,8 @@ export interface Program {
   targetAmount: number;
   currentAmount: number;
   distributedAmount: number;
+  mustahiqDistributedAmount: number;
+  amilDistributedAmount: number;
   startDate?: Date | string | null;
   endDate?: Date | string | null;
   amilPlatformPercentage: number;

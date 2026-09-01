@@ -291,7 +291,7 @@ export class WebhookService {
     }
 
     const lembagaId = w.lembagaId;
-    if (!lembagaId) {
+    if (!w.isPlatform && !lembagaId) {
       this.logger.error({ withdrawalId }, "Xendit payout webhook: withdrawal has no lembagaId");
       throw new AppError("INVALID_STATE", "Withdrawal has no institution", 400);
     }
@@ -300,6 +300,8 @@ export class WebhookService {
       w.payout.id,
       withdrawalId,
       lembagaId,
+      w.isPlatform,
+      w.bankAccount?.chartOfAccountId ?? null,
       Number(w.amount),
       newPayoutStatus,
       newWithdrawalStatus,
