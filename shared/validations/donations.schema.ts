@@ -39,14 +39,3 @@ export const donationHistoryQuerySchema = z.object({
 });
 
 export type DonationHistoryQuery = z.infer<typeof donationHistoryQuerySchema>;
-
-export const adminDonationSchema = z.object({
-  programId: z.string().min(1, "Program wajib diisi"),
-  donorName: z.string().max(100, "Nama maksimal 100 karakter").optional(),
-  amount: z.coerce.number().min(1000, "Minimal Rp 1.000"),
-  message: z.string().max(250, "Pesan maksimal 250 karakter").optional(),
-  isAnonymous: z.coerce.boolean().default(false),
-  status: z.enum(["PENDING", "PAID", "FAILED"]).default("PAID"),
-});
-
-export type AdminDonationInput = z.infer<typeof adminDonationSchema>;

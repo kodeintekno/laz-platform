@@ -1,5 +1,5 @@
 import React from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { formatDate } from "@/lib/utils";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
@@ -18,6 +18,10 @@ interface JournalTableProps {
 }
 
 export function JournalTable({ journals, pagination }: JournalTableProps) {
+  const [searchParams] = useSearchParams();
+  const detailQuery = searchParams.get("scope") === "platform"
+    ? "?scope=platform"
+    : searchParams.get("lembagaId") ? `?lembagaId=${searchParams.get("lembagaId")}` : "";
   if (!journals || journals.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-16 text-center bg-surface border border-border rounded-xl">
@@ -50,7 +54,7 @@ export function JournalTable({ journals, pagination }: JournalTableProps) {
                     <td className="px-4 py-3">
                       <div className="flex flex-col gap-1">
                         <Link 
-                          to={`/dashboard/journal/${journal.id}`}
+                          to={`/dashboard/journal/${journal.id}${detailQuery}`}
                           className="font-mono font-bold text-primary hover:text-blue-600 transition-colors"
                         >
                           {journal.journalNo}
@@ -88,7 +92,7 @@ export function JournalTable({ journals, pagination }: JournalTableProps) {
                     </td>
                     <td className="px-4 py-3 text-right">
                       <div className="flex items-center justify-end gap-2 transition-opacity">
-                        <Link to={`/dashboard/journal/${journal.id}`}>
+                        <Link to={`/dashboard/journal/${journal.id}${detailQuery}`}>
                           <Button intent="secondary" size="sm" className="h-8 px-2">
                             <Eye className="w-4 h-4" />
                           </Button>

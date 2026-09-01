@@ -28,11 +28,21 @@ export function SelectProgramForDistributionModal({
     enabled: isOpen,
   });
 
+  const { data: overviewResult } = useQuery({
+    queryKey: ["dashboard", "overview"],
+    queryFn: () => api.get<any>("/dashboard/overview"),
+    enabled: isOpen,
+  });
+
+  const amilBalance = Number(overviewResult?.data?.metrics?.amilBalance ?? 0);
+
   const programs = (result?.data ?? []).map((p: any) => ({
     ...p,
     currentAmount: Number(p.currentAmount),
+    programFundAmount: Number(p.programFundAmount),
     distributedAmount: Number(p.distributedAmount),
-    availableBalance: Number(p.currentAmount) - Number(p.distributedAmount),
+    mustahiqDistributedAmount: Number(p.mustahiqDistributedAmount),
+    availableBalance: Number(p.programFundAmount) - Number(p.mustahiqDistributedAmount),
   }));
 
   const filtered = programs.filter((p) =>
@@ -85,13 +95,14 @@ export function SelectProgramForDistributionModal({
           ) : (
             filtered.map((program) => {
               const isEmpty = program.availableBalance <= 0;
+              const areAllBalancesEmpty = isEmpty && amilBalance <= 0;
               const isLow = program.availableBalance < 500_000 && !isEmpty;
 
               return (
                 <button
                   key={program.id}
                   onClick={() => handleSelect(program)}
-                  disabled={isEmpty}
+                  disabled={areAllBalancesEmpty}
                   className="w-full text-left p-4 rounded-xl border border-border bg-surface hover:bg-surface-muted hover:border-primary/30 transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed group"
                 >
                   <div className="flex items-start justify-between gap-3">
@@ -119,7 +130,7 @@ export function SelectProgramForDistributionModal({
                     </div>
 
                     {/* Right: balance badge */}
-                    <div className="flex-shrink-0 text-right">
+                    <div className="flex flex-shrink-0 flex-col items-end gap-1.5 text-right">
                       <span
                         className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${
                           isEmpty
@@ -139,8 +150,14 @@ export function SelectProgramForDistributionModal({
                           }`}
                         />
                         {isEmpty
-                          ? "Saldo Habis"
-                          : formatRupiah(program.availableBalance)}
+                          ? "Saldo Utama Habis"
+                          : `Saldo Utama: ${formatRupiah(program.availableBalance)}`}
+                      </span>
+                      <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ${
+                        amilBalance <= 0 ? "bg-red-50 text-red-600" : "bg-blue-50 text-blue-700"
+                      }`}>
+                        <span className={`h-1.5 w-1.5 rounded-full ${amilBalance <= 0 ? "bg-red-500" : "bg-blue-500"}`} />
+                        {amilBalance <= 0 ? "Saldo Amil Habis" : `Saldo Amil: ${formatRupiah(amilBalance)}`}
                       </span>
                     </div>
                   </div>

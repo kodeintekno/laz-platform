@@ -20,12 +20,15 @@ export function JournalListPage() {
   const limit = Number(searchParams.get("limit") ?? 10);
   const search = searchParams.get("search") ?? undefined;
   const lembagaId = searchParams.get("lembagaId") ?? undefined;
+  const isPlatformBook = isSuperAdmin && searchParams.get("scope") === "platform";
 
-  const params = isSuperAdmin && lembagaId ? { page, limit, search, lembagaId } : { page, limit, search };
-  const enabled = isSuperAdmin ? !!lembagaId : true;
+  const params = isPlatformBook
+    ? { page, limit, search, scope: "platform" }
+    : isSuperAdmin && lembagaId ? { page, limit, search, lembagaId } : { page, limit, search };
+  const enabled = isSuperAdmin ? isPlatformBook || !!lembagaId : true;
 
   const { data: result, isLoading } = useQuery({
-    queryKey: ["journal", { page, limit, search, lembagaId }],
+    queryKey: ["journal", { page, limit, search, lembagaId, isPlatformBook }],
     queryFn: () => api.get<any[]>("/journal", params),
     enabled,
   });
@@ -46,7 +49,7 @@ export function JournalListPage() {
         title="Jurnal Umum"
         description="Pencatatan transaksi akuntansi double-entry."
         action={
-          can(PERMISSIONS.JOURNAL_CREATE) && (!isSuperAdmin || lembagaId) ? (
+          can(PERMISSIONS.JOURNAL_CREATE) && (!isSuperAdmin || (lembagaId && !isPlatformBook)) ? (
             <Link to={isSuperAdmin ? `/dashboard/journal/new?lembagaId=${lembagaId}` : "/dashboard/journal/new"}>
               <Button intent="primary">
                 <Plus className="w-4 h-4 mr-2" />
@@ -62,12 +65,12 @@ export function JournalListPage() {
         searchPlaceholder="Cari nomor jurnal atau deskripsi..."
         filterSlot={
           isSuperAdmin && lembagasResult?.data?.length ? (
-            <UserLembagaFilter lembagas={lembagasResult.data} />
+            <UserLembagaFilter lembagas={lembagasResult.data} includePlatform />
           ) : undefined
         }
       />
 
-      {isSuperAdmin && !lembagaId ? (
+      {isSuperAdmin && !lembagaId && !isPlatformBook ? (
         <div className="flex flex-col items-center justify-center py-16 text-center border border-border rounded-xl bg-surface">
           <p className="text-secondary">Pilih lembaga di atas untuk melihat daftar Jurnal Umum.</p>
         </div>

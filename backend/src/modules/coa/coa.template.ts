@@ -1,21 +1,61 @@
-/**
- * COA Template Standar — Ruang Berbagi Platform
- *
- * Sumber kebenaran tunggal untuk semua akun COA sistem.
- * Digunakan oleh:
- *  - CoaRepository.seedCoaForLembaga() (runtime: saat lembaga di-approve)
- *  - seed.ts (dev: seeding sample lembaga)
- *
- * Level:
- *   1 = root (1000, 2000, …)
- *   2 = group header (1100, 1200, …)
- *   3 = detail account (1101, 1102, …)
- */
-
+/** COA standar untuk buku Lembaga dan buku Platform. */
 export type AccountType = "ASSET" | "LIABILITY" | "FUND" | "REVENUE" | "EXPENSE";
 export type NormalBalance = "DEBIT" | "CREDIT";
+export type CoaScope = "BOTH" | "LEMBAGA" | "PLATFORM";
+
+export const COA_KEYS = {
+  ASSETS: "ASSETS",
+  CASH_AND_BANK: "CASH_AND_BANK",
+  BANK_ACCOUNTS: "BANK_ACCOUNTS",
+  BANK: "BANK",
+  RECEIVABLES: "RECEIVABLES",
+  PAYMENT_GATEWAY_RECEIVABLE: "PAYMENT_GATEWAY_RECEIVABLE",
+  FIXED_ASSETS: "FIXED_ASSETS",
+  FIXED_ASSET_EQUIPMENT: "FIXED_ASSET_EQUIPMENT",
+  ACCUMULATED_DEPRECIATION: "ACCUMULATED_DEPRECIATION",
+  LIABILITIES: "LIABILITIES",
+  OPERATING_PAYABLE: "OPERATING_PAYABLE",
+  TAX_PAYABLE: "TAX_PAYABLE",
+  OTHER_PAYABLE: "OTHER_PAYABLE",
+  INSTITUTION_FUNDS_PAYABLE: "INSTITUTION_FUNDS_PAYABLE",
+  FUND_BALANCES: "FUND_BALANCES",
+  ZAKAT_FUND: "ZAKAT_FUND",
+  INFAK_SEDEKAH_FUND: "INFAK_SEDEKAH_FUND",
+  WAKAF_FUND: "WAKAF_FUND",
+  AMIL_FUND: "AMIL_FUND",
+  NON_HALAL_FUND: "NON_HALAL_FUND",
+  CSR_FUND: "CSR_FUND",
+  DSKL_FUND: "DSKL_FUND",
+  REVENUE: "REVENUE",
+  ZAKAT_REVENUE: "ZAKAT_REVENUE",
+  INFAK_SEDEKAH_REVENUE: "INFAK_SEDEKAH_REVENUE",
+  WAKAF_REVENUE: "WAKAF_REVENUE",
+  AMIL_REVENUE: "AMIL_REVENUE",
+  OTHER_REVENUE: "OTHER_REVENUE",
+  CSR_REVENUE: "CSR_REVENUE",
+  DSKL_REVENUE: "DSKL_REVENUE",
+  DISTRIBUTIONS: "DISTRIBUTIONS",
+  ZAKAT_DISTRIBUTION: "ZAKAT_DISTRIBUTION",
+  INFAK_SEDEKAH_DISTRIBUTION: "INFAK_SEDEKAH_DISTRIBUTION",
+  WAKAF_DISTRIBUTION: "WAKAF_DISTRIBUTION",
+  CSR_DISTRIBUTION: "CSR_DISTRIBUTION",
+  DSKL_DISTRIBUTION: "DSKL_DISTRIBUTION",
+  OPERATING_EXPENSES: "OPERATING_EXPENSES",
+  SALARY_EXPENSE: "SALARY_EXPENSE",
+  UTILITIES_EXPENSE: "UTILITIES_EXPENSE",
+  OFFICE_ADMIN_EXPENSE: "OFFICE_ADMIN_EXPENSE",
+  TRANSPORT_EXPENSE: "TRANSPORT_EXPENSE",
+  BANK_GATEWAY_EXPENSE: "BANK_GATEWAY_EXPENSE",
+  MAINTENANCE_EXPENSE: "MAINTENANCE_EXPENSE",
+  DEPRECIATION_EXPENSE: "DEPRECIATION_EXPENSE",
+  OTHER_OPERATING_EXPENSE: "OTHER_OPERATING_EXPENSE",
+  PLATFORM_AMIL_EXPENSE: "PLATFORM_AMIL_EXPENSE",
+} as const;
+
+export type CoaKey = (typeof COA_KEYS)[keyof typeof COA_KEYS];
 
 export interface CoaTemplateRow {
+  key: CoaKey;
   code: string;
   name: string;
   accountType: AccountType;
@@ -23,84 +63,68 @@ export interface CoaTemplateRow {
   isHeader: boolean;
   parentCode: string | null;
   level: number;
+  scope: CoaScope;
 }
 
+const row = (key: CoaKey, code: string, name: string, accountType: AccountType,
+  normalBalance: NormalBalance, isHeader: boolean, parentCode: string | null,
+  level: number, scope: CoaScope = "BOTH"): CoaTemplateRow =>
+  ({ key, code, name, accountType, normalBalance, isHeader, parentCode, level, scope });
+
 export const COA_TEMPLATE: CoaTemplateRow[] = [
-  // ─── 1000 ASSET ───────────────────────────────────────────────────────────────
-  { code: "1000", name: "Aset", accountType: "ASSET", normalBalance: "DEBIT", isHeader: true, parentCode: null, level: 1 },
-  { code: "1100", name: "Kas dan Bank", accountType: "ASSET", normalBalance: "DEBIT", isHeader: true, parentCode: "1000", level: 2 },
-  { code: "1101", name: "Kas", accountType: "ASSET", normalBalance: "DEBIT", isHeader: false, parentCode: "1100", level: 3 },
-  { code: "1102", name: "Kas Kecil", accountType: "ASSET", normalBalance: "DEBIT", isHeader: false, parentCode: "1100", level: 3 },
-  { code: "1103", name: "Bank", accountType: "ASSET", normalBalance: "DEBIT", isHeader: false, parentCode: "1100", level: 3 },
-  { code: "1104", name: "Kas Dalam Perjalanan", accountType: "ASSET", normalBalance: "DEBIT", isHeader: false, parentCode: "1100", level: 3 },
-  { code: "1110", name: "Piutang", accountType: "ASSET", normalBalance: "DEBIT", isHeader: true, parentCode: "1000", level: 2 },
-  { code: "1111", name: "Piutang Lain-lain", accountType: "ASSET", normalBalance: "DEBIT", isHeader: false, parentCode: "1110", level: 3 },
-  { code: "1120", name: "Persediaan", accountType: "ASSET", normalBalance: "DEBIT", isHeader: true, parentCode: "1000", level: 2 },
-  { code: "1121", name: "Persediaan", accountType: "ASSET", normalBalance: "DEBIT", isHeader: false, parentCode: "1120", level: 3 },
-  { code: "1200", name: "Aset Tetap", accountType: "ASSET", normalBalance: "DEBIT", isHeader: true, parentCode: "1000", level: 2 },
-  { code: "1201", name: "Peralatan", accountType: "ASSET", normalBalance: "DEBIT", isHeader: false, parentCode: "1200", level: 3 },
-  { code: "1202", name: "Kendaraan", accountType: "ASSET", normalBalance: "DEBIT", isHeader: false, parentCode: "1200", level: 3 },
-  { code: "1203", name: "Gedung", accountType: "ASSET", normalBalance: "DEBIT", isHeader: false, parentCode: "1200", level: 3 },
-  { code: "1290", name: "Akumulasi Penyusutan", accountType: "ASSET", normalBalance: "CREDIT", isHeader: true, parentCode: "1000", level: 2 },
-  { code: "1291", name: "Akumulasi Penyusutan Peralatan", accountType: "ASSET", normalBalance: "CREDIT", isHeader: false, parentCode: "1290", level: 3 },
-  { code: "1292", name: "Akumulasi Penyusutan Kendaraan", accountType: "ASSET", normalBalance: "CREDIT", isHeader: false, parentCode: "1290", level: 3 },
-  { code: "1293", name: "Akumulasi Penyusutan Gedung", accountType: "ASSET", normalBalance: "CREDIT", isHeader: false, parentCode: "1290", level: 3 },
+  row(COA_KEYS.ASSETS, "1000", "Aset", "ASSET", "DEBIT", true, null, 1),
+  row(COA_KEYS.CASH_AND_BANK, "1100", "Kas dan Bank", "ASSET", "DEBIT", true, "1000", 2),
+  row(COA_KEYS.BANK_ACCOUNTS, "1103", "Rekening Bank", "ASSET", "DEBIT", true, "1100", 3),
+  row(COA_KEYS.BANK, "110399", "Bank Operasional", "ASSET", "DEBIT", false, "1103", 4),
+  row(COA_KEYS.RECEIVABLES, "1110", "Piutang", "ASSET", "DEBIT", true, "1000", 2),
+  row(COA_KEYS.PAYMENT_GATEWAY_RECEIVABLE, "1111", "Piutang Payment Gateway", "ASSET", "DEBIT", false, "1110", 3),
+  row(COA_KEYS.FIXED_ASSETS, "1200", "Aset Tetap", "ASSET", "DEBIT", true, "1000", 2),
+  row(COA_KEYS.FIXED_ASSET_EQUIPMENT, "1201", "Peralatan dan Aset Tetap", "ASSET", "DEBIT", false, "1200", 3),
+  row(COA_KEYS.ACCUMULATED_DEPRECIATION, "1291", "Akumulasi Penyusutan Aset Tetap", "ASSET", "CREDIT", false, "1200", 3),
 
-  // ─── 2000 LIABILITY ───────────────────────────────────────────────────────────
-  { code: "2000", name: "Kewajiban", accountType: "LIABILITY", normalBalance: "CREDIT", isHeader: true, parentCode: null, level: 1 },
-  { code: "2100", name: "Utang", accountType: "LIABILITY", normalBalance: "CREDIT", isHeader: true, parentCode: "2000", level: 2 },
-  { code: "2101", name: "Utang Operasional", accountType: "LIABILITY", normalBalance: "CREDIT", isHeader: false, parentCode: "2100", level: 3 },
-  { code: "2102", name: "Utang Gaji", accountType: "LIABILITY", normalBalance: "CREDIT", isHeader: false, parentCode: "2100", level: 3 },
-  { code: "2103", name: "Utang Pajak", accountType: "LIABILITY", normalBalance: "CREDIT", isHeader: false, parentCode: "2100", level: 3 },
-  { code: "2104", name: "Utang Lain-lain", accountType: "LIABILITY", normalBalance: "CREDIT", isHeader: false, parentCode: "2100", level: 3 },
+  row(COA_KEYS.LIABILITIES, "2000", "Kewajiban", "LIABILITY", "CREDIT", true, null, 1),
+  row(COA_KEYS.OPERATING_PAYABLE, "2101", "Utang Operasional", "LIABILITY", "CREDIT", false, "2000", 2),
+  row(COA_KEYS.TAX_PAYABLE, "2103", "Utang Pajak", "LIABILITY", "CREDIT", false, "2000", 2),
+  row(COA_KEYS.OTHER_PAYABLE, "2104", "Utang Lain-lain", "LIABILITY", "CREDIT", false, "2000", 2),
+  row(COA_KEYS.INSTITUTION_FUNDS_PAYABLE, "2105", "Utang Dana Lembaga", "LIABILITY", "CREDIT", false, "2000", 2, "PLATFORM"),
 
-  // ─── 3000 FUND ────────────────────────────────────────────────────────────────
-  { code: "3000", name: "Dana", accountType: "FUND", normalBalance: "CREDIT", isHeader: true, parentCode: null, level: 1 },
-  { code: "3100", name: "Dana", accountType: "FUND", normalBalance: "CREDIT", isHeader: true, parentCode: "3000", level: 2 },
-  { code: "3101", name: "Dana Zakat", accountType: "FUND", normalBalance: "CREDIT", isHeader: false, parentCode: "3100", level: 3 },
-  { code: "3102", name: "Dana Infak/Sedekah", accountType: "FUND", normalBalance: "CREDIT", isHeader: false, parentCode: "3100", level: 3 },
-  { code: "3104", name: "Dana Wakaf", accountType: "FUND", normalBalance: "CREDIT", isHeader: false, parentCode: "3100", level: 3 },
-  { code: "3105", name: "Dana Amil", accountType: "FUND", normalBalance: "CREDIT", isHeader: false, parentCode: "3100", level: 3 },
-  { code: "3106", name: "Dana Nonhalal", accountType: "FUND", normalBalance: "CREDIT", isHeader: false, parentCode: "3100", level: 3 },
-  { code: "3107", name: "Dana CSR", accountType: "FUND", normalBalance: "CREDIT", isHeader: false, parentCode: "3100", level: 3 },
-  { code: "3108", name: "Dana DSKL", accountType: "FUND", normalBalance: "CREDIT", isHeader: false, parentCode: "3100", level: 3 },
+  row(COA_KEYS.FUND_BALANCES, "3000", "Saldo Dana", "FUND", "CREDIT", true, null, 1),
+  row(COA_KEYS.ZAKAT_FUND, "3101", "Dana Zakat", "FUND", "CREDIT", false, "3000", 2, "LEMBAGA"),
+  row(COA_KEYS.INFAK_SEDEKAH_FUND, "3102", "Dana Infak/Sedekah", "FUND", "CREDIT", false, "3000", 2, "LEMBAGA"),
+  row(COA_KEYS.WAKAF_FUND, "3104", "Dana Wakaf", "FUND", "CREDIT", false, "3000", 2, "LEMBAGA"),
+  row(COA_KEYS.AMIL_FUND, "3105", "Dana Amil", "FUND", "CREDIT", false, "3000", 2),
+  row(COA_KEYS.NON_HALAL_FUND, "3106", "Dana Nonhalal", "FUND", "CREDIT", false, "3000", 2, "LEMBAGA"),
+  row(COA_KEYS.CSR_FUND, "3107", "Dana CSR", "FUND", "CREDIT", false, "3000", 2, "LEMBAGA"),
+  row(COA_KEYS.DSKL_FUND, "3108", "Dana DSKL", "FUND", "CREDIT", false, "3000", 2, "LEMBAGA"),
 
-  // ─── 4000 PENERIMAAN DANA ─────────────────────────────────────────────────────
-  { code: "4000", name: "Penerimaan Dana", accountType: "REVENUE", normalBalance: "CREDIT", isHeader: true, parentCode: null, level: 1 },
-  { code: "4100", name: "Penerimaan", accountType: "REVENUE", normalBalance: "CREDIT", isHeader: true, parentCode: "4000", level: 2 },
-  { code: "4101", name: "Penerimaan Zakat", accountType: "REVENUE", normalBalance: "CREDIT", isHeader: false, parentCode: "4100", level: 3 },
-  { code: "4102", name: "Penerimaan Infak/Sedekah", accountType: "REVENUE", normalBalance: "CREDIT", isHeader: false, parentCode: "4100", level: 3 },
-  { code: "4104", name: "Penerimaan Wakaf", accountType: "REVENUE", normalBalance: "CREDIT", isHeader: false, parentCode: "4100", level: 3 },
-  { code: "4105", name: "Penerimaan Dana Amil", accountType: "REVENUE", normalBalance: "CREDIT", isHeader: false, parentCode: "4100", level: 3 },
-  { code: "4106", name: "Penerimaan Hibah", accountType: "REVENUE", normalBalance: "CREDIT", isHeader: false, parentCode: "4100", level: 3 },
-  { code: "4107", name: "Pendapatan Lainnya", accountType: "REVENUE", normalBalance: "CREDIT", isHeader: false, parentCode: "4100", level: 3 },
-  { code: "4108", name: "Penerimaan CSR", accountType: "REVENUE", normalBalance: "CREDIT", isHeader: false, parentCode: "4100", level: 3 },
-  { code: "4109", name: "Penerimaan DSKL", accountType: "REVENUE", normalBalance: "CREDIT", isHeader: false, parentCode: "4100", level: 3 },
+  row(COA_KEYS.REVENUE, "4000", "Penerimaan Dana", "REVENUE", "CREDIT", true, null, 1),
+  row(COA_KEYS.ZAKAT_REVENUE, "4101", "Penerimaan Zakat", "REVENUE", "CREDIT", false, "4000", 2, "LEMBAGA"),
+  row(COA_KEYS.INFAK_SEDEKAH_REVENUE, "4102", "Penerimaan Infak/Sedekah", "REVENUE", "CREDIT", false, "4000", 2, "LEMBAGA"),
+  row(COA_KEYS.WAKAF_REVENUE, "4104", "Penerimaan Wakaf", "REVENUE", "CREDIT", false, "4000", 2, "LEMBAGA"),
+  row(COA_KEYS.AMIL_REVENUE, "4105", "Penerimaan Dana Amil", "REVENUE", "CREDIT", false, "4000", 2),
+  row(COA_KEYS.OTHER_REVENUE, "4107", "Penerimaan Lainnya", "REVENUE", "CREDIT", false, "4000", 2),
+  row(COA_KEYS.CSR_REVENUE, "4108", "Penerimaan CSR", "REVENUE", "CREDIT", false, "4000", 2, "LEMBAGA"),
+  row(COA_KEYS.DSKL_REVENUE, "4109", "Penerimaan DSKL", "REVENUE", "CREDIT", false, "4000", 2, "LEMBAGA"),
 
-  // ─── 5000 PENYALURAN DANA ─────────────────────────────────────────────────────
-  { code: "5000", name: "Penyaluran Dana", accountType: "EXPENSE", normalBalance: "DEBIT", isHeader: true, parentCode: null, level: 1 },
-  { code: "5100", name: "Penyaluran", accountType: "EXPENSE", normalBalance: "DEBIT", isHeader: true, parentCode: "5000", level: 2 },
-  { code: "5101", name: "Penyaluran Zakat", accountType: "EXPENSE", normalBalance: "DEBIT", isHeader: false, parentCode: "5100", level: 3 },
-  { code: "5102", name: "Penyaluran Infak/Sedekah", accountType: "EXPENSE", normalBalance: "DEBIT", isHeader: false, parentCode: "5100", level: 3 },
-  { code: "5104", name: "Penyaluran Wakaf", accountType: "EXPENSE", normalBalance: "DEBIT", isHeader: false, parentCode: "5100", level: 3 },
-  { code: "5105", name: "Penyaluran CSR", accountType: "EXPENSE", normalBalance: "DEBIT", isHeader: false, parentCode: "5100", level: 3 },
-  { code: "5106", name: "Penyaluran DSKL", accountType: "EXPENSE", normalBalance: "DEBIT", isHeader: false, parentCode: "5100", level: 3 },
+  row(COA_KEYS.DISTRIBUTIONS, "5000", "Penyaluran Dana", "EXPENSE", "DEBIT", true, null, 1, "LEMBAGA"),
+  row(COA_KEYS.ZAKAT_DISTRIBUTION, "5101", "Penyaluran Zakat", "EXPENSE", "DEBIT", false, "5000", 2, "LEMBAGA"),
+  row(COA_KEYS.INFAK_SEDEKAH_DISTRIBUTION, "5102", "Penyaluran Infak/Sedekah", "EXPENSE", "DEBIT", false, "5000", 2, "LEMBAGA"),
+  row(COA_KEYS.WAKAF_DISTRIBUTION, "5104", "Penyaluran Wakaf", "EXPENSE", "DEBIT", false, "5000", 2, "LEMBAGA"),
+  row(COA_KEYS.CSR_DISTRIBUTION, "5105", "Penyaluran CSR", "EXPENSE", "DEBIT", false, "5000", 2, "LEMBAGA"),
+  row(COA_KEYS.DSKL_DISTRIBUTION, "5106", "Penyaluran DSKL", "EXPENSE", "DEBIT", false, "5000", 2, "LEMBAGA"),
 
-  // ─── 6000 BEBAN OPERASIONAL ───────────────────────────────────────────────────
-  { code: "6000", name: "Beban Operasional", accountType: "EXPENSE", normalBalance: "DEBIT", isHeader: true, parentCode: null, level: 1 },
-  { code: "6100", name: "Beban Operasional", accountType: "EXPENSE", normalBalance: "DEBIT", isHeader: true, parentCode: "6000", level: 2 },
-  { code: "6101", name: "Beban Gaji", accountType: "EXPENSE", normalBalance: "DEBIT", isHeader: false, parentCode: "6100", level: 3 },
-  { code: "6102", name: "Beban Listrik", accountType: "EXPENSE", normalBalance: "DEBIT", isHeader: false, parentCode: "6100", level: 3 },
-  { code: "6103", name: "Beban Air", accountType: "EXPENSE", normalBalance: "DEBIT", isHeader: false, parentCode: "6100", level: 3 },
-  { code: "6104", name: "Beban Internet", accountType: "EXPENSE", normalBalance: "DEBIT", isHeader: false, parentCode: "6100", level: 3 },
-  { code: "6105", name: "Beban ATK", accountType: "EXPENSE", normalBalance: "DEBIT", isHeader: false, parentCode: "6100", level: 3 },
-  { code: "6106", name: "Beban Transportasi", accountType: "EXPENSE", normalBalance: "DEBIT", isHeader: false, parentCode: "6100", level: 3 },
-  { code: "6107", name: "Beban Administrasi Bank", accountType: "EXPENSE", normalBalance: "DEBIT", isHeader: false, parentCode: "6100", level: 3 },
-  { code: "6108", name: "Beban Konsumsi", accountType: "EXPENSE", normalBalance: "DEBIT", isHeader: false, parentCode: "6100", level: 3 },
-  { code: "6109", name: "Beban Pemeliharaan", accountType: "EXPENSE", normalBalance: "DEBIT", isHeader: false, parentCode: "6100", level: 3 },
-  { code: "6110", name: "Beban Penyusutan Peralatan", accountType: "EXPENSE", normalBalance: "DEBIT", isHeader: false, parentCode: "6100", level: 3 },
-  { code: "6111", name: "Beban Penyusutan Kendaraan", accountType: "EXPENSE", normalBalance: "DEBIT", isHeader: false, parentCode: "6100", level: 3 },
-  { code: "6112", name: "Beban Penyusutan Gedung", accountType: "EXPENSE", normalBalance: "DEBIT", isHeader: false, parentCode: "6100", level: 3 },
-  { code: "6113", name: "Beban Operasional Lainnya", accountType: "EXPENSE", normalBalance: "DEBIT", isHeader: false, parentCode: "6100", level: 3 },
-  { code: "6114", name: "Beban Amil Platform", accountType: "EXPENSE", normalBalance: "DEBIT", isHeader: false, parentCode: "6100", level: 3 },
+  row(COA_KEYS.OPERATING_EXPENSES, "6000", "Beban Operasional", "EXPENSE", "DEBIT", true, null, 1),
+  row(COA_KEYS.SALARY_EXPENSE, "6101", "Beban Gaji dan Honor", "EXPENSE", "DEBIT", false, "6000", 2),
+  row(COA_KEYS.UTILITIES_EXPENSE, "6102", "Beban Utilitas dan Komunikasi", "EXPENSE", "DEBIT", false, "6000", 2),
+  row(COA_KEYS.OFFICE_ADMIN_EXPENSE, "6105", "Beban Administrasi Kantor", "EXPENSE", "DEBIT", false, "6000", 2),
+  row(COA_KEYS.TRANSPORT_EXPENSE, "6106", "Beban Transportasi", "EXPENSE", "DEBIT", false, "6000", 2),
+  row(COA_KEYS.BANK_GATEWAY_EXPENSE, "6107", "Beban Bank dan Payment Gateway", "EXPENSE", "DEBIT", false, "6000", 2),
+  row(COA_KEYS.MAINTENANCE_EXPENSE, "6109", "Beban Pemeliharaan", "EXPENSE", "DEBIT", false, "6000", 2),
+  row(COA_KEYS.DEPRECIATION_EXPENSE, "6110", "Beban Penyusutan Aset Tetap", "EXPENSE", "DEBIT", false, "6000", 2),
+  row(COA_KEYS.OTHER_OPERATING_EXPENSE, "6113", "Beban Operasional Lainnya", "EXPENSE", "DEBIT", false, "6000", 2),
+  row(COA_KEYS.PLATFORM_AMIL_EXPENSE, "6114", "Beban Amil Platform", "EXPENSE", "DEBIT", false, "6000", 2, "LEMBAGA"),
 ];
+
+export function coaTemplateFor(ownerType: "LEMBAGA" | "PLATFORM"): CoaTemplateRow[] {
+  return COA_TEMPLATE.filter((account) => account.scope === "BOTH" || account.scope === ownerType);
+}

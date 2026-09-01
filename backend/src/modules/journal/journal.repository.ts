@@ -6,10 +6,12 @@ import type { Prisma } from "@prisma/client";
 export class JournalRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  async findMany(lembagaId: string, page: number, limit: number, search?: string) {
+  async findMany(lembagaId: string | null, page: number, limit: number, search?: string) {
     const skip = (page - 1) * limit;
     
-    const where: Prisma.JournalWhereInput = { lembagaId };
+    const where: Prisma.JournalWhereInput = lembagaId
+      ? { lembagaId }
+      : { accountingBook: { ownerType: "PLATFORM" } };
     
     if (search) {
       where.OR = [
@@ -43,9 +45,9 @@ export class JournalRepository {
     };
   }
 
-  async findById(id: string, lembagaId: string) {
+  async findById(id: string, lembagaId: string | null) {
     return this.prisma.journal.findFirst({
-      where: { id, lembagaId },
+      where: lembagaId ? { id, lembagaId } : { id, accountingBook: { ownerType: "PLATFORM" } },
       include: {
         createdBy: { select: { name: true } },
         postedBy: { select: { name: true } },
@@ -60,18 +62,21 @@ export class JournalRepository {
   }
 
   async createJournal(
-    lembagaId: string, 
+    accountingBookId: string,
+    lembagaId: string,
     journalNo: string, 
     data: any, 
     userId: string
   ) {
     return this.prisma.journal.create({
       data: {
+        accountingBookId,
         lembagaId,
         journalNo,
         journalDate: new Date(data.journalDate),
         description: data.description,
         sourceType: "MANUAL",
+        sourceEvent: "MANUAL",
         programId: data.programId,
         status: "POSTED",
         createdById: userId,

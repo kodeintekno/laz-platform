@@ -215,9 +215,6 @@ export class LembagaService {
       logoPublicId: input.logoPublicId || null,
       officePhotoUrl: input.officePhotoUrl || null,
       officePhotoPublicId: input.officePhotoPublicId || null,
-      bankCode: input.bankCode || null,
-      accountNumber: input.accountNumber || null,
-      accountHolder: input.accountHolder || null,
     });
 
     await this.auditService.log({

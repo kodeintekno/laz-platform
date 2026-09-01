@@ -48,9 +48,6 @@ export function LembagaProfileForm({ initialData }: { initialData: Lembaga }) {
           description: initialData.description ?? "",
           website: initialData.website ?? "",
           izinYayasanNumber: initialData.izinYayasanNumber ?? "",
-          bankCode: (initialData as any).bankCode ?? "",
-          accountNumber: (initialData as any).accountNumber ?? "",
-          accountHolder: (initialData as any).accountHolder ?? "",
         }}
       >
         <CardContent className="space-y-6 w-full">
@@ -65,41 +62,6 @@ export function LembagaProfileForm({ initialData }: { initialData: Lembaga }) {
           <FormField name="address" label="Alamat Lengkap" type="textarea" rows={2} disabled={isPending} />
           <FormField name="description" label="Deskripsi Lembaga" type="textarea" rows={4} disabled={isPending} />
           <FormField name="izinYayasanNumber" label="Nomor Izin Yayasan" type="input" disabled={isPending} />
-
-          <div className="border-t border-surface-soft pt-6 mt-6">
-            <h3 className="text-lg font-medium text-surface-stronger mb-4">Pengaturan Rekening Bank (Untuk Pencairan Dana)</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
-              <FormField 
-                name="bankCode" 
-                label="Kode Bank (Bank Tujuan)" 
-                type="select" 
-                disabled={isPending} 
-                options={[
-                  { label: "BCA - Bank Central Asia", value: "ID_BCA" },
-                  { label: "Mandiri - Bank Mandiri", value: "ID_MANDIRI" },
-                  { label: "BRI - Bank Rakyat Indonesia", value: "ID_BRI" },
-                  { label: "BNI - Bank Negara Indonesia", value: "ID_BNI" },
-                  { label: "BSI - Bank Syariah Indonesia", value: "ID_BSI" },
-                  { label: "Permata - Bank Permata", value: "ID_PERMATA" },
-                  { label: "CIMB Niaga", value: "ID_CIMB" },
-                  { label: "Danamon", value: "ID_DANAMON" },
-                  { label: "Muamalat", value: "ID_MUAMALAT" }
-                ]}
-              />
-              <FormField 
-                name="accountNumber" 
-                label="Nomor Rekening" 
-                type="input" 
-                disabled={isPending} 
-              />
-            </div>
-            <FormField 
-              name="accountHolder" 
-              label="Nama Pemilik Rekening" 
-              type="input" 
-              disabled={isPending} 
-            />
-          </div>
 
           <FileUpload
             name="logoUrl"

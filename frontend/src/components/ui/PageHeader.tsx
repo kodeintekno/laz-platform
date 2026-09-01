@@ -14,9 +14,9 @@ export function PageHeader({ title, description, action }: PageHeaderProps) {
           {title}
         </h1>
         {description && (
-          <p className="text-sm text-secondary max-w-2xl leading-relaxed">
+          <div className="text-sm text-secondary max-w-4xl leading-relaxed">
             {description}
-          </p>
+          </div>
         )}
       </div>
       {action && (

@@ -1,13 +1,8 @@
 import { Injectable, Logger, NotFoundException } from "@nestjs/common";
 import { DonationsRepository } from "./donations.repository";
-import { AuditService } from "../audit/audit.service";
-import { AuditAction } from "../audit/audit.types";
 import { XenditService } from "../../lib/xendit/xendit.service";
 import type { PaymentMethodChannel } from "../../lib/xendit/xendit.service";
-import type {
-  AdminDonationInput,
-  DonationInput,
-} from "../../../../shared/validations/donations.schema";
+import type { DonationInput } from "../../../../shared/validations/donations.schema";
 
 export interface CreateDonationResult {
   donationId: string;
@@ -28,7 +23,6 @@ export class DonationsService {
 
   constructor(
     private readonly donationsRepository: DonationsRepository,
-    private readonly auditService: AuditService,
     private readonly xenditService: XenditService,
   ) {}
 
@@ -126,17 +120,4 @@ export class DonationsService {
     return this.donationsRepository.findByPhone(phone, page, limit);
   }
 
-  async createAdminDonation(data: AdminDonationInput, adminUserId: string) {
-    const result = await this.donationsRepository.createAdminDonation(data);
-
-    await this.auditService.log({
-      userId: adminUserId,
-      action: AuditAction.CREATE,
-      entity: "Donation",
-      entityId: result.id,
-      newData: result as any,
-    });
-
-    return result;
-  }
 }

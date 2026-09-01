@@ -6,7 +6,7 @@ import { DataTable, type ColumnDef } from "@/components/ui/data-table";
 
 type DistributionWithRelations = Prisma.DistributionGetPayload<{
   include: {
-    program: { select: { title: true; currentAmount: true; distributedAmount: true } };
+    program: { select: { title: true; currentAmount: true; programFundAmount: true; distributedAmount: true; mustahiqDistributedAmount: true; amilDistributedAmount: true } };
     createdBy: { select: { name: true; email: true } };
     approvedBy: { select: { name: true } };
   };
@@ -39,7 +39,7 @@ export function DistributionTable({
         <div>
           <div className="font-semibold text-primary truncate max-w-[200px]">{dist.program.title}</div>
           <div className="text-xs text-secondary mt-0.5">
-            Saldo: {formatRupiah(Number(dist.program.currentAmount) - Number(dist.program.distributedAmount))}
+            Saldo Utama: {formatRupiah(Number(dist.program.programFundAmount) - Number(dist.program.mustahiqDistributedAmount))}
           </div>
         </div>
       ),
@@ -57,6 +57,14 @@ export function DistributionTable({
       header: "Nominal",
       cell: (dist) => (
         <span className="font-medium text-primary">{formatRupiah(dist.amount as any)}</span>
+      ),
+    },
+    {
+      header: "Sumber Dana",
+      cell: (dist) => (
+        <Badge intent={dist.fundSource === "AMIL" ? "info" : "success"}>
+          {dist.fundSource === "AMIL" ? "Saldo Amil" : "Saldo Utama"}
+        </Badge>
       ),
     },
     {

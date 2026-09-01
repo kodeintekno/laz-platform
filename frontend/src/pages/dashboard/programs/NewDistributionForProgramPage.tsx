@@ -5,6 +5,7 @@ import { DistributionForm } from "@/features/distributions/components/Distributi
 import { PageHeader } from "@/components/ui";
 import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
 import { ProgramBalanceBadge } from "@/components/ui/ProgramBalanceBadge";
+import { AmilBalanceBadge } from "@/components/ui/AmilBalanceBadge";
 
 export function NewDistributionForProgramPage() {
   const { slug } = useParams<{ slug: string }>();
@@ -15,14 +16,20 @@ export function NewDistributionForProgramPage() {
     queryFn: () => api.get<any>(`/programs/${slug}`),
   });
 
-  if (isLoading) return <div className="flex justify-center py-20"><LoadingSpinner /></div>;
+  const { data: overviewResult, isLoading: isOverviewLoading } = useQuery({
+    queryKey: ["dashboard", "overview"],
+    queryFn: () => api.get<any>("/dashboard/overview"),
+  });
+
+  if (isLoading || isOverviewLoading) return <div className="flex justify-center py-20"><LoadingSpinner /></div>;
   if (isError || !result?.data) {
     navigate("/dashboard/programs", { replace: true });
     return null;
   }
 
   const program = result.data;
-  const availableBalance = Number(program.currentAmount) - Number(program.distributedAmount);
+  const mustahiqBalance = Number(program.programFundAmount) - Number(program.mustahiqDistributedAmount);
+  const amilBalance = Number(overviewResult?.data?.metrics?.amilBalance ?? 0);
 
   return (
     <div className="space-y-6 w-full">
@@ -31,11 +38,17 @@ export function NewDistributionForProgramPage() {
         description={
           <ProgramBalanceBadge
             programTitle={program.title}
-            availableBalance={availableBalance}
-          />
+            availableBalance={mustahiqBalance}
+          >
+            <AmilBalanceBadge availableBalance={amilBalance} />
+          </ProgramBalanceBadge>
         }
       />
-      <DistributionForm programId={program.id} availableBalance={availableBalance} />
+      <DistributionForm
+        programId={program.id}
+        mustahiqBalance={mustahiqBalance}
+        amilBalance={amilBalance}
+      />
     </div>
   );
 }

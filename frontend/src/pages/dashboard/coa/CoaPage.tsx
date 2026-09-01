@@ -10,6 +10,11 @@ import { Info, BookMarked, RefreshCw } from "lucide-react";
 import { provisionCoaAction } from "@/features/coa/actions/coa.actions";
 import { toast } from "@/stores/toast.store";
 import { Button } from "@/components/ui/Button";
+import { Card, CardContent, Input, Select } from "@/components/ui";
+import { Plus } from "lucide-react";
+import { useState } from "react";
+
+const EXPECTED_LEMBAGA_COA_COUNT = 45;
 
 function CoaSkeletonRow({ indent = 0 }: { indent?: number }) {
   return (
@@ -53,13 +58,14 @@ export function CoaPage() {
   const [searchParams] = useSearchParams();
   const isSuperAdmin = user?.roleName === "SUPER_ADMIN";
   const lembagaId = searchParams.get("lembagaId") ?? undefined;
+  const isPlatformBook = isSuperAdmin && searchParams.get("scope") === "platform";
 
   // Fetch COA — LEMBAGA_ADMIN auto-scoped, SUPER_ADMIN needs ?lembagaId=
-  const params = isSuperAdmin && lembagaId ? { lembagaId } : undefined;
-  const enabled = isSuperAdmin ? !!lembagaId : true;
+  const params = isPlatformBook ? { scope: "platform" } : isSuperAdmin && lembagaId ? { lembagaId } : undefined;
+  const enabled = isSuperAdmin ? isPlatformBook || !!lembagaId : true;
 
   const { data: result, isLoading } = useQuery({
-    queryKey: ["coa", { lembagaId }],
+    queryKey: ["coa", { lembagaId, isPlatformBook }],
     queryFn: () => api.get<CoaAccount[]>("/coa", params),
     enabled,
   });
@@ -73,6 +79,7 @@ export function CoaPage() {
   const accounts = result?.data ?? [];
   const totalDetail = accounts.filter((a) => !a.isHeader).length;
   const totalHeader = accounts.filter((a) => a.isHeader).length;
+  const [showCustomForm, setShowCustomForm] = useState(false);
 
   return (
     <div className="space-y-6">
@@ -85,8 +92,8 @@ export function CoaPage() {
       <div className="flex items-start gap-3 p-4 rounded-xl border border-blue-200 bg-blue-50/60">
         <Info className="w-4 h-4 text-blue-600 flex-shrink-0 mt-0.5" />
         <p className="text-sm text-blue-800">
-          COA ini ditentukan oleh sistem dan bersifat <strong>read-only</strong>.
-          Semua lembaga menggunakan template COA yang sama sebagai standar pencatatan.
+          Struktur utama COA ditentukan oleh sistem. Setiap Lembaga dapat menambahkan
+          <strong> akun detail sendiri</strong> di bawah header yang tersedia.
           Akun dengan label <strong>Header</strong> hanya berfungsi sebagai pengelompokan
           dan tidak dapat digunakan dalam jurnal transaksi.
         </p>
@@ -96,12 +103,12 @@ export function CoaPage() {
       {isSuperAdmin && lembagasResult?.data?.length && (
         <div className="flex items-center gap-3">
           <span className="text-sm text-secondary font-medium">Filter Lembaga:</span>
-          <UserLembagaFilter lembagas={lembagasResult.data} />
+          <UserLembagaFilter lembagas={lembagasResult.data} includePlatform />
         </div>
       )}
 
       {/* No lembaga selected (SUPER_ADMIN) */}
-      {isSuperAdmin && !lembagaId && (
+      {isSuperAdmin && !lembagaId && !isPlatformBook && (
         <div className="flex flex-col items-center justify-center py-20 text-center">
           <BookMarked className="w-14 h-14 text-secondary/30 mb-4" />
           <h3 className="font-semibold text-primary mb-1">Pilih Lembaga</h3>
@@ -126,18 +133,78 @@ export function CoaPage() {
             </span>
           </div>
           
-          {/* If accounts are less than the template (~60-70), show a sync button */}
-          {accounts.length < 60 && (
-            <SyncCoaButton lembagaId={lembagaId} />
+          {!isPlatformBook && (
+            <div className="flex gap-2">
+              <Button intent="outline" size="sm" onClick={() => setShowCustomForm((value) => !value)}>
+                <Plus className="w-4 h-4 mr-2" /> Tambah Akun Anak
+              </Button>
+              {accounts.filter((account) => account.isSystem).length < EXPECTED_LEMBAGA_COA_COUNT && (
+                <SyncCoaButton lembagaId={lembagaId} />
+              )}
+            </div>
           )}
         </div>
       )}
 
+      {showCustomForm && !isPlatformBook && (
+        <CustomCoaForm accounts={accounts} lembagaId={lembagaId} onClose={() => setShowCustomForm(false)} />
+      )}
+
       {/* COA Tree */}
-      {(isSuperAdmin ? !!lembagaId : true) && (
+      {(isSuperAdmin ? isPlatformBook || !!lembagaId : true) && (
         isLoading ? <CoaSkeleton /> : <CoaTree accounts={accounts} />
       )}
     </div>
+  );
+}
+
+function CustomCoaForm({ accounts, lembagaId, onClose }: {
+  accounts: CoaAccount[]; lembagaId?: string; onClose: () => void;
+}) {
+  const queryClient = useQueryClient();
+  const headers = accounts.filter((account) => account.isHeader && account.level < 4);
+  const [parentId, setParentId] = useState(headers[0]?.id ?? "");
+  const [code, setCode] = useState("");
+  const [name, setName] = useState("");
+  const mutation = useMutation({
+    mutationFn: () => api.post("/coa/accounts", { lembagaId, parentId, code, name }),
+    onSuccess: () => {
+      toast.success("Akun anak berhasil dibuat");
+      queryClient.invalidateQueries({ queryKey: ["coa"] });
+      onClose();
+    },
+    onError: (error: any) => toast.error(error?.message || "Gagal membuat akun anak"),
+  });
+
+  return (
+    <Card>
+      <CardContent className="p-5 space-y-4">
+        <h3 className="font-bold text-primary">Tambah Akun COA Anak</h3>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Akun Induk</label>
+            <Select value={parentId} onChange={(event) => setParentId(event.target.value)}>
+              {headers.map((account) => <option key={account.id} value={account.id}>{account.code} — {account.name}</option>)}
+            </Select>
+          </div>
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Kode Akun</label>
+            <Input value={code} placeholder="Contoh: 610501" maxLength={12}
+              onChange={(event) => setCode(event.target.value.replace(/\D/g, ""))} />
+          </div>
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Nama Akun</label>
+            <Input value={name} placeholder="Contoh: Beban ATK Cabang"
+              onChange={(event) => setName(event.target.value)} />
+          </div>
+        </div>
+        <p className="text-xs text-secondary">Jenis akun dan saldo normal otomatis mengikuti akun induk.</p>
+        <div className="flex justify-end gap-2">
+          <Button intent="outline" onClick={onClose}>Batal</Button>
+          <Button onClick={() => mutation.mutate()} isLoading={mutation.isPending} disabled={!parentId || !code || !name}>Simpan</Button>
+        </div>
+      </CardContent>
+    </Card>
   );
 }
 

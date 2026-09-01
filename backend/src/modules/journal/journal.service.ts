@@ -16,11 +16,11 @@ export class JournalService {
     private readonly autoJournalService: AutoJournalService,
   ) {}
 
-  async getJournals(lembagaId: string, page: number, limit: number, search?: string) {
+  async getJournals(lembagaId: string | null, page: number, limit: number, search?: string) {
     return this.journalRepository.findMany(lembagaId, page, limit, search);
   }
 
-  async getJournalById(id: string, lembagaId: string) {
+  async getJournalById(id: string, lembagaId: string | null) {
     const journal = await this.journalRepository.findById(id, lembagaId);
     if (!journal) {
       throw new NotFoundException("Jurnal tidak ditemukan");
@@ -81,11 +81,15 @@ export class JournalService {
     }
     
     const journalDate = new Date(data.journalDate);
-    const journalNo = await this.prisma.$transaction((tx) => 
-      this.autoJournalService.generateJournalNo(tx, lembagaId, journalDate)
+    const book = await this.prisma.accountingBook.findUnique({ where: { lembagaId } });
+    if (!book) {
+      throw new AppError("ACCOUNTING_BOOK_NOT_FOUND", "Buku akuntansi lembaga belum tersedia", 500);
+    }
+    const journalNo = await this.prisma.$transaction((tx) =>
+      this.autoJournalService.generateJournalNo(tx, book.id, journalDate)
     );
 
-    const journal = await this.journalRepository.createJournal(lembagaId, journalNo, data, userId);
+    const journal = await this.journalRepository.createJournal(book.id, lembagaId, journalNo, data, userId);
 
     await this.auditService.log({
       userId,

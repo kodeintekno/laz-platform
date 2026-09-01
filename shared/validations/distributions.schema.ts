@@ -3,6 +3,7 @@ import { INDONESIA_PHONE_REGEX } from "./donations.schema";
 
 export const distributionSchema = z.object({
   programId: z.string().min(1, "Program tidak valid"),
+  fundSource: z.enum(["MUSTAHIQ", "AMIL"], { message: "Sumber saldo tidak valid" }),
   amount: z.coerce.number().min(1000, "Nominal minimal Rp 1.000"),
   title: z.string().min(5, "Judul minimal 5 karakter").max(100, "Judul maksimal 100 karakter"),
   description: z.string().min(10, "Deskripsi minimal 10 karakter"),
