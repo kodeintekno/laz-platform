@@ -4,6 +4,7 @@ import { api } from "@/lib/api-client";
 import { Badge, Button, Textarea, EmptyState } from "@/components/ui";
 import { FileUpload } from "@/components/ui/FileUpload";
 import { toast } from "@/stores/toast.store";
+import { Download, Loader2 } from "lucide-react";
 
 const STATUS_META: Record<string, { label: string; intent: "success" | "warning" | "destructive" }> = {
   APPROVED: { label: "Sedang Diikuti", intent: "success" },
@@ -13,6 +14,83 @@ const STATUS_META: Record<string, { label: string; intent: "success" | "warning"
 const fmtDate = (d: string) =>
   new Intl.DateTimeFormat("id-ID", { dateStyle: "medium" }).format(new Date(d));
 
+// ── Surat Tugas Download Button ──────────────────────────────────────────────
+function DownloadSuratTugasButton({ applicationId }: { applicationId: string }) {
+  const [loading, setLoading] = useState(false);
+
+  const handleDownload = async () => {
+    setLoading(true);
+    try {
+      // 1. Fetch data dari backend
+      const result = await api.get<any>(
+        `/volunteers/applications/${applicationId}/assignment-letter-data`,
+      );
+      const app = result?.data ?? result;
+
+      // 2. Lazy-import react-pdf (code splitting — tidak dimuat saat halaman dibuka)
+      const [{ pdf }, { SuratTugasPdf }] = await Promise.all([
+        import("@react-pdf/renderer"),
+        import("@/lib/pdf/SuratTugas"),
+      ]);
+
+      // 3. Generate PDF blob
+      const blob = await pdf(
+        <SuratTugasPdf
+          applicationId={applicationId}
+          volunteerName={app.volunteer?.name ?? ""}
+          volunteerPhone={app.volunteer?.phone}
+          volunteerEmail={app.volunteer?.email}
+          volunteerAddress={app.volunteer?.addressDomicile}
+          activityTitle={app.activity?.title ?? ""}
+          activityLocation={app.activity?.location}
+          activityDate={app.activity?.activityDate}
+          lembagaName={app.lembaga?.name ?? ""}
+          lembagaLogo={app.lembaga?.logoUrl}
+          lembagaAddress={app.lembaga?.address}
+          picName={app.lembaga?.picName}
+          picPhone={app.lembaga?.picPhone}
+          approvedAt={app.reviewedAt}
+        />,
+      ).toBlob();
+
+      // 4. Trigger download
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `Surat-Tugas-Relawan-${applicationId.slice(-6).toUpperCase()}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+
+      toast.success("Surat tugas berhasil diunduh!");
+    } catch (err: any) {
+      console.error(err);
+      toast.error(err?.message ?? "Gagal membuat surat tugas. Silakan coba lagi.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <button
+      type="button"
+      onClick={handleDownload}
+      disabled={loading}
+      className="inline-flex items-center gap-1.5 text-xs font-semibold text-brand-primary hover:text-brand-primary/80 disabled:opacity-60 disabled:cursor-not-allowed transition-colors group"
+      title="Unduh Surat Tugas (PDF)"
+    >
+      {loading ? (
+        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+      ) : (
+        <Download className="w-3.5 h-3.5 group-hover:scale-110 transition-transform" />
+      )}
+      {loading ? "Membuat PDF..." : "Unduh Surat Tugas"}
+    </button>
+  );
+}
+
+// ── Report Form ──────────────────────────────────────────────────────────────
 function ReportForm({ applicationId, onSubmitted }: { applicationId: string; onSubmitted: () => void }) {
   const [reportText, setReportText] = useState("");
   const [fileUrl, setFileUrl] = useState("");
@@ -73,6 +151,7 @@ function ReportForm({ applicationId, onSubmitted }: { applicationId: string; onS
   );
 }
 
+// ── Main Page ────────────────────────────────────────────────────────────────
 export function VolunteerMyActivitiesPage() {
   const queryClient = useQueryClient();
 
@@ -102,8 +181,8 @@ export function VolunteerMyActivitiesPage() {
             const meta = STATUS_META[app.status] ?? { label: app.status, intent: "warning" as const };
             return (
               <div key={app.id} className="bg-surface rounded-2xl border border-border/40 p-5">
-                <div className="flex items-center justify-between gap-4">
-                  <div>
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex-1 min-w-0">
                     <p className="font-bold text-primary">{app.activity?.title}</p>
                     <p className="text-xs text-secondary">
                       {app.lembaga?.name}
@@ -113,7 +192,13 @@ export function VolunteerMyActivitiesPage() {
                       <p className="text-xs text-secondary">🗓️ {fmtDate(app.activity.activityDate)}</p>
                     )}
                   </div>
-                  <Badge intent={meta.intent}>{meta.label}</Badge>
+                  <div className="flex flex-col items-end gap-2 shrink-0">
+                    <Badge intent={meta.intent}>{meta.label}</Badge>
+                    {/* Tombol Surat Tugas — hanya tampil saat APPROVED */}
+                    {app.status === "APPROVED" && (
+                      <DownloadSuratTugasButton applicationId={app.id} />
+                    )}
+                  </div>
                 </div>
 
                 {app.status === "APPROVED" && (
