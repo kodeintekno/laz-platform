@@ -1,7 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { useSearchParams } from "react-router-dom";
 import { api } from "@/lib/api-client";
-import { useAuth } from "@/auth/AuthProvider";
 import { usePermission } from "@/hooks/usePermission";
 import { PERMISSIONS } from "@shared/constants/permissions";
 import { ProgramTable } from "@/features/programs/components/ProgramTable";
@@ -19,10 +18,9 @@ const STATUS_TABS = [
 ] as const;
 
 export function ProgramsListPage() {
-  const { user } = useAuth();
   const { can } = usePermission();
   const [searchParams, setSearchParams] = useSearchParams();
-  const isSuperAdmin = user?.roleName === "SUPER_ADMIN";
+  const hasPlatformFinanceAccess = can(PERMISSIONS.PLATFORM_FINANCE_READ);
 
   const page = Number(searchParams.get("page") ?? 1);
   const limit = Number(searchParams.get("limit") ?? 10);
@@ -46,7 +44,7 @@ export function ProgramsListPage() {
   const { data: lembagasResult } = useQuery({
     queryKey: ["lembaga", "options"],
     queryFn: () => api.get<any>("/lembaga/options"),
-    enabled: isSuperAdmin,
+    enabled: hasPlatformFinanceAccess,
   });
 
   const programs = (result?.data ?? []).map((p: any) => ({
@@ -66,7 +64,7 @@ export function ProgramsListPage() {
         title="Program Management"
         description="Kelola semua program kampanye zakat dan Infak/Sedekah."
         action={
-          can(PERMISSIONS.PROGRAMS_CREATE) && !isSuperAdmin ? (
+          can(PERMISSIONS.PROGRAMS_CREATE) && !hasPlatformFinanceAccess ? (
             <Link to="/dashboard/programs/new">
               <Button intent="primary">Buat Program</Button>
             </Link>
@@ -94,7 +92,7 @@ export function ProgramsListPage() {
         searchValue={search}
         searchPlaceholder="Cari judul atau deskripsi..."
         filterSlot={
-          isSuperAdmin && lembagasResult?.data?.length ? (
+          hasPlatformFinanceAccess && lembagasResult?.data?.length ? (
             <UserLembagaFilter lembagas={lembagasResult.data} />
           ) : undefined
         }

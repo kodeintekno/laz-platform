@@ -13,8 +13,12 @@ import {
 } from "@/components/ui";
 import { toast } from "@/stores/toast.store";
 import { formatCurrency } from "@/lib/utils";
+import { usePermission } from "@/hooks/usePermission";
+import { PERMISSIONS } from "@shared/constants/permissions";
 
 export function AdminWithdrawalPage() {
+  const { can } = usePermission();
+  const canManageWithdrawals = can(PERMISSIONS.WITHDRAWALS_MANAGE);
   const [page, setPage] = useState(1);
   const [statusFilter, setStatusFilter] = useState<string>("PENDING");
   const [selectedWithdrawal, setSelectedWithdrawal] = useState<Withdrawal | null>(null);
@@ -174,7 +178,7 @@ export function AdminWithdrawalPage() {
                       </td>
                       <td className="px-4 py-3">{getStatusBadge(w.status)}</td>
                       <td className="px-4 py-3 text-right">
-                        {w.status === "PENDING" && (
+                        {w.status === "PENDING" && canManageWithdrawals && (
                           <div className="flex justify-end gap-2">
                             <Button
                               size="sm"
@@ -201,7 +205,7 @@ export function AdminWithdrawalPage() {
                             </Button>
                           </div>
                         )}
-                        {w.status !== "PENDING" && (
+                        {(w.status !== "PENDING" || !canManageWithdrawals) && (
                           <div className="flex justify-end gap-2">
                             <Button
                               size="sm"
@@ -210,7 +214,7 @@ export function AdminWithdrawalPage() {
                             >
                               Detail
                             </Button>
-                            {w.status === "APPROVED" && (
+                            {w.status === "APPROVED" && canManageWithdrawals && (
                               <Button
                                 size="sm"
                                 intent="outline"

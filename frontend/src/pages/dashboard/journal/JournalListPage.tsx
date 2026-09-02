@@ -1,7 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { useSearchParams, Link } from "react-router-dom";
 import { api } from "@/lib/api-client";
-import { useAuth } from "@/auth/AuthProvider";
 import { usePermission } from "@/hooks/usePermission";
 import { PERMISSIONS } from "@shared/constants/permissions";
 import { JournalTable } from "@/features/journal/components/JournalTable";
@@ -11,21 +10,20 @@ import { UserLembagaFilter } from "@/features/users/components/UserLembagaFilter
 import { Plus } from "lucide-react";
 
 export function JournalListPage() {
-  const { user } = useAuth();
   const { can } = usePermission();
   const [searchParams] = useSearchParams();
-  const isSuperAdmin = user?.roleName === "SUPER_ADMIN";
+  const hasPlatformFinanceAccess = can(PERMISSIONS.PLATFORM_FINANCE_READ);
 
   const page = Number(searchParams.get("page") ?? 1);
   const limit = Number(searchParams.get("limit") ?? 10);
   const search = searchParams.get("search") ?? undefined;
   const lembagaId = searchParams.get("lembagaId") ?? undefined;
-  const isPlatformBook = isSuperAdmin && searchParams.get("scope") === "platform";
+  const isPlatformBook = hasPlatformFinanceAccess && searchParams.get("scope") === "platform";
 
   const params = isPlatformBook
     ? { page, limit, search, scope: "platform" }
-    : isSuperAdmin && lembagaId ? { page, limit, search, lembagaId } : { page, limit, search };
-  const enabled = isSuperAdmin ? isPlatformBook || !!lembagaId : true;
+    : hasPlatformFinanceAccess && lembagaId ? { page, limit, search, lembagaId } : { page, limit, search };
+  const enabled = hasPlatformFinanceAccess ? isPlatformBook || !!lembagaId : true;
 
   const { data: result, isLoading } = useQuery({
     queryKey: ["journal", { page, limit, search, lembagaId, isPlatformBook }],
@@ -36,7 +34,7 @@ export function JournalListPage() {
   const { data: lembagasResult } = useQuery({
     queryKey: ["lembaga", "options"],
     queryFn: () => api.get<any>("/lembaga/options"),
-    enabled: isSuperAdmin,
+    enabled: hasPlatformFinanceAccess,
   });
 
   const pagination = result?.meta
@@ -49,8 +47,8 @@ export function JournalListPage() {
         title="Jurnal Umum"
         description="Pencatatan transaksi akuntansi double-entry."
         action={
-          can(PERMISSIONS.JOURNAL_CREATE) && (!isSuperAdmin || (lembagaId && !isPlatformBook)) ? (
-            <Link to={isSuperAdmin ? `/dashboard/journal/new?lembagaId=${lembagaId}` : "/dashboard/journal/new"}>
+          can(PERMISSIONS.JOURNAL_CREATE) && (!hasPlatformFinanceAccess || (lembagaId && !isPlatformBook)) ? (
+            <Link to={hasPlatformFinanceAccess ? `/dashboard/journal/new?lembagaId=${lembagaId}` : "/dashboard/journal/new"}>
               <Button intent="primary">
                 <Plus className="w-4 h-4 mr-2" />
                 Buat Draft Jurnal
@@ -64,13 +62,13 @@ export function JournalListPage() {
         searchValue={search}
         searchPlaceholder="Cari nomor jurnal atau deskripsi..."
         filterSlot={
-          isSuperAdmin && lembagasResult?.data?.length ? (
+          hasPlatformFinanceAccess && lembagasResult?.data?.length ? (
             <UserLembagaFilter lembagas={lembagasResult.data} includePlatform />
           ) : undefined
         }
       />
 
-      {isSuperAdmin && !lembagaId && !isPlatformBook ? (
+      {hasPlatformFinanceAccess && !lembagaId && !isPlatformBook ? (
         <div className="flex flex-col items-center justify-center py-16 text-center border border-border rounded-xl bg-surface">
           <p className="text-secondary">Pilih lembaga di atas untuk melihat daftar Jurnal Umum.</p>
         </div>

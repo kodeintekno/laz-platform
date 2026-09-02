@@ -21,6 +21,7 @@ import {
 import { toast } from "@/stores/toast.store";
 import { formatCurrency } from "@/lib/utils";
 import { ArrowDownToLine, CheckCircle2, Clock3, Landmark, Layers3, Wallet } from "lucide-react";
+import { formatIdrAmountInput } from "../utils/amount";
 
 export function LembagaWithdrawalPage() {
   const [page] = useState(1);
@@ -312,7 +313,7 @@ export function LembagaWithdrawalPage() {
                 type="text"
                 placeholder="Rp 0"
                 value={amount ? formatCurrency(parseInt(amount)) : ""}
-                onChange={(event) => setAmount(event.target.value.replace(/\D/g, ""))}
+                onChange={(event) => setAmount(formatIdrAmountInput(event.target.value))}
                 disabled={!isBankConfigured || !selectedProgram || selectedProgramBalance <= 0 || createWithdrawal.isPending}
               />
               {selectedProgram && (
@@ -320,7 +321,7 @@ export function LembagaWithdrawalPage() {
                   <button
                     type="button"
                     className="text-xs font-semibold text-emerald-700 hover:text-emerald-800"
-                    onClick={() => setAmount(String(Math.floor(selectedProgramBalance)))}
+                    onClick={() => setAmount(formatIdrAmountInput(Math.floor(selectedProgramBalance)))}
                   >
                     Tarik seluruh saldo
                   </button>

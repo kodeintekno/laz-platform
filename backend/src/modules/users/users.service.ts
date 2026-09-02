@@ -9,6 +9,7 @@ import type {
   CreateUserInput,
   UpdateUserInput,
 } from "../../../../shared/validations/users.schema";
+import { isPlatformRoleName } from "../../../../shared/lib/roles";
 
 /**
  * Users Service — orchestrates user management business logic,
@@ -28,7 +29,7 @@ export class UsersService {
   async getRoles(isSuperAdmin: boolean = false) {
     const roles = await this.usersRepository.findRoles();
     if (!isSuperAdmin) {
-      return roles.filter((role) => role.name !== "SUPER_ADMIN");
+      return roles.filter((role) => !isPlatformRoleName(role.name));
     }
     return roles;
   }
@@ -62,13 +63,13 @@ export class UsersService {
       throw new AppError("ROLE_NOT_FOUND", "Role tidak ditemukan.", 404);
     }
     
-    if (targetRole.name === "SUPER_ADMIN" && !isSuperAdmin) {
-      throw new ForbiddenException("Hanya Super Admin yang dapat membuat Super Admin baru.");
+    if (isPlatformRoleName(targetRole.name) && !isSuperAdmin) {
+      throw new ForbiddenException("Hanya Super Admin yang dapat membuat user platform baru.");
     }
 
     let targetLembagaId: string | null | undefined = isSuperAdmin ? input.lembagaId : (adminLembagaId || input.lembagaId);
     
-    if (targetRole.name === "SUPER_ADMIN") {
+    if (isPlatformRoleName(targetRole.name)) {
       targetLembagaId = null;
     } else {
       if (!targetLembagaId) {
@@ -160,8 +161,8 @@ export class UsersService {
       throw new AppError("ROLE_NOT_FOUND", "Role tidak ditemukan.", 404);
     }
     
-    if (targetRole.name === "SUPER_ADMIN" && !isSuperAdmin) {
-      throw new ForbiddenException("Hanya Super Admin yang dapat menunjuk role Super Admin.");
+    if (isPlatformRoleName(targetRole.name) && !isSuperAdmin) {
+      throw new ForbiddenException("Hanya Super Admin yang dapat menunjuk role platform.");
     }
 
     const updateData: any = {
@@ -172,7 +173,7 @@ export class UsersService {
     };
 
     if (isSuperAdmin) {
-      if (targetRole.name === "SUPER_ADMIN") {
+      if (isPlatformRoleName(targetRole.name)) {
         updateData.lembagaId = null;
       } else {
         updateData.lembagaId = input.lembagaId || existingUser.lembagaId;
@@ -300,8 +301,8 @@ export class UsersService {
       throw new AppError("ROLE_NOT_FOUND", "Role tidak ditemukan.", 404);
     }
     
-    if (targetRole.name === "SUPER_ADMIN" && !isSuperAdmin) {
-      throw new ForbiddenException("Hanya Super Admin yang dapat menunjuk role Super Admin.");
+    if (isPlatformRoleName(targetRole.name) && !isSuperAdmin) {
+      throw new ForbiddenException("Hanya Super Admin yang dapat menunjuk role platform.");
     }
 
     if (user.roleId === newRoleId) {

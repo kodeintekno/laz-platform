@@ -3,7 +3,6 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useParams, Link, useNavigate, useSearchParams } from "react-router-dom";
 import { api } from "@/lib/api-client";
 import { formatDate } from "@/lib/utils";
-import { useAuth } from "@/auth/AuthProvider";
 import { usePermission } from "@/hooks/usePermission";
 import { PERMISSIONS } from "@shared/constants/permissions";
 import { voidJournalAction } from "@/features/journal/actions/journal.actions";
@@ -16,18 +15,17 @@ import { Edit, CheckCircle2, Ban } from "lucide-react";
 export function JournalDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { user } = useAuth();
   const { can } = usePermission();
   const [searchParams] = useSearchParams();
   const queryClient = useQueryClient();
-  const isSuperAdmin = user?.roleName === "SUPER_ADMIN";
+  const hasPlatformFinanceAccess = can(PERMISSIONS.PLATFORM_FINANCE_READ);
   const lembagaId = searchParams.get("lembagaId") ?? undefined;
-  const isPlatformBook = isSuperAdmin && searchParams.get("scope") === "platform";
+  const isPlatformBook = hasPlatformFinanceAccess && searchParams.get("scope") === "platform";
 
   const [isPending, startTransition] = useTransition();
   const [isVoidModalOpen, setIsVoidModalOpen] = useState(false);
 
-  const params = isPlatformBook ? { scope: "platform" } : isSuperAdmin && lembagaId ? { lembagaId } : undefined;
+  const params = isPlatformBook ? { scope: "platform" } : hasPlatformFinanceAccess && lembagaId ? { lembagaId } : undefined;
 
   const { data: result, isLoading } = useQuery({
     queryKey: ["journal", id, { lembagaId, isPlatformBook }],

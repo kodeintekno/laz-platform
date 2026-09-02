@@ -42,6 +42,7 @@ export const PERMISSIONS = {
   // ── Reports ──────────────────────────────────────────────────────
   REPORTS_READ: "reports.read",
   REPORTS_FINANCIAL: "reports.financial",
+  PLATFORM_FINANCE_READ: "platform_finance.read",
 
   // ── RBAC Management ──────────────────────────────────────────────
   ROLES_READ: "roles.read",
@@ -61,11 +62,14 @@ export const PERMISSIONS = {
 
   // ── Withdrawal Management ──────────────────────────────────────────
   WITHDRAWALS_READ: "withdrawals.read",
+  WITHDRAWALS_READ_ALL: "withdrawals.read_all",
   WITHDRAWALS_CREATE: "withdrawals.create",
   WITHDRAWALS_MANAGE: "withdrawals.manage",
+  PLATFORM_WITHDRAWALS_CREATE: "platform_withdrawals.create",
 
   // ── Accounting (COA) ─────────────────────────────────────────────────
   COA_READ: "coa.read",
+  COA_MANAGE: "coa.manage",
 
   // ── Journal ────────────────────────────────────────────────────────
   JOURNAL_READ: "journal.read",

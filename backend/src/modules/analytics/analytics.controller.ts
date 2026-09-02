@@ -1,7 +1,9 @@
-import { Controller, ForbiddenException, Get, Query } from "@nestjs/common";
+import { Controller, Get, Query } from "@nestjs/common";
 import { AnalyticsService } from "./analytics.service";
 import { CurrentUser } from "../../common/decorators/current-user.decorator";
+import { RequirePermission } from "../../common/decorators/require-permission.decorator";
 import { resolveLembagaScope } from "../../common/utils/lembaga-scope";
+import { PERMISSIONS } from "../../../../shared/constants/permissions";
 import type { RBACSessionUser } from "../../../../shared/types/rbac";
 
 @Controller("api/dashboard")
@@ -15,15 +17,12 @@ export class AnalyticsController {
   }
 
   /**
-   * Statistik platform lintas-tenant — SUPER_ADMIN only. Dicek eksplisit via
-   * roleName (bukan permission key) supaya tidak bocor ke LEMBAGA_ADMIN yang
-   * juga punya reports.read/donations.read untuk laporan tenant sendiri.
+   * Statistik keuangan platform lintas-tenant. Permission khusus mencegah
+   * laporan agregat ini bocor ke LEMBAGA_ADMIN.
    */
   @Get("platform-overview")
-  async platformOverview(@CurrentUser() user: RBACSessionUser) {
-    if (user.roleName !== "SUPER_ADMIN") {
-      throw new ForbiddenException("Akses ditolak");
-    }
+  @RequirePermission(PERMISSIONS.PLATFORM_FINANCE_READ)
+  async platformOverview() {
     return this.analyticsService.getPlatformOverview();
   }
 }

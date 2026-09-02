@@ -1,24 +1,25 @@
 import { useQuery } from "@tanstack/react-query";
 import { useSearchParams } from "react-router-dom";
 import { api } from "@/lib/api-client";
-import { useAuth } from "@/auth/AuthProvider";
 import { ReportSummaryCards } from "@/features/reports/components/ReportSummaryCards";
 import { DonationTrendChart } from "@/features/reports/components/DonationTrendChart";
 import { ProgramPerformanceList } from "@/features/reports/components/ProgramPerformanceList";
 import { UserLembagaFilter } from "@/features/users/components/UserLembagaFilter";
 import { PageHeader } from "@/components/ui";
 import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
+import { usePermission } from "@/hooks/usePermission";
+import { PERMISSIONS } from "@shared/constants/permissions";
 
 export function ReportsPage() {
-  const { user } = useAuth();
+  const { can } = usePermission();
   const [searchParams] = useSearchParams();
-  const isSuperAdmin = user?.roleName === "SUPER_ADMIN";
+  const hasPlatformFinanceAccess = can(PERMISSIONS.PLATFORM_FINANCE_READ);
   const lembagaId = searchParams.get("lembagaId") ?? undefined;
 
   const { data: lembagasResult } = useQuery({
     queryKey: ["lembaga", "options"],
     queryFn: () => api.get<any>("/lembaga/options"),
-    enabled: isSuperAdmin,
+    enabled: hasPlatformFinanceAccess,
   });
 
   const { data: statsResult, isLoading: statsLoading } = useQuery({
@@ -46,7 +47,7 @@ export function ReportsPage() {
         title="Dasbor Analitik & Kinerja"
         description="Pantau tren donasi, penyaluran dana, dan performa program secara real-time."
         action={
-          isSuperAdmin && lembagasResult?.data?.length ? (
+          hasPlatformFinanceAccess && lembagasResult?.data?.length ? (
             <div className="w-64">
               <UserLembagaFilter lembagas={lembagasResult.data} />
             </div>

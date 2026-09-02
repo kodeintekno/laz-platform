@@ -2,7 +2,6 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useSearchParams } from "react-router-dom";
 import { api } from "@/lib/api-client";
-import { useAuth } from "@/auth/AuthProvider";
 import { usePermission } from "@/hooks/usePermission";
 import { PERMISSIONS } from "@shared/constants/permissions";
 import { DistributionTable } from "@/features/distributions/components/DistributionTable";
@@ -13,10 +12,9 @@ import { UserLembagaFilter } from "@/features/users/components/UserLembagaFilter
 import { HandCoins, CircleDollarSign } from "lucide-react";
 
 export function DistributionsListPage() {
-  const { user } = useAuth();
   const { can } = usePermission();
   const [searchParams] = useSearchParams();
-  const isSuperAdmin = user?.roleName === "SUPER_ADMIN";
+  const hasPlatformFinanceAccess = can(PERMISSIONS.PLATFORM_FINANCE_READ);
   const [isSelectProgramModalOpen, setIsSelectProgramModalOpen] = useState(false);
 
   const page = Number(searchParams.get("page") ?? 1);
@@ -32,13 +30,13 @@ export function DistributionsListPage() {
   const { data: lembagasResult } = useQuery({
     queryKey: ["lembaga", "options"],
     queryFn: () => api.get<any>("/lembaga/options"),
-    enabled: isSuperAdmin,
+    enabled: hasPlatformFinanceAccess,
   });
 
   const { data: overviewResult, isLoading: isBalanceLoading } = useQuery({
     queryKey: ["dashboard", "overview"],
     queryFn: () => api.get<any>("/dashboard/overview"),
-    enabled: !isSuperAdmin,
+    enabled: !hasPlatformFinanceAccess,
   });
 
   const metrics = overviewResult?.data?.metrics;
@@ -58,7 +56,7 @@ export function DistributionsListPage() {
         title="Manajemen Penyaluran Dana"
         description="Daftar pengajuan penyaluran dana dari berbagai program kampanye."
         action={
-          can(PERMISSIONS.DISTRIBUTIONS_MANAGE) && !isSuperAdmin ? (
+          can(PERMISSIONS.DISTRIBUTIONS_MANAGE) && !hasPlatformFinanceAccess ? (
             <Button
               intent="primary"
               onClick={() => setIsSelectProgramModalOpen(true)}
@@ -69,7 +67,7 @@ export function DistributionsListPage() {
         }
       />
 
-      {!isSuperAdmin && (
+      {!hasPlatformFinanceAccess && (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           {[
             {
@@ -107,7 +105,7 @@ export function DistributionsListPage() {
         searchValue={search}
         searchPlaceholder="Cari rincian penyaluran atau nama program..."
         filterSlot={
-          isSuperAdmin && lembagasResult?.data?.length ? (
+          hasPlatformFinanceAccess && lembagasResult?.data?.length ? (
             <UserLembagaFilter lembagas={lembagasResult.data} />
           ) : undefined
         }

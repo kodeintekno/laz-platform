@@ -17,13 +17,18 @@ The platform supports multiple organizations (multi-tenant architecture), role-b
 - Review, approve, or reject Lembaga (organization) registrations
 - Manage roles and permissions across the platform
 
+### FINANCE_PLATFORM
+- Platform-wide finance access (`lembagaId: null`)
+- View finance and accounting data across all Lembaga
+- Configure the Platform payout account and submit withdrawal requests for the Platform's amil share
+
 ### LEMBAGA_ADMIN
 - Manage donation programs for their own Lembaga
 - Manage donations, payments, and distributions
 - Review and verify Volunteer applications for their activities
 - View operational and financial reports
 
-> `SUPER_ADMIN` and `LEMBAGA_ADMIN` are the only two roles in the RBAC table. There is no `DONATUR`/`FINANCE`/`RELAWAN` role — donors and volunteers are separate principals, not `User`/RBAC accounts.
+> `SUPER_ADMIN`, `FINANCE_PLATFORM`, and `LEMBAGA_ADMIN` are the RBAC roles. Donors and volunteers remain separate principals, not `User`/RBAC accounts.
 
 ### Volunteer (Relawan)
 - Self-service registration, a distinct principal from `User`/RBAC, authenticated via its own session
@@ -133,6 +138,8 @@ CLOUDINARY_API_SECRET="<YOUR_API_SECRET>"
 # Seed admin credentials (development only)
 SEED_ADMIN_EMAIL="admin-dev@laz.id"
 SEED_ADMIN_PASSWORD="DevAdmin@123"
+SEED_FINANCE_EMAIL="finance@ruangberbagi.id"
+SEED_FINANCE_PASSWORD="Finance@123456"
 
 # Optional
 LOG_LEVEL="debug"
@@ -212,6 +219,13 @@ Email    : admin@ruangberbagi.id  (or SEED_ADMIN_EMAIL if set)
 Password : Admin@123456           (or SEED_ADMIN_PASSWORD if set)
 ```
 
+## Finance Platform
+
+```text
+Email    : finance@ruangberbagi.id  (or SEED_FINANCE_EMAIL if set)
+Password : Finance@123456           (or SEED_FINANCE_PASSWORD if set)
+```
+
 ## Default Organization (Lembaga) — APPROVED
 
 ```text
@@ -269,7 +283,7 @@ laz-platform/
 ## Completed
 
 - Session-based Authentication & CSRF protection
-- Authorization (RBAC: SUPER_ADMIN / LEMBAGA_ADMIN)
+- Authorization (RBAC: SUPER_ADMIN / FINANCE_PLATFORM / LEMBAGA_ADMIN)
 - Lembaga self-service registration & approval workflow
 - Program Management
 - Donation Management (guest checkout)

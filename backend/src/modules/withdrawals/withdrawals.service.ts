@@ -309,9 +309,7 @@ export class WithdrawalsService {
   }
 
   async updatePlatformBankAccount(userId: string, input: { bankCode: string; accountNumber: string; accountHolder: string }) {
-    if (!input.bankCode?.trim() || !input.accountNumber?.trim() || !input.accountHolder?.trim()) {
-      throw new AppError("INVALID_BANK_ACCOUNT", "Data rekening Bank Platform wajib lengkap.", 400);
-    }
+    this.validateBankAccount(input);
     const balance = await this.prisma.platformBalance.upsert({
       where: { id: "platform" },
       update: {

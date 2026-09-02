@@ -1,16 +1,17 @@
 import { useQuery } from "@tanstack/react-query";
 import { useSearchParams } from "react-router-dom";
 import { api } from "@/lib/api-client";
-import { useAuth } from "@/auth/AuthProvider";
 import { DonationTable } from "@/features/donations/components/DonationTable";
 import { PageHeader, TableSkeleton } from "@/components/ui";
 import { DataTableToolbar } from "@/components/ui/data-table";
 import { UserLembagaFilter } from "@/features/users/components/UserLembagaFilter";
+import { usePermission } from "@/hooks/usePermission";
+import { PERMISSIONS } from "@shared/constants/permissions";
 
 export function DonationsListPage() {
-  const { user } = useAuth();
+  const { can } = usePermission();
   const [searchParams] = useSearchParams();
-  const isSuperAdmin = user?.roleName === "SUPER_ADMIN";
+  const hasPlatformFinanceAccess = can(PERMISSIONS.PLATFORM_FINANCE_READ);
 
   const page = Number(searchParams.get("page") ?? 1);
   const limit = Number(searchParams.get("limit") ?? 10);
@@ -25,7 +26,7 @@ export function DonationsListPage() {
   const { data: lembagasResult } = useQuery({
     queryKey: ["lembaga", "options"],
     queryFn: () => api.get<any>("/lembaga/options"),
-    enabled: isSuperAdmin,
+    enabled: hasPlatformFinanceAccess,
   });
 
   const donations = (result?.data ?? []).map((d: any) => ({
@@ -49,7 +50,7 @@ export function DonationsListPage() {
         searchValue={search}
         searchPlaceholder="Cari donatur atau program..."
         filterSlot={
-          isSuperAdmin && lembagasResult?.data?.length ? (
+          hasPlatformFinanceAccess && lembagasResult?.data?.length ? (
             <UserLembagaFilter lembagas={lembagasResult.data} />
           ) : undefined
         }

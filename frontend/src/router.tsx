@@ -67,7 +67,7 @@ import { JournalDetailPage } from "@/pages/dashboard/journal/JournalDetailPage";
 import { LedgerPage } from "@/pages/dashboard/ledger/LedgerPage";
 import { LembagaWithdrawalPage } from "@/features/withdrawals/pages/LembagaWithdrawalPage";
 import { AdminWithdrawalPage } from "@/features/withdrawals/pages/AdminWithdrawalPage";
-import { AdminFinanceOverviewPage } from "@/pages/dashboard/finance/AdminFinanceOverviewPage";
+import { PlatformWithdrawalPage } from "@/features/withdrawals/pages/PlatformWithdrawalPage";
 import { FinanceOverviewPage } from "@/pages/dashboard/finance/FinanceOverviewPage";
 import { PayoutsListPage } from "@/pages/dashboard/finance/PayoutsListPage";
 import { LembagaFinanceOverviewPage } from "@/pages/dashboard/lembaga/finance/LembagaFinanceOverviewPage";
@@ -128,7 +128,7 @@ export const router = createBrowserRouter([
           { path: "/volunteer/profile", element: <VolunteerProfilePage /> },
         ],
       },
-      // Protected dashboard routes (staff: SUPER_ADMIN / LEMBAGA_ADMIN)
+      // Protected dashboard routes (staff: SUPER_ADMIN / FINANCE_PLATFORM / LEMBAGA_ADMIN)
       {
         path: "/dashboard",
         element: (
@@ -269,8 +269,16 @@ export const router = createBrowserRouter([
           {
             path: "withdrawals",
             element: (
-              <RequirePermission permission={PERMISSIONS.WITHDRAWALS_MANAGE as any}>
+              <RequirePermission permission={PERMISSIONS.WITHDRAWALS_READ_ALL}>
                 <AdminWithdrawalPage />
+              </RequirePermission>
+            ),
+          },
+          {
+            path: "withdrawals/platform",
+            element: (
+              <RequirePermission permission={PERMISSIONS.PLATFORM_WITHDRAWALS_CREATE}>
+                <PlatformWithdrawalPage />
               </RequirePermission>
             ),
           },
@@ -286,7 +294,7 @@ export const router = createBrowserRouter([
           {
             path: "payouts",
             element: (
-              <RequirePermission permission={PERMISSIONS.WITHDRAWALS_MANAGE as any}>
+              <RequirePermission permission={PERMISSIONS.WITHDRAWALS_READ_ALL}>
                 <PayoutsListPage />
               </RequirePermission>
             ),

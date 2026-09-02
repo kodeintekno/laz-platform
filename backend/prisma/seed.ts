@@ -3,16 +3,17 @@
  *
  * Seeds:
  * 1. All permission rows from constants
- * 2. Final role set (SUPER_ADMIN, LEMBAGA_ADMIN)
+ * 2. Final role set (SUPER_ADMIN, FINANCE_PLATFORM, LEMBAGA_ADMIN)
  * 3. Role ↔ Permission matrix
  * 4. One SUPER_ADMIN user (lembagaId = null — platform-level)
- * 5. One APPROVED sample Lembaga + its LEMBAGA_ADMIN
- * 6. Five dummy programs/donations/distributions (dev only)
- * 7. A second APPROVED Lembaga + its LEMBAGA_ADMIN (dev only)
- * 8. One PENDING Lembaga (with dummy documents) for the approval-queue UI —
+ * 5. One FINANCE_PLATFORM user (lembagaId = null — platform finance)
+ * 6. One APPROVED sample Lembaga + its LEMBAGA_ADMIN
+ * 7. Five dummy programs/donations/distributions (dev only)
+ * 8. A second APPROVED Lembaga + its LEMBAGA_ADMIN (dev only)
+ * 9. One PENDING Lembaga (with dummy documents) for the approval-queue UI —
  *    3 lembaga in total (2 APPROVED + 1 PENDING)
- * 9. Two sample Volunteers
- * 10. Two VolunteerActivity + VolunteerApplication across the full status lifecycle
+ * 10. Two sample Volunteers
+ * 11. Two VolunteerActivity + VolunteerApplication across the full status lifecycle
  *
  * Run with: npx prisma db seed
  *
@@ -59,6 +60,7 @@ const PERMISSION_DEFINITIONS = [
   // Reports
   { key: "reports.read", description: "Melihat laporan statistik umum kinerja platform" },
   { key: "reports.financial", description: "Melihat laporan keuangan dan kas lembaga" },
+  { key: "platform_finance.read", description: "Melihat ringkasan keuangan platform dan data keuangan lintas lembaga" },
   // RBAC
   { key: "roles.read", description: "Melihat daftar tingkat peran (Role)" },
   { key: "roles.manage", description: "Mengatur hak akses dan matriks izin peran (RBAC)" },
@@ -73,10 +75,13 @@ const PERMISSION_DEFINITIONS = [
   { key: "volunteers.manage", description: "Mengelola pendaftaran relawan pada program lembaga" },
   // Withdrawals
   { key: "withdrawals.read", description: "Melihat daftar pencairan dana" },
+  { key: "withdrawals.read_all", description: "Melihat pencairan dana dan payout seluruh lembaga" },
   { key: "withdrawals.create", description: "Membuat request pencairan dana (Lembaga)" },
   { key: "withdrawals.manage", description: "Menyetujui/menolak pencairan dana (Super Admin)" },
+  { key: "platform_withdrawals.create", description: "Mengatur rekening dan membuat penarikan porsi amil Platform" },
   // Accounting
   { key: "coa.read", description: "Melihat daftar Chart of Accounts lembaga" },
+  { key: "coa.manage", description: "Mengelola Chart of Accounts lembaga" },
   { key: "journal.read", description: "Melihat daftar Jurnal Umum" },
   { key: "journal.create", description: "Membuat draft Jurnal Umum" },
   { key: "journal.post", description: "Memposting (finalisasi) Jurnal Umum" },
@@ -87,6 +92,21 @@ const PERMISSION_DEFINITIONS = [
 
 const ROLE_PERMISSIONS: Record<string, string[]> = {
   SUPER_ADMIN: PERMISSION_DEFINITIONS.map((p) => p.key), // full access
+
+  FINANCE_PLATFORM: [
+    "programs.read",
+    "donations.read",
+    "payments.read",
+    "distributions.read",
+    "reports.read",
+    "reports.financial",
+    "platform_finance.read",
+    "withdrawals.read",
+    "withdrawals.read_all",
+    "platform_withdrawals.create",
+    "coa.read",
+    "journal.read",
+  ],
 
   LEMBAGA_ADMIN: [
     "programs.read",
@@ -112,6 +132,7 @@ const ROLE_PERMISSIONS: Record<string, string[]> = {
     "withdrawals.read",
     "withdrawals.create",
     "coa.read",
+    "coa.manage",
     "journal.read",
     "journal.create",
     "journal.post",
@@ -121,6 +142,7 @@ const ROLE_PERMISSIONS: Record<string, string[]> = {
 
 const ROLE_DEFINITIONS = [
   { name: "SUPER_ADMIN", description: "Full system access" },
+  { name: "FINANCE_PLATFORM", description: "Memantau keuangan lintas lembaga dan mengajukan penarikan amil platform" },
   { name: "LEMBAGA_ADMIN", description: "Mengelola program, donasi, dan relawan lembaga sendiri" },
 ];
 
@@ -233,7 +255,34 @@ async function main() {
   });
   console.log(" ✓ Super admin created");
 
-  // 5. Seed one APPROVED sample Lembaga + its LEMBAGA_ADMIN
+  // 5. Seed FINANCE_PLATFORM user (platform-level — no lembaga)
+  const financeEmail = process.env.SEED_FINANCE_EMAIL ?? "finance@ruangberbagi.id";
+  const financePassword = process.env.SEED_FINANCE_PASSWORD ?? "Finance@123456";
+  const financePlatformRoleId = roleMap["FINANCE_PLATFORM"];
+
+  console.log(`\n💰 Seeding FINANCE_PLATFORM user (${financeEmail})...`);
+
+  const hashedFinancePassword = await bcrypt.hash(financePassword, 12);
+
+  await prisma.user.upsert({
+    where: { email: financeEmail },
+    update: {
+      roleId: financePlatformRoleId,
+      status: "ACTIVE",
+      lembagaId: null,
+    },
+    create: {
+      email: financeEmail,
+      name: "Finance Platform",
+      password: hashedFinancePassword,
+      status: "ACTIVE",
+      roleId: financePlatformRoleId,
+      lembagaId: null,
+    },
+  });
+  console.log(" ✓ Finance platform created");
+
+  // 6. Seed one APPROVED sample Lembaga + its LEMBAGA_ADMIN
   console.log("\n🏢 Seeding sample APPROVED Lembaga...");
   const lembagaAdminRoleId = roleMap["LEMBAGA_ADMIN"];
 
@@ -503,7 +552,7 @@ async function main() {
       });
     }
 
-    // Hitung total institutionAmount (87.5%) dari semua donasi PAID & update InstitutionBalance
+    // Bentuk saldo aktual dari nilai split dinamis yang tersimpan pada donasi PAID.
     const balanceAgg = await prisma.donation.aggregate({
       where: { lembagaId: approvedLembaga.id, status: "PAID" },
       _sum: { institutionAmount: true, netAmount: true, amilInstitutionAmount: true },
@@ -527,6 +576,18 @@ async function main() {
       },
     });
     console.log(` ✓ InstitutionBalance seeded: Rp ${totalInstitutionAmount.toLocaleString("id-ID")}`);
+
+    const platformBalanceAgg = await prisma.donation.aggregate({
+      where: { status: "PAID" },
+      _sum: { amilPlatformAmount: true },
+    });
+    const totalPlatformBalance = Number(platformBalanceAgg._sum.amilPlatformAmount || 0);
+    await prisma.platformBalance.upsert({
+      where: { id: "platform" },
+      update: { balance: totalPlatformBalance, reservedBalance: 0 },
+      create: { id: "platform", balance: totalPlatformBalance, reservedBalance: 0 },
+    });
+    console.log(` ✓ PlatformBalance seeded: Rp ${totalPlatformBalance.toLocaleString("id-ID")}`);
     console.log(" ✓ Dummy programs, donations, and distributions seeded");
 
     // 7. A second APPROVED Lembaga + its LEMBAGA_ADMIN (for multi-tenant demo) ─
@@ -619,7 +680,7 @@ async function main() {
         email: "relawan@ruangberbagi.id",
         password: volunteerPassword,
         phone: "081355556666",
-        address: "Jl. Sukarela No. 3, Depok",
+        addressKtp: "Jl. Sukarela No. 3, Depok",
         status: "ACTIVE",
       },
     });
@@ -632,7 +693,7 @@ async function main() {
         email: "relawan2@ruangberbagi.id",
         password: volunteerPassword,
         phone: "081377778888",
-        address: "Jl. Gotong Royong No. 7, Bogor",
+        addressKtp: "Jl. Gotong Royong No. 7, Bogor",
         status: "ACTIVE",
       },
     });

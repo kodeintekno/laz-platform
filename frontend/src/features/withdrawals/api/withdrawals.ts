@@ -47,6 +47,15 @@ export function useBankAccounts() {
   });
 }
 
+export interface PlatformBalance {
+  id: string;
+  balance: string;
+  reservedBalance: string;
+  bankCode?: string | null;
+  accountNumber?: string | null;
+  accountHolder?: string | null;
+}
+
 export function useProgramWithdrawalBalances() {
   return useQuery({
     queryKey: ["program-withdrawal-balances"],
@@ -100,6 +109,34 @@ export function useGetAllWithdrawals(status?: string, page = 1, limit = 20) {
     queryFn: async () => {
       const { data, meta } = await api.get<Withdrawal[]>("/withdrawals", { status, page, limit });
       return { data, meta };
+    },
+  });
+}
+
+export function usePlatformBalance() {
+  return useQuery({
+    queryKey: ["platform-balance"],
+    queryFn: async () => (await api.get<PlatformBalance>("/withdrawals/platform/balance")).data,
+  });
+}
+
+export function useSavePlatformBankAccount() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (data: { bankCode: string; accountNumber: string; accountHolder: string }) =>
+      (await api.patch<PlatformBalance>("/withdrawals/platform/bank", data)).data,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["platform-balance"] }),
+  });
+}
+
+export function useCreatePlatformWithdrawal() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (amount: number) =>
+      (await api.post<Withdrawal>("/withdrawals/platform", { amount })).data,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["platform-balance"] });
+      queryClient.invalidateQueries({ queryKey: ["all-withdrawals"] });
     },
   });
 }

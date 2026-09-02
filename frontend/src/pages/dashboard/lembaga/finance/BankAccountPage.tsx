@@ -9,18 +9,7 @@ import {
   useSaveBankAccount,
   type LembagaBankAccount,
 } from "@/features/withdrawals/api/withdrawals";
-
-const BANKS = [
-  ["ID_BCA", "BCA – Bank Central Asia"],
-  ["ID_MANDIRI", "MANDIRI – Bank Mandiri"],
-  ["ID_BNI", "BNI – Bank Negara Indonesia"],
-  ["ID_BRI", "BRI – Bank Rakyat Indonesia"],
-  ["ID_BSI", "BSI – Bank Syariah Indonesia"],
-  ["ID_CIMB", "CIMB – CIMB Niaga"],
-  ["ID_PERMATA", "PERMATA – Bank Permata"],
-  ["ID_DANAMON", "DANAMON – Bank Danamon"],
-  ["ID_MUAMALAT", "MUAMALAT – Bank Muamalat"],
-] as const;
+import { BANK_OPTIONS, getBankLabel } from "@/features/withdrawals/constants/banks";
 
 type FormState = {
   id?: string;
@@ -84,7 +73,9 @@ export function BankAccountPage() {
                 <label className="text-sm font-medium">Bank</label>
                 <Select value={form.bankCode} onChange={(event) => setForm({ ...form, bankCode: event.target.value })}>
                   <option value="">Pilih Bank</option>
-                  {BANKS.map(([code, label]) => <option key={code} value={code}>{label}</option>)}
+                  {BANK_OPTIONS.map((bank) => (
+                    <option key={bank.value} value={bank.value}>{bank.label}</option>
+                  ))}
                 </Select>
               </div>
               <div className="space-y-2">
@@ -170,7 +161,7 @@ export function BankAccountPage() {
                         <div className="flex items-center justify-between gap-4 border-b border-border/40 pb-3">
                           <dt className="text-secondary">Bank</dt>
                           <dd className="text-right font-semibold text-primary">
-                            {BANKS.find(([code]) => code === account.bankCode)?.[1] || account.bankCode.replace(/^ID_/, "")}
+                            {getBankLabel(account.bankCode)}
                           </dd>
                         </div>
                         <div className="flex items-center justify-between gap-4 border-b border-border/40 pb-3">

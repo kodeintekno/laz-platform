@@ -4,6 +4,7 @@ import { AuthGuard } from "../../common/guards/auth.guard";
 import { RequirePermission } from "../../common/decorators/require-permission.decorator";
 import { AppError } from "../../common/errors/app.error";
 import { Request } from "express";
+import { PERMISSIONS } from "../../../../shared/constants/permissions";
 
 @Controller("api/withdrawals")
 @UseGuards(AuthGuard)
@@ -91,23 +92,23 @@ export class WithdrawalsController {
   }
 
   // ==========================================
-  // SUPER ADMIN ENDPOINTS
+  // PLATFORM FINANCE ENDPOINTS
   // ==========================================
 
   @Post("platform")
-  @RequirePermission("withdrawals.manage")
+  @RequirePermission(PERMISSIONS.PLATFORM_WITHDRAWALS_CREATE)
   async createPlatformWithdrawal(@Req() req: Request, @Body() body: { amount: number }) {
     return this.withdrawalsService.createPlatformWithdrawal(req.user!.id, body.amount);
   }
 
   @Get("platform/balance")
-  @RequirePermission("withdrawals.manage")
+  @RequirePermission(PERMISSIONS.PLATFORM_WITHDRAWALS_CREATE)
   async getPlatformBalance() {
     return this.withdrawalsService.getPlatformBalance();
   }
 
   @Patch("platform/bank")
-  @RequirePermission("withdrawals.manage")
+  @RequirePermission(PERMISSIONS.PLATFORM_WITHDRAWALS_CREATE)
   async updatePlatformBank(
     @Req() req: Request,
     @Body() body: { bankCode: string; accountNumber: string; accountHolder: string },
@@ -116,7 +117,7 @@ export class WithdrawalsController {
   }
 
   @Get()
-  @RequirePermission("withdrawals.manage")
+  @RequirePermission(PERMISSIONS.WITHDRAWALS_READ_ALL)
   async getAllWithdrawals(
     @Query("status") status?: string,
     @Query("page") page?: string,
@@ -130,7 +131,7 @@ export class WithdrawalsController {
   }
 
   @Get("payouts")
-  @RequirePermission("withdrawals.manage")
+  @RequirePermission(PERMISSIONS.WITHDRAWALS_READ_ALL)
   async getAllPayouts(
     @Query("status") status?: string,
     @Query("page") page?: string,

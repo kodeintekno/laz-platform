@@ -46,6 +46,7 @@ export interface LedgerResponse {
 
 export interface GetLedgerParams {
   accountId: string;
+  lembagaId?: string;
   startDate?: string;
   endDate?: string;
   page?: number;
