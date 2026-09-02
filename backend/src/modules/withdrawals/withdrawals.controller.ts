@@ -16,7 +16,7 @@ export class WithdrawalsController {
 
   @Post()
   @RequirePermission("withdrawals.create")
-  async createWithdrawal(@Req() req: Request, @Body() body: { amount: number; bankAccountId: string }) {
+  async createWithdrawal(@Req() req: Request, @Body() body: { amount: number; programId: string }) {
     const user = req.user!;
     // Must be part of a lembaga to request withdrawal
     if (!user.lembagaId) {
@@ -27,8 +27,15 @@ export class WithdrawalsController {
       user.lembagaId,
       user.id,
       body.amount,
-      body.bankAccountId,
+      body.programId,
     );
+  }
+
+  @Get("program-balances")
+  @RequirePermission("withdrawals.read")
+  async listProgramBalances(@Req() req: Request) {
+    if (!req.user!.lembagaId) throw new AppError("FORBIDDEN", "User tidak memiliki Lembaga", 403);
+    return this.withdrawalsService.listProgramBalances(req.user!.lembagaId);
   }
 
   @Get("bank-accounts")

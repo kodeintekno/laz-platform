@@ -13,6 +13,21 @@ export interface Withdrawal {
   lembaga?: { name: string; slug: string };
   requestedBy?: { name: string; email: string };
   approvedBy?: { name: string; email: string };
+  program?: { id: string; title: string; slug: string } | null;
+}
+
+export interface ProgramWithdrawalBalance {
+  programId: string;
+  balance: string;
+  mustahiqBalance: string;
+  amilBalance: string;
+  reservedBalance: string;
+  program: {
+    id: string;
+    title: string;
+    slug: string;
+    status: string;
+  };
 }
 
 export interface LembagaBankAccount {
@@ -29,6 +44,15 @@ export function useBankAccounts() {
   return useQuery({
     queryKey: ["bank-accounts"],
     queryFn: async () => (await api.get<LembagaBankAccount[]>("/withdrawals/bank-accounts")).data,
+  });
+}
+
+export function useProgramWithdrawalBalances() {
+  return useQuery({
+    queryKey: ["program-withdrawal-balances"],
+    queryFn: async () => (
+      await api.get<ProgramWithdrawalBalance[]>("/withdrawals/program-balances")
+    ).data,
   });
 }
 
@@ -83,12 +107,14 @@ export function useGetAllWithdrawals(status?: string, page = 1, limit = 20) {
 export function useCreateWithdrawal() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ amount, bankAccountId }: { amount: number; bankAccountId: string }) => {
-      const { data } = await api.post("/withdrawals", { amount, bankAccountId });
+    mutationFn: async ({ amount, programId }: { amount: number; programId: string }) => {
+      const { data } = await api.post("/withdrawals", { amount, programId });
       return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["my-withdrawals"] });
+      queryClient.invalidateQueries({ queryKey: ["program-withdrawal-balances"] });
+      queryClient.invalidateQueries({ queryKey: ["lembaga-me"] });
     },
   });
 }

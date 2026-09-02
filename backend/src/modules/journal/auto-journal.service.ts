@@ -229,37 +229,50 @@ export class AutoJournalService {
   }
 
   async createWithdrawalCompletionJournal(tx: Tx, withdrawalId: string, amount: number,
-    lembagaId: string, userId: string | null, bankChartOfAccountId?: string | null) {
+    lembagaId: string, userId: string | null, bankChartOfAccountId?: string | null,
+    programId?: string | null, context?: {
+      bankCode?: string | null;
+      accountNumber?: string | null;
+      programTitle?: string | null;
+    }) {
     const [lembagaBook, platformBook] = await Promise.all([
       this.getBook(tx, "LEMBAGA", lembagaId),
       this.getBook(tx, "PLATFORM"),
     ]);
+    const reference = withdrawalId.slice(-6).toUpperCase();
+    const bankName = context?.bankCode?.replace(/^ID_/, "") || "Bank";
+    const accountSuffix = context?.accountNumber?.slice(-4);
+    const destination = `${bankName}${accountSuffix ? ` •${accountSuffix}` : ""}`;
+    const programLabel = context?.programTitle ? ` program ${context.programTitle}` : "";
+    const description = `Penarikan dana${programLabel} ke ${destination} berhasil #${reference}`;
+
     await this.postJournal(tx, {
       accountingBookId: lembagaBook.id,
       lembagaId,
-      description: `Payout Lembaga berhasil #${withdrawalId.slice(-6).toUpperCase()}`,
+      description,
       sourceType: "WITHDRAWAL",
       sourceId: withdrawalId,
       sourceEvent: "PAYOUT_SUCCEEDED",
+      programId: programId ?? null,
       userId,
       lines: [
         bankChartOfAccountId
-          ? { accountId: bankChartOfAccountId, debit: amount, description: "Dana masuk rekening Bank tujuan" }
-          : { key: COA_KEYS.BANK, debit: amount, description: "Dana masuk Bank Operasional" },
-        { key: COA_KEYS.PAYMENT_GATEWAY_RECEIVABLE, credit: amount, description: "Pengurangan piutang payment gateway" },
+          ? { accountId: bankChartOfAccountId, debit: amount, description: `Dana penarikan masuk ke ${destination}` }
+          : { key: COA_KEYS.BANK, debit: amount, description: `Dana penarikan masuk ke ${destination}` },
+        { key: COA_KEYS.PAYMENT_GATEWAY_RECEIVABLE, credit: amount, description: `Saldo gateway${programLabel} berkurang` },
       ],
     });
     await this.postJournal(tx, {
       accountingBookId: platformBook.id,
       lembagaId: null,
-      description: `Payout Lembaga berhasil #${withdrawalId.slice(-6).toUpperCase()}`,
+      description,
       sourceType: "WITHDRAWAL",
       sourceId: withdrawalId,
       sourceEvent: "PAYOUT_SUCCEEDED",
       userId,
       lines: [
-        { key: COA_KEYS.INSTITUTION_FUNDS_PAYABLE, debit: amount, description: `Pelunasan hak Lembaga ${lembagaId}` },
-        { key: COA_KEYS.PAYMENT_GATEWAY_RECEIVABLE, credit: amount, description: "Dana keluar dari payment gateway" },
+        { key: COA_KEYS.INSTITUTION_FUNDS_PAYABLE, debit: amount, description: `Pelunasan hak Lembaga ${lembagaId}${programLabel}` },
+        { key: COA_KEYS.PAYMENT_GATEWAY_RECEIVABLE, credit: amount, description: `Transfer payout ke ${destination}` },
       ],
     });
   }

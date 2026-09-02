@@ -8,7 +8,7 @@ import { useState } from "react";
 // ─── Status metadata ─────────────────────────────────────────────────────────
 const STATUS_META: Record<
   string,
-  { label: string; intent: "success" | "warning" | "destructive" | "default"; icon: React.ReactNode }
+  { label: string; intent: "success" | "warning" | "destructive"; icon: React.ReactNode }
 > = {
   PENDING:          { label: "Menunggu Persetujuan",       intent: "warning",     icon: <Clock className="w-3.5 h-3.5" /> },
   REJECTED:         { label: "Ditolak",                    intent: "destructive", icon: <XCircle className="w-3.5 h-3.5" /> },

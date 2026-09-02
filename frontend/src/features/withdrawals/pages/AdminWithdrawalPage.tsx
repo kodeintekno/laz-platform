@@ -141,6 +141,7 @@ export function AdminWithdrawalPage() {
                   <tr>
                     <th className="px-4 py-3">Tanggal</th>
                     <th className="px-4 py-3">Lembaga</th>
+                    <th className="px-4 py-3">Program</th>
                     <th className="px-4 py-3">Nominal</th>
                     <th className="px-4 py-3">Bank Tujuan</th>
                     <th className="px-4 py-3">Status</th>
@@ -150,7 +151,7 @@ export function AdminWithdrawalPage() {
                 <tbody>
                   {withdrawals?.data?.length === 0 && (
                     <tr>
-                      <td colSpan={6} className="px-4 py-4 text-center text-surface-strong">
+                      <td colSpan={7} className="px-4 py-4 text-center text-surface-strong">
                         Tidak ada pengajuan pencairan
                       </td>
                     </tr>
@@ -163,6 +164,7 @@ export function AdminWithdrawalPage() {
                       <td className="px-4 py-3 font-medium">
                         {w.lembaga?.name}
                       </td>
+                      <td className="px-4 py-3">{w.program?.title || (w.lembaga ? "Data lama" : "Platform")}</td>
                       <td className="px-4 py-3 font-medium text-primary">
                         {formatCurrency(Number(w.amount))}
                       </td>
@@ -246,6 +248,12 @@ export function AdminWithdrawalPage() {
               <div>
                 <p className="text-secondary font-medium">Nominal</p>
                 <p className="font-bold text-primary">{formatCurrency(Number(selectedWithdrawal.amount))}</p>
+              </div>
+              <div>
+                <p className="text-secondary font-medium">Program Sumber Dana</p>
+                <p className="font-bold text-primary">
+                  {selectedWithdrawal.program?.title || (selectedWithdrawal.lembaga ? "Data lama" : "Platform")}
+                </p>
               </div>
               <div>
                 <p className="text-secondary font-medium">Status</p>

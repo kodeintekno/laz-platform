@@ -77,6 +77,7 @@ model Lembaga {
   users                      User[]
   documents                  LembagaDocument[]
   journals                   Journal[]
+  programBalances            ProgramBalance[]
   volunteerApplications      VolunteerApplication[]
   volunteerActivities        VolunteerActivity[]
   balance                    InstitutionBalance?
@@ -228,8 +229,11 @@ model Program {
   lembaga                    Lembaga                     @relation(fields: [lembagaId], references: [id], onDelete: Cascade)
   volunteerActivities        VolunteerActivity[]
   amilPlatformChangeRequests AmilPlatformChangeRequest[]
+  balance                    ProgramBalance?
+  withdrawals                Withdrawal[]
 
   @@unique([lembagaId, slug])
+  @@unique([id, lembagaId])
   @@map("programs")
 }
 
@@ -308,7 +312,7 @@ model Volunteer {
   name             String
   email            String                 @unique
   password         String
-  phone            String
+  phone             String
   addressDomicile  String?
   addressKtp       String?
   photoUrl         String?
@@ -715,8 +719,30 @@ model InstitutionBalance {
   @@map("institution_balances")
 }
 
-/// Rekening pencairan milik Lembaga. Setiap rekening mempunyai akun COA
-/// detail sendiri di bawah kelompok Rekening Bank.
+/// Saldo dana yang masih berada di payment gateway, terisolasi untuk satu
+/// program. Saldo ini adalah sumber otoritatif saat Lembaga mengajukan
+/// penarikan; InstitutionBalance hanya menyimpan agregat lintas program.
+model ProgramBalance {
+  id                      String   @id @default(cuid())
+  programId               String   @unique
+  lembagaId               String
+  balance                 Decimal  @default(0) @db.Decimal(15, 2)
+  mustahiqBalance         Decimal  @default(0) @db.Decimal(15, 2)
+  amilBalance             Decimal  @default(0) @db.Decimal(15, 2)
+  reservedBalance         Decimal  @default(0) @db.Decimal(15, 2)
+  reservedMustahiqBalance Decimal  @default(0) @db.Decimal(15, 2)
+  reservedAmilBalance     Decimal  @default(0) @db.Decimal(15, 2)
+  updatedAt               DateTime @updatedAt
+
+  program Program @relation(fields: [programId, lembagaId], references: [id, lembagaId], onDelete: Cascade)
+  lembaga Lembaga @relation(fields: [lembagaId], references: [id], onDelete: Cascade)
+
+  @@index([lembagaId])
+  @@unique([programId, lembagaId])
+  @@map("program_balances")
+}
+
+/// Satu-satunya rekening pencairan milik Lembaga, terhubung ke akun COA Bank.
 model LembagaBankAccount {
   id               String   @id @default(cuid())
   lembagaId        String
@@ -734,7 +760,7 @@ model LembagaBankAccount {
   chartOfAccount ChartOfAccount @relation(fields: [chartOfAccountId], references: [id], onDelete: Restrict)
   withdrawals    Withdrawal[]
 
-  @@unique([lembagaId, accountNumber])
+  @@unique([lembagaId])
   @@index([lembagaId, isActive])
   @@map("lembaga_bank_accounts")
 }
@@ -759,7 +785,12 @@ model Withdrawal {
   lembagaId       String?
   isPlatform      Boolean          @default(false)
   bankAccountId   String?
+  programId       String?
   amount          Decimal          @db.Decimal(15, 2)
+  /// Komponen saldo program yang dikunci saat request dibuat. Snapshot ini
+  /// memastikan reject/failure mengembalikan dana ke sumber yang persis sama.
+  mustahiqAmount  Decimal          @default(0) @db.Decimal(15, 2)
+  amilAmount      Decimal          @default(0) @db.Decimal(15, 2)
   status          WithdrawalStatus @default(PENDING)
   bankCode        String
   accountNumber   String
@@ -775,8 +806,10 @@ model Withdrawal {
   approvedBy  User?               @relation("WithdrawalApprover", fields: [approvedById], references: [id])
   payout      Payout?
   bankAccount LembagaBankAccount? @relation(fields: [bankAccountId], references: [id], onDelete: SetNull)
+  program     Program?            @relation(fields: [programId, lembagaId], references: [id, lembagaId], onDelete: Restrict)
 
   @@index([bankAccountId])
+  @@index([programId])
   @@map("withdrawals")
 }
 
