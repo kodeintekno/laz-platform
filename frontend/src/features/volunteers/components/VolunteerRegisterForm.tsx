@@ -105,7 +105,7 @@ const STEPS: StepConfig[] = [
 ];
 
 const STEP_FIELDS: FieldPath<VolunteerRegistrationInput>[][] = [
-  ["name", "email", "phone", "address", "password", "confirmPassword"],
+  ["name", "email", "phone", "addressDomicile", "addressKtp", "password", "confirmPassword"],
   [], // uploads only — no required text fields
 ];
 
@@ -122,7 +122,8 @@ function Step1({ isPending }: { isPending: boolean }) {
       <FormField name="name" label="Nama Lengkap" type="input" placeholder="Nama lengkap Anda" disabled={isPending} />
       <FormField name="email" label="Email" type="input" inputType="email" placeholder="nama@email.com" disabled={isPending} />
       <FormField name="phone" label="Nomor Telepon" type="input" inputType="tel" placeholder="081234567890" disabled={isPending} />
-      <FormField name="address" label="Alamat (Opsional)" type="textarea" rows={2} disabled={isPending} />
+      <FormField name="addressDomicile" label="Alamat Domisili" required type="textarea" rows={2} placeholder="Alamat tempat tinggal saat ini" disabled={isPending} />
+      <FormField name="addressKtp" label="Alamat KTP" required type="textarea" rows={2} placeholder="Alamat sesuai KTP" disabled={isPending} />
 
       <hr className="border-border/60 my-1" />
       <p className="text-xs font-semibold text-muted uppercase tracking-wide">Keamanan Akun</p>
@@ -248,7 +249,8 @@ export function VolunteerRegisterForm() {
     name: "",
     email: "",
     phone: "",
-    address: "",
+    addressDomicile: "",
+    addressKtp: "",
     password: "",
     confirmPassword: "",
     photoUrl: "",

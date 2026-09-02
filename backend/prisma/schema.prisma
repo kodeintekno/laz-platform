@@ -304,23 +304,24 @@ model Distribution {
 }
 
 model Volunteer {
-  id            String                 @id @default(cuid())
-  name          String
-  email         String                 @unique
-  password      String
-  phone         String
-  address       String?
-  photoUrl      String?
-  photoPublicId String?
-  ktpUrl        String?
-  ktpPublicId   String?
-  cvUrl         String?
-  cvPublicId    String?
-  status        VolunteerStatus        @default(ACTIVE)
-  createdAt     DateTime               @default(now())
-  updatedAt     DateTime               @updatedAt
-  applications  VolunteerApplication[]
-  notifications Notification[]
+  id               String                 @id @default(cuid())
+  name             String
+  email            String                 @unique
+  password         String
+  phone            String
+  addressDomicile  String?
+  addressKtp       String?
+  photoUrl         String?
+  photoPublicId    String?
+  ktpUrl           String?
+  ktpPublicId      String?
+  cvUrl            String?
+  cvPublicId       String?
+  status           VolunteerStatus        @default(ACTIVE)
+  createdAt        DateTime               @default(now())
+  updatedAt        DateTime               @updatedAt
+  applications     VolunteerApplication[]
+  notifications    Notification[]
 
   @@map("volunteers")
 }
