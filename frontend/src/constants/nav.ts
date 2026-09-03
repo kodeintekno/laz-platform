@@ -96,12 +96,6 @@ export const NAV_ITEMS: NavItem[] = [
         icon: "Coins",
         permission: PERMISSIONS.SETTINGS_MANAGE,
       },
-      {
-        label: "Permohonan Amil",
-        href: "/dashboard/amil-platform-requests",
-        icon: "Activity",
-        permission: PERMISSIONS.SETTINGS_MANAGE,
-      },
     ],
   },
   {
@@ -128,20 +122,6 @@ export const NAV_ITEMS: NavItem[] = [
         label: "Bank Account",
         href: "/dashboard/lembaga/finance/bank-account",
         icon: "CreditCard",
-        permission: PERMISSIONS.LEMBAGA_READ,
-        requiresLembaga: true,
-      },
-      {
-        label: "Porsi Amil",
-        href: "/dashboard/lembaga/finance/amil",
-        icon: "Coins",
-        permission: PERMISSIONS.LEMBAGA_READ,
-        requiresLembaga: true,
-      },
-      {
-        label: "Pengajuan Amil Platform",
-        href: "/dashboard/lembaga/finance/amil-platform-request",
-        icon: "Activity",
         permission: PERMISSIONS.LEMBAGA_READ,
         requiresLembaga: true,
       },

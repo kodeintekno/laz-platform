@@ -1,4 +1,4 @@
-import { Injectable, Logger, NotFoundException, Optional } from "@nestjs/common";
+import { BadRequestException, Injectable, Logger, NotFoundException, Optional } from "@nestjs/common";
 import { ProgramsRepository } from "./programs.repository";
 import { AuditService } from "../audit/audit.service";
 import { AuditAction } from "../audit/audit.types";
@@ -62,6 +62,27 @@ export class ProgramsService {
     }
   }
 
+  private resolvePlatformProposal(
+    data: Pick<ProgramInput, "requestedPlatformPercentage" | "platformChangeReason">,
+    snapshot: { platformPercentage: number; institutionPercentage: number; maxTotalPercentage: number },
+  ) {
+    const requested = data.requestedPlatformPercentage;
+    this.amilService.validateProgramAmilSnapshot(
+      requested ?? snapshot.platformPercentage,
+      snapshot.institutionPercentage,
+      snapshot.maxTotalPercentage,
+    );
+    if (requested === undefined || Math.abs(requested - snapshot.platformPercentage) < 1e-8) {
+      return { requestedPlatformPercentage: null, platformChangeReason: null };
+    }
+
+    const reason = data.platformChangeReason?.trim();
+    if (!reason || reason.length < 10) {
+      throw new BadRequestException("Alasan perubahan porsi amil platform minimal 10 karakter");
+    }
+    return { requestedPlatformPercentage: requested, platformChangeReason: reason };
+  }
+
   async getPublishedPrograms(options?: {
     page?: number;
     limit?: number;
@@ -100,12 +121,13 @@ export class ProgramsService {
     }
 
     const newProgram = await this.prisma.$transaction(async (tx) => {
-      const snapshot = await this.amilService.getDefaultProgramAmilSnapshot(tx, {
+      const snapshot = await this.amilService.getProgramAmilContext(tx, {
         lembagaId: admin.lembagaId!,
         category: data.category,
-        institutionPercentage: data.institutionPercentage,
       });
-      return tx.program.create({
+      if (data.institutionPercentage !== undefined) snapshot.institutionPercentage = data.institutionPercentage;
+      const proposal = this.resolvePlatformProposal(data, snapshot);
+      const program = await tx.program.create({
         data: {
           title: data.title,
           slug,
@@ -121,9 +143,25 @@ export class ProgramsService {
           amilPlatformPercentage: snapshot.platformPercentage,
           amilInstitutionPercentage: snapshot.institutionPercentage,
           amilMaxTotalPercentage: snapshot.maxTotalPercentage,
+          requestedAmilPlatformPercentage: proposal.requestedPlatformPercentage,
+          amilPlatformChangeReason: proposal.platformChangeReason,
           amilLockedAt: data.status === "PUBLISHED" ? new Date() : null,
         },
       });
+
+      if (data.status === "PENDING_REVIEW") {
+        await tx.programReviewHistory.create({
+          data: {
+            programId: program.id,
+            defaultPlatformPercentage: snapshot.platformPercentage,
+            requestedPlatformPercentage: proposal.requestedPlatformPercentage,
+            institutionPercentage: snapshot.institutionPercentage,
+            maxTotalPercentage: snapshot.maxTotalPercentage,
+            platformChangeReason: proposal.platformChangeReason,
+          },
+        });
+      }
+      return program;
     });
 
     await this.auditService.log({
@@ -161,15 +199,26 @@ export class ProgramsService {
 
     const oldProgram = await this.prisma.program.findUnique({ where: { id } });
     if (!oldProgram) throw new NotFoundException("Program tidak ditemukan");
+    if (oldProgram.status === "PENDING_REVIEW" && ["PUBLISHED", "REJECTED"].includes(data.status)) {
+      throw new AppError(
+        "PROGRAM_REVIEW_ACTION_REQUIRED",
+        "Gunakan aksi Setujui atau Tolak agar keputusan program dan porsi amil diproses bersamaan",
+        409,
+      );
+    }
     if (actor.lembagaId && oldProgram.lembagaId !== actor.lembagaId && !hasPermission(actor, PERMISSIONS.PROGRAMS_APPROVE)) {
       throw new AppError("FORBIDDEN_PROGRAM", "Anda tidak memiliki izin untuk mengubah program lembaga lain", 403);
     }
 
     const snapshotLocked = !!oldProgram.amilLockedAt || ["PUBLISHED", "COMPLETED", "CANCELLED"].includes(oldProgram.status);
     const requestedInstitution = data.institutionPercentage ?? Number(oldProgram.amilInstitutionPercentage);
+    const currentProposal = oldProgram.requestedAmilPlatformPercentage === null
+      ? Number(oldProgram.amilPlatformPercentage)
+      : Number(oldProgram.requestedAmilPlatformPercentage);
     if (snapshotLocked && (
       data.category !== oldProgram.category
       || Math.abs(requestedInstitution - Number(oldProgram.amilInstitutionPercentage)) > 1e-8
+      || (data.requestedPlatformPercentage !== undefined && Math.abs(data.requestedPlatformPercentage - currentProposal) > 1e-8)
     )) {
       throw new AppError(
         "PROGRAM_AMIL_LOCKED",
@@ -185,21 +234,25 @@ export class ProgramsService {
         maxTotalPercentage: Number(oldProgram.amilMaxTotalPercentage),
       };
       if (!snapshotLocked && data.category !== oldProgram.category) {
-        snapshot = await this.amilService.getDefaultProgramAmilSnapshot(tx, {
+        snapshot = await this.amilService.getProgramAmilContext(tx, {
           lembagaId: oldProgram.lembagaId,
           category: data.category,
-          institutionPercentage: data.institutionPercentage,
         });
+        if (data.institutionPercentage !== undefined) snapshot.institutionPercentage = data.institutionPercentage;
       } else if (!snapshotLocked) {
         snapshot.institutionPercentage = requestedInstitution;
-        this.amilService.validateProgramAmilSnapshot(
-          snapshot.platformPercentage,
-          snapshot.institutionPercentage,
-          snapshot.maxTotalPercentage,
-        );
       }
 
-      return tx.program.update({
+      const proposal = snapshotLocked
+        ? {
+            requestedPlatformPercentage: oldProgram.requestedAmilPlatformPercentage === null
+              ? null
+              : Number(oldProgram.requestedAmilPlatformPercentage),
+            platformChangeReason: oldProgram.amilPlatformChangeReason,
+          }
+        : this.resolvePlatformProposal(data, snapshot);
+
+      const program = await tx.program.update({
         where: { id },
         data: {
           title: data.title,
@@ -213,9 +266,41 @@ export class ProgramsService {
           amilPlatformPercentage: snapshot.platformPercentage,
           amilInstitutionPercentage: snapshot.institutionPercentage,
           amilMaxTotalPercentage: snapshot.maxTotalPercentage,
+          requestedAmilPlatformPercentage: proposal.requestedPlatformPercentage,
+          amilPlatformChangeReason: proposal.platformChangeReason,
+          ...(oldProgram.status !== "PENDING_REVIEW" && data.status === "PENDING_REVIEW" ? { rejectionReason: null } : {}),
           ...(!oldProgram.amilLockedAt && data.status === "PUBLISHED" ? { amilLockedAt: new Date() } : {}),
         },
       });
+
+      const reviewSnapshot = {
+        defaultPlatformPercentage: snapshot.platformPercentage,
+        requestedPlatformPercentage: proposal.requestedPlatformPercentage,
+        institutionPercentage: snapshot.institutionPercentage,
+        maxTotalPercentage: snapshot.maxTotalPercentage,
+        platformChangeReason: proposal.platformChangeReason,
+      };
+      if (oldProgram.status !== "PENDING_REVIEW" && data.status === "PENDING_REVIEW") {
+        await tx.programReviewHistory.create({ data: { programId: id, ...reviewSnapshot } });
+      } else if (oldProgram.status === "PENDING_REVIEW" && data.status === "PENDING_REVIEW") {
+        const pendingReview = await tx.programReviewHistory.findFirst({
+          where: { programId: id, status: "PENDING" },
+          orderBy: { submittedAt: "desc" },
+          select: { id: true },
+        });
+        if (pendingReview) {
+          await tx.programReviewHistory.update({ where: { id: pendingReview.id }, data: reviewSnapshot });
+        } else {
+          await tx.programReviewHistory.create({ data: { programId: id, ...reviewSnapshot } });
+        }
+      } else if (oldProgram.status === "PENDING_REVIEW" && data.status !== "PENDING_REVIEW") {
+        await tx.programReviewHistory.updateMany({
+          where: { programId: id, status: "PENDING" },
+          data: { status: "WITHDRAWN", reviewedAt: new Date() },
+        });
+      }
+
+      return program;
     });
 
     // If the image was changed or removed, delete the old image from Cloudinary
@@ -265,7 +350,57 @@ export class ProgramsService {
       );
     }
 
-    const updated = await this.programsRepository.approve(id, approverId);
+    const effectivePlatformPercentage = existing.requestedAmilPlatformPercentage === null
+      ? Number(existing.amilPlatformPercentage)
+      : Number(existing.requestedAmilPlatformPercentage);
+    this.amilService.validateProgramAmilSnapshot(
+      effectivePlatformPercentage,
+      Number(existing.amilInstitutionPercentage),
+      Number(existing.amilMaxTotalPercentage),
+    );
+
+    const updated = await this.prisma.$transaction(async (tx) => {
+      const claimed = await tx.program.updateMany({
+        where: { id, status: "PENDING_REVIEW" },
+        data: {
+          status: "PUBLISHED",
+          approvedAt: new Date(),
+          amilLockedAt: new Date(),
+          approvedById: approverId,
+          rejectionReason: null,
+          amilPlatformPercentage: effectivePlatformPercentage,
+        },
+      });
+      if (claimed.count !== 1) {
+        throw new AppError("INVALID_STATUS", "Pengajuan program ini sudah diproses", 409);
+      }
+
+      const pendingReview = await tx.programReviewHistory.findFirst({
+        where: { programId: id, status: "PENDING" },
+        orderBy: { submittedAt: "desc" },
+        select: { id: true },
+      });
+      if (pendingReview) {
+        await tx.programReviewHistory.update({
+          where: { id: pendingReview.id },
+          data: { status: "APPROVED", reviewedAt: new Date() },
+        });
+      } else {
+        await tx.programReviewHistory.create({
+          data: {
+            programId: id,
+            status: "APPROVED",
+            defaultPlatformPercentage: existing.amilPlatformPercentage,
+            requestedPlatformPercentage: existing.requestedAmilPlatformPercentage,
+            institutionPercentage: existing.amilInstitutionPercentage,
+            maxTotalPercentage: existing.amilMaxTotalPercentage,
+            platformChangeReason: existing.amilPlatformChangeReason,
+            reviewedAt: new Date(),
+          },
+        });
+      }
+      return tx.program.findUniqueOrThrow({ where: { id } });
+    });
 
     await this.auditService.log({
       userId: approverId,
@@ -303,7 +438,48 @@ export class ProgramsService {
       );
     }
 
-    const updated = await this.programsRepository.reject(id, reason, approverId);
+    const updated = await this.prisma.$transaction(async (tx) => {
+      const claimed = await tx.program.updateMany({
+        where: { id, status: "PENDING_REVIEW" },
+        data: {
+          status: "REJECTED",
+          rejectionReason: reason,
+          approvedById: approverId,
+          approvedAt: null,
+          amilLockedAt: null,
+        },
+      });
+      if (claimed.count !== 1) {
+        throw new AppError("INVALID_STATUS", "Pengajuan program ini sudah diproses", 409);
+      }
+
+      const pendingReview = await tx.programReviewHistory.findFirst({
+        where: { programId: id, status: "PENDING" },
+        orderBy: { submittedAt: "desc" },
+        select: { id: true },
+      });
+      if (pendingReview) {
+        await tx.programReviewHistory.update({
+          where: { id: pendingReview.id },
+          data: { status: "REJECTED", rejectionReason: reason, reviewedAt: new Date() },
+        });
+      } else {
+        await tx.programReviewHistory.create({
+          data: {
+            programId: id,
+            status: "REJECTED",
+            defaultPlatformPercentage: existing.amilPlatformPercentage,
+            requestedPlatformPercentage: existing.requestedAmilPlatformPercentage,
+            institutionPercentage: existing.amilInstitutionPercentage,
+            maxTotalPercentage: existing.amilMaxTotalPercentage,
+            platformChangeReason: existing.amilPlatformChangeReason,
+            rejectionReason: reason,
+            reviewedAt: new Date(),
+          },
+        });
+      }
+      return tx.program.findUniqueOrThrow({ where: { id } });
+    });
 
     await this.auditService.log({
       userId: approverId,

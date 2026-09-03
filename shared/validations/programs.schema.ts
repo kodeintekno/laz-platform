@@ -16,6 +16,8 @@ export const programSchema = z.object({
   startDate: z.string().optional(),
   endDate: z.string().optional(),
   institutionPercentage: z.coerce.number().min(0).max(100).optional(),
+  requestedPlatformPercentage: z.coerce.number().min(0).max(100).optional(),
+  platformChangeReason: z.string().trim().max(1000, "Alasan perubahan maksimal 1000 karakter").optional().or(z.literal("")),
 });
 
 export type ProgramInput = z.infer<typeof programSchema>;

@@ -133,13 +133,16 @@ export class AmilService {
     });
   }
 
-  /** Ambil default lembaga + kategori lalu bentuk snapshot untuk satu program. */
-  async getDefaultProgramAmilSnapshot(
+  /**
+   * Ambil konteks default lembaga + kategori. Total belum divalidasi di sini
+   * karena porsi platform usulan program dapat menggantikan default tersebut.
+   * ProgramsService memvalidasi kombinasi final sebelum menyimpan program.
+   */
+  async getProgramAmilContext(
     tx: Prisma.TransactionClient,
     input: {
       lembagaId: string;
       category: ProgramCategory;
-      institutionPercentage?: number;
     },
   ) {
     this.assertValidCategory(input.category);
@@ -152,12 +155,11 @@ export class AmilService {
     const platformPercentage = existing
       ? Number(existing.platformPercentage)
       : Number(globalSetting.defaultPlatformPercentage);
-    const institutionPercentage = input.institutionPercentage ?? (existing
+    const institutionPercentage = existing
       ? Number(existing.institutionPercentage)
-      : Number(globalSetting.maxTotalPercentage) - platformPercentage);
+      : Number(globalSetting.maxTotalPercentage) - platformPercentage;
     const maxTotalPercentage = Number(globalSetting.maxTotalPercentage);
 
-    this.validateProgramAmilSnapshot(platformPercentage, institutionPercentage, maxTotalPercentage);
     return { platformPercentage, institutionPercentage, maxTotalPercentage };
   }
 

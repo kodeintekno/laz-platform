@@ -73,10 +73,7 @@ import { PayoutsListPage } from "@/pages/dashboard/finance/PayoutsListPage";
 import { LembagaFinanceOverviewPage } from "@/pages/dashboard/lembaga/finance/LembagaFinanceOverviewPage";
 import { LembagaBalancePage } from "@/pages/dashboard/lembaga/finance/LembagaBalancePage";
 import { BankAccountPage } from "@/pages/dashboard/lembaga/finance/BankAccountPage";
-import { LembagaAmilSettingsPage } from "@/pages/dashboard/lembaga/finance/LembagaAmilSettingsPage";
-import { LembagaPlatformAmilRequestPage } from "@/pages/dashboard/lembaga/finance/LembagaPlatformAmilRequestPage";
 import { GlobalAmilSettingsPage } from "@/pages/dashboard/amil/GlobalAmilSettingsPage";
-import { PlatformAmilRequestsPage } from "@/pages/dashboard/amil/PlatformAmilRequestsPage";
 
 export const router = createBrowserRouter([
   {
@@ -309,11 +306,7 @@ export const router = createBrowserRouter([
           },
           {
             path: "amil-platform-requests",
-            element: (
-              <RequirePermission permission={PERMISSIONS.SETTINGS_MANAGE}>
-                <PlatformAmilRequestsPage />
-              </RequirePermission>
-            ),
+            element: <Navigate to="/dashboard/programs?status=PENDING_REVIEW" replace />,
           },
           {
             path: "lembaga/finance/overview",
@@ -333,19 +326,11 @@ export const router = createBrowserRouter([
           },
           {
             path: "lembaga/finance/amil",
-            element: (
-              <RequirePermission permission={PERMISSIONS.LEMBAGA_READ}>
-                <LembagaAmilSettingsPage />
-              </RequirePermission>
-            ),
+            element: <Navigate to="/dashboard/programs/new" replace />,
           },
           {
             path: "lembaga/finance/amil-platform-request",
-            element: (
-              <RequirePermission permission={PERMISSIONS.LEMBAGA_READ}>
-                <LembagaPlatformAmilRequestPage />
-              </RequirePermission>
-            ),
+            element: <Navigate to="/dashboard/programs/new" replace />,
           },
           // Relawan (lembaga-admin: kegiatan + review pendaftaran)
           {

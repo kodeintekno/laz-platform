@@ -23,13 +23,31 @@ export const programSchema = sharedProgramSchema
   .and(amilValidationContextSchema)
   .superRefine((data, ctx) => {
     const institution = data.institutionPercentage;
-    const platform = data.amilPlatformPercentage;
+    const defaultPlatform = data.amilPlatformPercentage;
+    // Nilai platform yang diedit pengguna adalah satu-satunya sumber untuk
+    // validasi total. Default hanya dipakai untuk mendeteksi adanya perubahan.
+    const platform = data.requestedPlatformPercentage;
     const maximum = data.amilMaxTotalPercentage;
 
     if (institution !== undefined && !hasAtMostTwoDecimals(institution)) {
       ctx.addIssue({ code: "custom", path: ["institutionPercentage"], message: "Porsi lembaga maksimal 2 angka desimal" });
     }
     // Form edit tidak membawa konteks amil sehingga aturan dinamis dilewati.
+    if (platform !== undefined && !hasAtMostTwoDecimals(platform)) {
+      ctx.addIssue({ code: "custom", path: ["requestedPlatformPercentage"], message: "Porsi platform maksimal 2 angka desimal" });
+    }
+    if (
+      platform !== undefined
+      && defaultPlatform !== undefined
+      && Math.abs(platform - defaultPlatform) > 1e-8
+      && (!data.platformChangeReason || data.platformChangeReason.trim().length < 10)
+    ) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["platformChangeReason"],
+        message: "Alasan perubahan porsi amil platform minimal 10 karakter",
+      });
+    }
     if (institution === undefined || platform === undefined || maximum === undefined) return;
 
     const institutionMaximum = maximum - platform;

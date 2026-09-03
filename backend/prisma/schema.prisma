@@ -218,6 +218,9 @@ model Program {
   amilPlatformPercentage     Decimal                     @db.Decimal(5, 2)
   amilInstitutionPercentage  Decimal                     @db.Decimal(5, 2)
   amilMaxTotalPercentage     Decimal                     @db.Decimal(5, 2)
+  /// Usulan porsi amil platform khusus program ini. Null berarti memakai default snapshot.
+  requestedAmilPlatformPercentage Decimal?               @db.Decimal(5, 2)
+  amilPlatformChangeReason   String?
   amilLockedAt               DateTime?
   createdAt                  DateTime                    @default(now())
   updatedAt                  DateTime                    @updatedAt
@@ -229,12 +232,42 @@ model Program {
   lembaga                    Lembaga                     @relation(fields: [lembagaId], references: [id], onDelete: Cascade)
   volunteerActivities        VolunteerActivity[]
   amilPlatformChangeRequests AmilPlatformChangeRequest[]
+  reviewHistory              ProgramReviewHistory[]
   balance                    ProgramBalance?
   withdrawals                Withdrawal[]
 
   @@unique([lembagaId, slug])
   @@unique([id, lembagaId])
   @@map("programs")
+}
+
+enum ProgramReviewStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  WITHDRAWN
+}
+
+/// Snapshot setiap kali program diajukan untuk direview. Riwayat ini tetap ada
+/// ketika program ditolak, diperbaiki, lalu diajukan ulang.
+model ProgramReviewHistory {
+  id                          String              @id @default(cuid())
+  programId                   String
+  status                      ProgramReviewStatus @default(PENDING)
+  defaultPlatformPercentage   Decimal             @db.Decimal(5, 2)
+  requestedPlatformPercentage Decimal?            @db.Decimal(5, 2)
+  institutionPercentage       Decimal             @db.Decimal(5, 2)
+  maxTotalPercentage           Decimal             @db.Decimal(5, 2)
+  platformChangeReason        String?
+  rejectionReason             String?
+  submittedAt                 DateTime            @default(now())
+  reviewedAt                  DateTime?
+
+  program Program @relation(fields: [programId], references: [id], onDelete: Cascade)
+
+  @@index([programId, submittedAt])
+  @@index([status, submittedAt])
+  @@map("program_review_history")
 }
 
 model Donation {

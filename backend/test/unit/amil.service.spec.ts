@@ -30,6 +30,29 @@ describe("AmilService program snapshots", () => {
       "melebihi batas maksimum",
     );
   });
+
+  it("loads an over-limit default context before applying a lower program proposal", async () => {
+    const contextualService = new AmilService({} as any, {} as any);
+    const tx = {
+      amilGlobalSetting: {
+        findUnique: async () => ({ defaultPlatformPercentage: 5, maxTotalPercentage: 20 }),
+      },
+      amilInstitutionSetting: {
+        findUnique: async () => ({ platformPercentage: 5, institutionPercentage: 18 }),
+      },
+    };
+
+    await expect(contextualService.getProgramAmilContext(tx as any, {
+      lembagaId: "lembaga-1",
+      category: ProgramCategory.ZAKAT,
+    })).resolves.toEqual({
+      platformPercentage: 5,
+      institutionPercentage: 18,
+      maxTotalPercentage: 20,
+    });
+
+    expect(() => contextualService.validateProgramAmilSnapshot(2, 18, 20)).not.toThrow();
+  });
 });
 
 describe("AmilService settings and platform requests", () => {

@@ -12,6 +12,7 @@ import { PERMISSIONS } from "@shared/constants/permissions";
 import { type Program } from "@prisma/client";
 import { ProgramAmilAllocation } from "@/features/amil/components/ProgramAmilAllocation";
 import { useAuth } from "@/auth/AuthProvider";
+import type { UseFormReturn } from "react-hook-form";
 
 export function ProgramForm({
   initialData,
@@ -31,13 +32,25 @@ export function ProgramForm({
   const [uploadedImagePublicId, setUploadedImagePublicId] = useState<string>('');
   const uploadAbortRef = useRef<AbortController | null>(null);
 
-  const onSubmit = (data: ProgramInput) => {
+  const onSubmit = (data: ProgramInput, form: UseFormReturn<ProgramInput>) => {
     setError(null);
     startTransition(async () => {
       const formData = new FormData();
-      
+
+      // Ambil nilai amil langsung dari state RHF pada saat submit. Untuk field
+      // lintas-validasi, output resolver dapat tertinggal dari nilai input
+      // controlled yang baru saja diubah sebelum tombol Simpan ditekan.
+      const liveInstitutionPercentage = form.getValues("institutionPercentage");
+      const liveRequestedPlatformPercentage = form.getValues("requestedPlatformPercentage");
+      const livePlatformChangeReason = form.getValues("platformChangeReason");
       const image = uploadedImageUrl || data.image?.trim();
-      const finalData = { ...data, image };
+      const finalData = {
+        ...data,
+        institutionPercentage: liveInstitutionPercentage,
+        requestedPlatformPercentage: liveRequestedPlatformPercentage,
+        platformChangeReason: livePlatformChangeReason,
+        image,
+      };
       
       Object.entries(finalData).forEach(([key, value]) => {
         if (value !== undefined && value !== null) {
@@ -104,7 +117,7 @@ export function ProgramForm({
     value,
   }));
 
-  const isStatusLocked = !canApprove && initialData && !SELF_SERVICE_STATUSES.includes(initialData.status);
+  const isStatusLocked = !canApprove && initialData && ["PUBLISHED", "COMPLETED", "CANCELLED"].includes(initialData.status);
   const isAmilLocked = !!initialData && (
     !!initialData.amilLockedAt || ["PUBLISHED", "COMPLETED", "CANCELLED"].includes(initialData.status)
   );
@@ -124,6 +137,10 @@ export function ProgramForm({
           startDate: initialData.startDate ? new Date(initialData.startDate).toISOString().split('T')[0] : "",
           endDate: initialData.endDate ? new Date(initialData.endDate).toISOString().split('T')[0] : "",
           institutionPercentage: Number(initialData.amilInstitutionPercentage),
+          requestedPlatformPercentage: initialData.requestedAmilPlatformPercentage == null
+            ? Number(initialData.amilPlatformPercentage)
+            : Number(initialData.requestedAmilPlatformPercentage),
+          platformChangeReason: initialData.amilPlatformChangeReason ?? "",
           amilPlatformPercentage: Number(initialData.amilPlatformPercentage),
           amilMaxTotalPercentage: Number(initialData.amilMaxTotalPercentage),
         } : {
@@ -135,14 +152,15 @@ export function ProgramForm({
           image: "",
           startDate: "",
           endDate: "",
+          platformChangeReason: "",
         }}
         error={error}
       >
         <CardContent className="space-y-6">
           {initialData?.status === "REJECTED" && initialData.rejectionReason && (
-            <div className="rounded-xl border border-destructive/30 bg-destructive/10 p-4 text-sm">
+            <div className="min-w-0 overflow-hidden rounded-xl border border-destructive/30 bg-destructive/10 p-4 text-sm">
               <p className="font-bold text-destructive mb-1">Program ini ditolak oleh Ruang Berbagi</p>
-              <p className="text-secondary">{initialData.rejectionReason}</p>
+              <p className="max-h-40 overflow-y-auto whitespace-pre-wrap break-words leading-6 text-secondary [overflow-wrap:anywhere]">{initialData.rejectionReason}</p>
               {!canApprove && (
                 <p className="text-secondary mt-1">
                   Perbaiki program lalu ubah status menjadi "Ajukan untuk Direview" untuk mengajukan ulang.

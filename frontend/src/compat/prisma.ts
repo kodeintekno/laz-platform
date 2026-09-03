@@ -103,6 +103,8 @@ export interface Program {
   amilPlatformPercentage: number;
   amilInstitutionPercentage: number;
   amilMaxTotalPercentage: number;
+  requestedAmilPlatformPercentage?: number | null;
+  amilPlatformChangeReason?: string | null;
   amilLockedAt?: Date | string | null;
   lembagaId: string;
   createdAt: Date;

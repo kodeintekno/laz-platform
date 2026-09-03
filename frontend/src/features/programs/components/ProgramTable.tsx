@@ -5,7 +5,7 @@ import type { Prisma } from "@prisma/client";
 import { useRouter } from "next/navigation";
 import { Badge, ActionDropdown } from "@/components/ui";
 import { DataTable, type ColumnDef } from "@/components/ui/data-table";
-import { CheckCircle2, Eye, HandCoins, Pencil, Star, Trash2, XCircle } from "lucide-react";
+import { CheckCircle2, Eye, HandCoins, History, Pencil, Star, Trash2, XCircle } from "lucide-react";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { toast } from "@/stores/toast.store";
 import { usePermission } from "@/hooks/usePermission";
@@ -17,14 +17,30 @@ import {
   setFeaturedProgramAction,
 } from "../actions/programs.actions";
 import { ProgramApprovalModal } from "./ProgramApprovalModal";
+import { ProgramReviewHistoryModal } from "./ProgramReviewHistoryModal";
 import { formatProgramCategory } from "@/lib/program-category";
 
 type ProgramWithCreator = Omit<Prisma.ProgramGetPayload<{
   include: { createdBy: { select: { name: true } }; lembaga: { select: { name: true; slug: true } } };
 }>, "targetAmount" | "currentAmount" | "distributedAmount"> & {
+  title: string;
   targetAmount: number;
   currentAmount: number;
   distributedAmount: number;
+  requestedAmilPlatformPercentage?: number | null;
+  amilPlatformChangeReason?: string | null;
+  reviewHistory?: Array<{
+    id: string;
+    status: string;
+    defaultPlatformPercentage: number | string;
+    requestedPlatformPercentage?: number | string | null;
+    institutionPercentage: number | string;
+    maxTotalPercentage: number | string;
+    platformChangeReason?: string | null;
+    rejectionReason?: string | null;
+    submittedAt: Date | string;
+    reviewedAt?: Date | string | null;
+  }>;
 };
 
 const STATUS_META: Record<string, { label: string; intent: "success" | "warning" | "destructive" | "info" | "muted" }> = {
@@ -66,6 +82,7 @@ export function ProgramTable({ programs, pagination }: ProgramTableProps) {
     reason: "",
   });
   const [detailProgram, setDetailProgram] = useState<ProgramWithCreator | null>(null);
+  const [historyProgram, setHistoryProgram] = useState<ProgramWithCreator | null>(null);
 
   const formatRupiah = (amount: number | string) => {
     return new Intl.NumberFormat("id-ID", {
@@ -133,7 +150,7 @@ export function ProgramTable({ programs, pagination }: ProgramTableProps) {
   };
 
   const handleConfirmReject = () => {
-    if (!rejectState.program || !rejectState.reason.trim()) return;
+    if (!rejectState.program || rejectState.reason.trim().length < 5) return;
     const { program, reason } = rejectState;
     startTransition(async () => {
       const result = await rejectProgramAction(program.id, reason);
@@ -199,11 +216,59 @@ export function ProgramTable({ programs, pagination }: ProgramTableProps) {
         </div>
       ),
     },
+    ...(canApprove
+      ? [{
+          header: "Perubahan % Amil Platform",
+          cell: (program: ProgramWithCreator) => {
+            const latestReview = program.reviewHistory?.[0];
+            const defaultPlatform = Number(latestReview?.defaultPlatformPercentage ?? program.amilPlatformPercentage);
+            const requested = latestReview?.requestedPlatformPercentage ?? program.requestedAmilPlatformPercentage;
+            if (requested == null || Math.abs(Number(requested) - defaultPlatform) < 1e-8) {
+              return (
+                <div>
+                  <Badge intent="muted">Tidak ada</Badge>
+                  <p className="mt-1 text-xs text-secondary">Default {defaultPlatform.toFixed(2)}%</p>
+                </div>
+              );
+            }
+            return (
+              <div className="w-[220px] max-w-[220px] min-w-0">
+                <p className="font-bold text-blue-700">{defaultPlatform.toFixed(2)}% → {Number(requested).toFixed(2)}%</p>
+                <p className="mt-1 line-clamp-2 break-words text-xs text-secondary [overflow-wrap:anywhere]">{latestReview?.platformChangeReason ?? program.amilPlatformChangeReason}</p>
+              </div>
+            );
+          },
+        }]
+      : [{
+          header: "Riwayat Pengajuan",
+          cell: (program: ProgramWithCreator) => {
+            const latest = program.reviewHistory?.[0];
+            return (
+              <button
+                type="button"
+                onClick={() => setHistoryProgram(program)}
+                className="text-left text-sm font-semibold text-brand-primary hover:underline"
+              >
+                <span className="inline-flex items-center gap-1.5"><History className="h-4 w-4" /> Lihat riwayat</span>
+                <span className="mt-1 block text-xs font-normal text-secondary">
+                  {latest ? `${program.reviewHistory?.length ?? 0} pengajuan · ${STATUS_META[latest.status === "APPROVED" ? "PUBLISHED" : latest.status === "PENDING" ? "PENDING_REVIEW" : latest.status]?.label ?? latest.status}` : "Belum pernah diajukan"}
+                </span>
+              </button>
+            );
+          },
+        }]),
     {
       header: "Status",
       cell: (program) => {
         const meta = STATUS_META[program.status] ?? { label: program.status, intent: "muted" as const };
-        return <Badge intent={meta.intent}>{meta.label}</Badge>;
+        return (
+          <div className="w-[240px] max-w-[240px] min-w-0">
+            <Badge intent={meta.intent}>{meta.label}</Badge>
+            {program.status === "REJECTED" && program.rejectionReason && (
+              <p className="mt-1 line-clamp-3 break-words text-xs text-destructive [overflow-wrap:anywhere]">Alasan: {program.rejectionReason}</p>
+            )}
+          </div>
+        );
       },
     },
     {
@@ -288,18 +353,20 @@ export function ProgramTable({ programs, pagination }: ProgramTableProps) {
 
       {rejectState.isOpen && rejectState.program && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <div className="bg-surface rounded-2xl shadow-xl border border-border/40 p-6 max-w-md w-full space-y-4">
+          <div className="w-full max-w-md min-w-0 space-y-4 overflow-x-hidden rounded-2xl border border-border/40 bg-surface p-6 shadow-xl">
             <h3 className="text-lg font-bold text-primary">Tolak Pengajuan Program</h3>
-            <p className="text-sm text-secondary">
+            <p className="break-words text-sm leading-6 text-secondary [overflow-wrap:anywhere]">
               Berikan alasan penolakan untuk "{rejectState.program.title}". Alasan ini akan ditampilkan kepada admin lembaga.
             </p>
             <textarea
               value={rejectState.reason}
               onChange={(e) => setRejectState((s) => ({ ...s, reason: e.target.value }))}
               rows={3}
-              className="w-full rounded-xl border border-border/60 px-3 py-2 text-sm focus:ring-2 focus:ring-brand-primary outline-none"
+              maxLength={500}
+              className="w-full max-w-full resize-y rounded-xl border border-border/60 px-3 py-2 text-sm focus:ring-2 focus:ring-brand-primary outline-none"
               placeholder="Contoh: Deskripsi program kurang jelas / target dana tidak wajar."
             />
+            <p className="text-xs text-secondary">Minimal 5 karakter, maksimal 500 karakter.</p>
             <div className="flex justify-end gap-3">
               <button
                 type="button"
@@ -311,7 +378,7 @@ export function ProgramTable({ programs, pagination }: ProgramTableProps) {
               <button
                 type="button"
                 onClick={handleConfirmReject}
-                disabled={!rejectState.reason.trim() || isPending}
+                disabled={rejectState.reason.trim().length < 5 || isPending}
                 className="px-4 py-2 text-sm font-semibold rounded-xl bg-destructive text-white hover:bg-destructive/90 transition disabled:opacity-50"
               >
                 Tolak Program
@@ -333,6 +400,13 @@ export function ProgramTable({ programs, pagination }: ProgramTableProps) {
             setDetailProgram(null);
             handleReject(detailProgram);
           }}
+        />
+      )}
+
+      {historyProgram && (
+        <ProgramReviewHistoryModal
+          program={historyProgram}
+          onClose={() => setHistoryProgram(null)}
         />
       )}
     </>

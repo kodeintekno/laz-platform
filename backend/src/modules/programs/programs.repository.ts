@@ -38,6 +38,7 @@ export class ProgramsRepository {
         include: {
           createdBy: { select: { name: true } },
           lembaga: { select: { name: true, slug: true } },
+          reviewHistory: { orderBy: { submittedAt: "desc" } },
         },
       }),
       this.prisma.program.count({ where }),
@@ -207,35 +208,4 @@ export class ProgramsRepository {
     });
   }
 
-  /**
-   * Approve a program pending review — publishes it.
-   */
-  async approve(id: string, approvedById: string) {
-    return this.prisma.program.update({
-      where: { id },
-      data: {
-        status: "PUBLISHED",
-        approvedAt: new Date(),
-        amilLockedAt: new Date(),
-        approvedById,
-        rejectionReason: null,
-      },
-    });
-  }
-
-  /**
-   * Reject a program pending review.
-   */
-  async reject(id: string, reason: string, approvedById: string) {
-    return this.prisma.program.update({
-      where: { id },
-      data: {
-        status: "REJECTED",
-        rejectionReason: reason,
-        approvedById,
-        approvedAt: null,
-        amilLockedAt: null,
-      },
-    });
-  }
 }

@@ -21,6 +21,7 @@ export function ProgramsListPage() {
   const { can } = usePermission();
   const [searchParams, setSearchParams] = useSearchParams();
   const hasPlatformFinanceAccess = can(PERMISSIONS.PLATFORM_FINANCE_READ);
+  const canApprovePrograms = can(PERMISSIONS.PROGRAMS_APPROVE);
 
   const page = Number(searchParams.get("page") ?? 1);
   const limit = Number(searchParams.get("limit") ?? 10);
@@ -52,6 +53,12 @@ export function ProgramsListPage() {
     targetAmount: Number(p.targetAmount),
     currentAmount: Number(p.currentAmount),
     distributedAmount: Number(p.distributedAmount),
+    amilPlatformPercentage: Number(p.amilPlatformPercentage),
+    amilInstitutionPercentage: Number(p.amilInstitutionPercentage),
+    amilMaxTotalPercentage: Number(p.amilMaxTotalPercentage),
+    requestedAmilPlatformPercentage: p.requestedAmilPlatformPercentage == null
+      ? null
+      : Number(p.requestedAmilPlatformPercentage),
   }));
 
   const pagination = result?.meta
@@ -100,9 +107,9 @@ export function ProgramsListPage() {
 
       {isLoading ? (
         <TableSkeleton
-          headers={["Judul Program", "Kategori", "Terkumpul", "Status", "Aksi"]}
+          headers={["Judul Program", "Kategori", "Terkumpul", canApprovePrograms ? "Perubahan % Amil Platform" : "Riwayat Pengajuan", "Status", "Aksi"]}
           rowCount={limit}
-          columnTypes={["text", "text", "text", "text", "action"]}
+          columnTypes={["text", "text", "text", "text", "text", "action"]}
         />
       ) : (
         <ProgramTable programs={programs} pagination={pagination} />
