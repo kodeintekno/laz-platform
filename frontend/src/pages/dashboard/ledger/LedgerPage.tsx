@@ -1,18 +1,20 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useSearchParams } from "react-router-dom";
 import { api } from "@/lib/api-client";
 import { ledgerApi, GetLedgerParams } from "@/features/ledger/api/ledger.api";
 import { PageHeader, Button, Card, Input, Select, TableSkeleton, Pagination } from "@/components/ui";
 import { formatCurrency } from "@/lib/utils";
-import { useAuth } from "@/auth/AuthProvider";
 import { usePermission } from "@/hooks/usePermission";
 import { PERMISSIONS } from "@shared/constants/permissions";
 import { Search } from "lucide-react";
+import { UserLembagaFilter } from "@/features/users/components/UserLembagaFilter";
 
 export function LedgerPage() {
-  const { user } = useAuth();
+  const { can } = usePermission();
   const [searchParams, setSearchParams] = useSearchParams();
+  const hasPlatformFinanceAccess = can(PERMISSIONS.PLATFORM_FINANCE_READ);
+  const lembagaId = searchParams.get("lembagaId") ?? undefined;
   
   const currentYear = new Date().getFullYear();
   const currentMonth = new Date().getMonth() + 1;
@@ -22,14 +24,25 @@ export function LedgerPage() {
   const [accountId, setAccountId] = useState<string>(searchParams.get("accountId") || "");
   const [startDate, setStartDate] = useState<string>(searchParams.get("startDate") || defaultStartDate);
   const [endDate, setEndDate] = useState<string>(searchParams.get("endDate") || defaultEndDate);
+
+  useEffect(() => {
+    setAccountId(searchParams.get("accountId") || "");
+  }, [lembagaId]);
   
   const page = Number(searchParams.get("page") ?? 1);
   const limit = Number(searchParams.get("limit") ?? 50);
 
   // Fetch COA for dropdown
   const { data: coaResult } = useQuery({
-    queryKey: ["coa"],
-    queryFn: () => api.get<any[]>("/coa"),
+    queryKey: ["coa", { lembagaId }],
+    queryFn: () => api.get<any[]>("/coa", hasPlatformFinanceAccess ? { lembagaId } : undefined),
+    enabled: hasPlatformFinanceAccess ? !!lembagaId : true,
+  });
+
+  const { data: lembagasResult } = useQuery({
+    queryKey: ["lembaga", "options"],
+    queryFn: () => api.get<any>("/lembaga/options"),
+    enabled: hasPlatformFinanceAccess,
   });
 
   // Filter out headers for selection
@@ -37,6 +50,7 @@ export function LedgerPage() {
   
   const queryParams: GetLedgerParams = {
     accountId,
+    lembagaId: hasPlatformFinanceAccess ? lembagaId : undefined,
     startDate,
     endDate,
     page,
@@ -46,12 +60,13 @@ export function LedgerPage() {
   const { data: ledgerResult, isLoading, isError, error } = useQuery({
     queryKey: ["ledger", queryParams],
     queryFn: () => ledgerApi.getLedger(queryParams),
-    enabled: !!accountId,
+    enabled: !!accountId && (!hasPlatformFinanceAccess || !!lembagaId),
   });
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     setSearchParams({
+      ...(lembagaId ? { lembagaId } : {}),
       accountId,
       startDate,
       endDate,
@@ -70,6 +85,18 @@ export function LedgerPage() {
         description="Laporan detail mutasi dan saldo per akun."
       />
 
+      {hasPlatformFinanceAccess && lembagasResult?.data?.length ? (
+        <div className="flex items-center gap-3">
+          <span className="text-sm font-medium text-secondary">Filter Lembaga:</span>
+          <UserLembagaFilter lembagas={lembagasResult.data} />
+        </div>
+      ) : null}
+
+      {hasPlatformFinanceAccess && !lembagaId ? (
+        <Card className="p-10 text-center text-secondary">
+          Pilih lembaga untuk melihat Buku Besar.
+        </Card>
+      ) : (
       <Card className="p-4">
         <form onSubmit={handleSearch} className="flex flex-col md:flex-row gap-4 items-end">
           <div className="flex-1 w-full">
@@ -111,6 +138,7 @@ export function LedgerPage() {
           </Button>
         </form>
       </Card>
+      )}
 
       {accountId && !ledgerData && isLoading && (
         <TableSkeleton headers={["Tanggal", "No. Jurnal", "Keterangan", "Source", "Debit", "Kredit", "Saldo"]} rowCount={10} columnTypes={["text", "text", "text", "text", "text", "text", "text"]} />
@@ -179,7 +207,7 @@ export function LedgerPage() {
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap">
                           <Link 
-                            to={`/dashboard/journal/${trx.journal.id}`}
+                            to={`/dashboard/journal/${trx.journal.id}${lembagaId ? `?lembagaId=${lembagaId}` : ""}`}
                             className="text-primary hover:underline font-medium"
                           >
                             {trx.journal.journalNo}

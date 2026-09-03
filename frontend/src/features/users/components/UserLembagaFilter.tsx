@@ -31,6 +31,7 @@ export function UserLembagaFilter({ lembagas, includePlatform = false }: UserLem
       params.delete("scope");
       params.delete("lembagaId");
     }
+    params.delete("accountId");
     params.set("page", "1"); // Reset to page 1
 
     startTransition(() => {

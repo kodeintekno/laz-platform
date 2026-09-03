@@ -1,6 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api-client";
 import { useAuth } from "@/auth/AuthProvider";
+import { usePermission } from "@/hooks/usePermission";
+import { PERMISSIONS } from "@shared/constants/permissions";
 import { PageHeader } from "@/components/ui";
 import { Link } from "react-router-dom";
 import { ArrowRight, Wallet, Users, Activity, HeartHandshake, Building2, ClipboardList } from "lucide-react";
@@ -13,7 +15,9 @@ const fmtDt = (d: string) =>
 
 export function OverviewPage() {
   const { user } = useAuth();
-  const isSuperAdmin = user?.roleName === "SUPER_ADMIN";
+  const { can } = usePermission();
+  const hasPlatformFinanceAccess = can(PERMISSIONS.PLATFORM_FINANCE_READ);
+  const canManageLembaga = can(PERMISSIONS.LEMBAGA_MANAGE);
 
   const { data: result } = useQuery({
     queryKey: ["dashboard", "overview"],
@@ -23,7 +27,7 @@ export function OverviewPage() {
   const { data: platformResult } = useQuery({
     queryKey: ["dashboard", "platform-overview"],
     queryFn: () => api.get<any>("/dashboard/platform-overview"),
-    enabled: isSuperAdmin,
+    enabled: hasPlatformFinanceAccess,
   });
 
   const overview = result?.data ?? {};
@@ -39,7 +43,7 @@ export function OverviewPage() {
         description="Berikut adalah ringkasan performa platform pengelolaan dana Anda."
       />
 
-      {isSuperAdmin && platform && (
+      {hasPlatformFinanceAccess && platform && (
         <div className="bg-emerald-950 rounded-2xl p-6 space-y-4">
           <h2 className="text-white font-bold text-lg">Statistik Platform (Seluruh Lembaga)</h2>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
@@ -57,7 +61,7 @@ export function OverviewPage() {
               </div>
             ))}
           </div>
-          {platform.lembaga.pending > 0 && (
+          {canManageLembaga && platform.lembaga.pending > 0 && (
             <Link
               to="/dashboard/lembaga?status=PENDING"
               className="inline-flex items-center gap-2 text-sm font-semibold text-emerald-300 hover:text-white transition"

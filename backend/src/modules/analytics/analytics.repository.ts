@@ -111,7 +111,7 @@ export class AnalyticsRepository {
     });
   }
 
-  /** Statistik platform lintas-tenant — SUPER_ADMIN only. */
+  /** Statistik platform lintas-tenant untuk staf dengan akses keuangan platform. */
   async getPlatformOverview() {
     const [
       lembagaPending,
@@ -119,10 +119,10 @@ export class AnalyticsRepository {
       lembagaRejected,
       totalPrograms,
       totalDonationsAgg,
+      platformBalance,
+      institutionBalanceAgg,
       totalVolunteers,
-      pendingVolunteerApplications,
-      pendingWithdrawalsAgg,
-      processingPayoutsAgg
+      pendingVolunteerApplications
     ] = await Promise.all([
       this.prisma.lembaga.count({ where: { status: "PENDING" } }),
       this.prisma.lembaga.count({ where: { status: "APPROVED" } }),
@@ -130,24 +130,41 @@ export class AnalyticsRepository {
       this.prisma.program.count(),
       this.prisma.donation.aggregate({ 
         where: { status: "PAID" }, 
-        _sum: { amount: true, platformFee: true, institutionAmount: true },
+        _sum: { amount: true },
         _count: { id: true }
+      }),
+      this.prisma.platformBalance.findUnique({ where: { id: "platform" } }),
+      this.prisma.institutionBalance.aggregate({
+        _sum: { balance: true, reservedBalance: true },
       }),
       this.prisma.volunteer.count(),
       this.prisma.volunteerApplication.count({ where: { status: "PENDING" } }),
-      this.prisma.withdrawal.aggregate({ where: { status: "PENDING" }, _sum: { amount: true } }),
-      this.prisma.payout.aggregate({ where: { status: { in: ["REQUESTED", "ACCEPTED", "PROCESSING"] } }, _sum: { amount: true } }),
     ]);
+
+    const platformAvailableBalance = Number(platformBalance?.balance || 0);
+    const platformReservedBalance = Number(platformBalance?.reservedBalance || 0);
+    const institutionAvailableBalance = Number(institutionBalanceAgg._sum.balance || 0);
+    const institutionReservedBalance = Number(institutionBalanceAgg._sum.reservedBalance || 0);
+    const totalMoneyIn = Number(totalDonationsAgg._sum.amount || 0);
 
     return {
       lembaga: { pending: lembagaPending, approved: lembagaApproved, rejected: lembagaRejected },
       totalPrograms,
-      totalDonationsAmount: Number(totalDonationsAgg._sum.amount || 0),
-      platformRevenue: Number(totalDonationsAgg._sum.platformFee || 0),
-      institutionShare: Number(totalDonationsAgg._sum.institutionAmount || 0),
+      // Nilai uang di ringkasan ini berasal langsung dari transaksi PAID dan
+      // tabel saldo gateway, bukan dari persentase statis.
+      totalMoneyIn,
+      totalDonationsAmount: totalMoneyIn,
+      platformBalance: {
+        available: platformAvailableBalance,
+        reserved: platformReservedBalance,
+        total: platformAvailableBalance + platformReservedBalance,
+      },
+      institutionBalance: {
+        available: institutionAvailableBalance,
+        reserved: institutionReservedBalance,
+        total: institutionAvailableBalance + institutionReservedBalance,
+      },
       successfulPayments: totalDonationsAgg._count.id,
-      pendingWithdrawalsAmount: Number(pendingWithdrawalsAgg._sum.amount || 0),
-      processingPayoutsAmount: Number(processingPayoutsAgg._sum.amount || 0),
       totalVolunteers,
       pendingVolunteerApplications,
     };

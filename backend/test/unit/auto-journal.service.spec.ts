@@ -111,10 +111,27 @@ describe("AutoJournalService category mapping", () => {
     };
 
     await service.createWithdrawalCompletionJournal(
-      tx, "withdrawal-1", 95_000, "lembaga-1", null, "coa-bank-mandiri",
+      tx,
+      "withdrawal-1",
+      95_000,
+      "lembaga-1",
+      "admin-1",
+      "coa-bank-mandiri",
+      "program-1",
+      { bankCode: "ID_MANDIRI", accountNumber: "1234567890", programTitle: "Program Pendidikan" },
     );
 
     expect(created).toHaveLength(2);
+    expect(created[0]).toMatchObject({
+      lembagaId: "lembaga-1",
+      programId: "program-1",
+      createdById: "admin-1",
+      postedById: "admin-1",
+      sourceType: "WITHDRAWAL",
+      sourceEvent: "PAYOUT_SUCCEEDED",
+      description: expect.stringContaining("Program Pendidikan"),
+    });
+    expect(created[0].description).toContain("MANDIRI •7890");
     expect(created[0].details.create).toEqual([
       expect.objectContaining({ accountId: "coa-bank-mandiri", debit: 95_000, credit: 0 }),
       expect.objectContaining({ accountId: `account-${COA_KEYS.PAYMENT_GATEWAY_RECEIVABLE}`, debit: 0, credit: 95_000 }),

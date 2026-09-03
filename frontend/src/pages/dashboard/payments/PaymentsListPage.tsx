@@ -1,7 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { useSearchParams } from "react-router-dom";
 import { api } from "@/lib/api-client";
-import { useAuth } from "@/auth/AuthProvider";
 import { PaymentTable } from "@/features/payments/components/PaymentTable";
 import { PageHeader, TableSkeleton } from "@/components/ui";
 import { DataTableToolbar } from "@/components/ui/data-table";
@@ -10,11 +9,13 @@ import { Button } from "@/components/ui";
 import { Play } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
+import { usePermission } from "@/hooks/usePermission";
+import { PERMISSIONS } from "@shared/constants/permissions";
 
 export function PaymentsListPage() {
-  const { user } = useAuth();
+  const { can } = usePermission();
   const [searchParams] = useSearchParams();
-  const isSuperAdmin = user?.roleName === "SUPER_ADMIN";
+  const hasPlatformFinanceAccess = can(PERMISSIONS.PLATFORM_FINANCE_READ);
   const queryClient = useQueryClient();
   const [isSimulating, setIsSimulating] = useState(false);
 
@@ -44,7 +45,7 @@ export function PaymentsListPage() {
   const { data: lembagasResult } = useQuery({
     queryKey: ["lembaga", "options"],
     queryFn: () => api.get<any>("/lembaga/options"),
-    enabled: isSuperAdmin,
+    enabled: hasPlatformFinanceAccess,
   });
 
   const payments = (result?.data ?? []).map((p: any) => ({
@@ -62,7 +63,7 @@ export function PaymentsListPage() {
       <PageHeader
         title="Manajemen Pembayaran"
         description="Kelola transaksi pembayaran donasi, detail invoice, dan integrasi payment gateway."
-        action={
+        action={can(PERMISSIONS.PAYMENTS_MANAGE) ? (
           <Button 
             onClick={handleSimulate} 
             disabled={isSimulating}
@@ -73,14 +74,14 @@ export function PaymentsListPage() {
             <Play className="w-4 h-4" />
             {isSimulating ? "Menyimulasikan..." : "Simulate Xendit (Paid)"}
           </Button>
-        }
+        ) : undefined}
       />
 
       <DataTableToolbar
         searchValue={search}
         searchPlaceholder="Cari invoice, program, atau donatur..."
         filterSlot={
-          isSuperAdmin && lembagasResult?.data?.length ? (
+          hasPlatformFinanceAccess && lembagasResult?.data?.length ? (
             <UserLembagaFilter lembagas={lembagasResult.data} />
           ) : undefined
         }

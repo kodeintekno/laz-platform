@@ -1,6 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api-client";
-import { useAuth } from "@/auth/AuthProvider";
 import { useSearchParams } from "react-router-dom";
 import { CoaTree, type CoaAccount } from "@/features/coa/components/CoaTree";
 import { PageHeader } from "@/components/ui/PageHeader";
@@ -13,6 +12,8 @@ import { Button } from "@/components/ui/Button";
 import { Card, CardContent, Input, Select } from "@/components/ui";
 import { Plus } from "lucide-react";
 import { useState } from "react";
+import { usePermission } from "@/hooks/usePermission";
+import { PERMISSIONS } from "@shared/constants/permissions";
 
 const EXPECTED_LEMBAGA_COA_COUNT = 45;
 
@@ -54,15 +55,16 @@ function CoaSkeleton() {
 }
 
 export function CoaPage() {
-  const { user } = useAuth();
+  const { can } = usePermission();
   const [searchParams] = useSearchParams();
-  const isSuperAdmin = user?.roleName === "SUPER_ADMIN";
+  const hasPlatformFinanceAccess = can(PERMISSIONS.PLATFORM_FINANCE_READ);
+  const canManageCoa = can(PERMISSIONS.COA_MANAGE);
   const lembagaId = searchParams.get("lembagaId") ?? undefined;
-  const isPlatformBook = isSuperAdmin && searchParams.get("scope") === "platform";
+  const isPlatformBook = hasPlatformFinanceAccess && searchParams.get("scope") === "platform";
 
-  // Fetch COA — LEMBAGA_ADMIN auto-scoped, SUPER_ADMIN needs ?lembagaId=
-  const params = isPlatformBook ? { scope: "platform" } : isSuperAdmin && lembagaId ? { lembagaId } : undefined;
-  const enabled = isSuperAdmin ? isPlatformBook || !!lembagaId : true;
+  // LEMBAGA_ADMIN auto-scoped; user platform memilih Lembaga atau Buku Platform.
+  const params = isPlatformBook ? { scope: "platform" } : hasPlatformFinanceAccess && lembagaId ? { lembagaId } : undefined;
+  const enabled = hasPlatformFinanceAccess ? isPlatformBook || !!lembagaId : true;
 
   const { data: result, isLoading } = useQuery({
     queryKey: ["coa", { lembagaId, isPlatformBook }],
@@ -73,7 +75,7 @@ export function CoaPage() {
   const { data: lembagasResult } = useQuery({
     queryKey: ["lembaga", "options"],
     queryFn: () => api.get<any>("/lembaga/options"),
-    enabled: isSuperAdmin,
+    enabled: hasPlatformFinanceAccess,
   });
 
   const accounts = result?.data ?? [];
@@ -99,16 +101,16 @@ export function CoaPage() {
         </p>
       </div>
 
-      {/* Lembaga filter for SUPER_ADMIN */}
-      {isSuperAdmin && lembagasResult?.data?.length && (
+      {/* Lembaga filter for platform finance staff */}
+      {hasPlatformFinanceAccess && lembagasResult?.data?.length && (
         <div className="flex items-center gap-3">
           <span className="text-sm text-secondary font-medium">Filter Lembaga:</span>
           <UserLembagaFilter lembagas={lembagasResult.data} includePlatform />
         </div>
       )}
 
-      {/* No lembaga selected (SUPER_ADMIN) */}
-      {isSuperAdmin && !lembagaId && !isPlatformBook && (
+      {/* No lembaga selected (platform staff) */}
+      {hasPlatformFinanceAccess && !lembagaId && !isPlatformBook && (
         <div className="flex flex-col items-center justify-center py-20 text-center">
           <BookMarked className="w-14 h-14 text-secondary/30 mb-4" />
           <h3 className="font-semibold text-primary mb-1">Pilih Lembaga</h3>
@@ -133,7 +135,7 @@ export function CoaPage() {
             </span>
           </div>
           
-          {!isPlatformBook && (
+          {!isPlatformBook && canManageCoa && (
             <div className="flex gap-2">
               <Button intent="outline" size="sm" onClick={() => setShowCustomForm((value) => !value)}>
                 <Plus className="w-4 h-4 mr-2" /> Tambah Akun Anak
@@ -146,12 +148,12 @@ export function CoaPage() {
         </div>
       )}
 
-      {showCustomForm && !isPlatformBook && (
+      {showCustomForm && !isPlatformBook && canManageCoa && (
         <CustomCoaForm accounts={accounts} lembagaId={lembagaId} onClose={() => setShowCustomForm(false)} />
       )}
 
       {/* COA Tree */}
-      {(isSuperAdmin ? isPlatformBook || !!lembagaId : true) && (
+      {(hasPlatformFinanceAccess ? isPlatformBook || !!lembagaId : true) && (
         isLoading ? <CoaSkeleton /> : <CoaTree accounts={accounts} />
       )}
     </div>

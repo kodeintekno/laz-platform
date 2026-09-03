@@ -1,57 +1,40 @@
 import { useState } from "react";
 import { Navigate } from "react-router-dom";
-import { Building2, CheckCircle2, Pencil, Plus, Star, Trash2 } from "lucide-react";
+import { Building2, Pencil, Plus, ShieldCheck, Wifi } from "lucide-react";
 import { useAuth } from "@/auth/AuthProvider";
 import { PageHeader, Input, Select, Button, Card, CardContent } from "@/components/ui";
 import { toast } from "@/stores/toast.store";
 import {
   useBankAccounts,
   useSaveBankAccount,
-  useDeactivateBankAccount,
   type LembagaBankAccount,
 } from "@/features/withdrawals/api/withdrawals";
-
-const BANKS = [
-  ["ID_BCA", "BCA – Bank Central Asia"],
-  ["ID_MANDIRI", "MANDIRI – Bank Mandiri"],
-  ["ID_BNI", "BNI – Bank Negara Indonesia"],
-  ["ID_BRI", "BRI – Bank Rakyat Indonesia"],
-  ["ID_BSI", "BSI – Bank Syariah Indonesia"],
-  ["ID_CIMB", "CIMB – CIMB Niaga"],
-  ["ID_PERMATA", "PERMATA – Bank Permata"],
-  ["ID_DANAMON", "DANAMON – Bank Danamon"],
-  ["ID_MUAMALAT", "MUAMALAT – Bank Muamalat"],
-] as const;
+import { BANK_OPTIONS, getBankLabel } from "@/features/withdrawals/constants/banks";
 
 type FormState = {
   id?: string;
   bankCode: string;
   accountNumber: string;
   accountHolder: string;
-  label: string;
-  isDefault: boolean;
 };
 
 const emptyForm: FormState = {
-  bankCode: "", accountNumber: "", accountHolder: "", label: "", isDefault: false,
+  bankCode: "", accountNumber: "", accountHolder: "",
 };
 
 export function BankAccountPage() {
   const { user } = useAuth();
   const { data: accounts = [], isLoading } = useBankAccounts();
   const save = useSaveBankAccount();
-  const deactivate = useDeactivateBankAccount();
   const [form, setForm] = useState<FormState | null>(null);
 
   if (!user?.lembagaId) return <Navigate to="/dashboard" replace />;
 
-  const edit = (account: LembagaBankAccount, makeDefault = false) => setForm({
+  const edit = (account: LembagaBankAccount) => setForm({
     id: account.id,
     bankCode: account.bankCode,
     accountNumber: account.accountNumber,
     accountHolder: account.accountHolder,
-    label: account.label ?? "",
-    isDefault: makeDefault || account.isDefault,
   });
 
   const submit = async () => {
@@ -61,33 +44,25 @@ export function BankAccountPage() {
     }
     try {
       await save.mutateAsync(form);
-      toast.success(form.id ? "Rekening berhasil diperbarui." : "Rekening dan akun COA berhasil dibuat.");
+      toast.success(form.id ? "Rekening berhasil diperbarui." : "Rekening lembaga berhasil disimpan.");
       setForm(null);
     } catch (error: any) {
       toast.error(error?.message || "Gagal menyimpan rekening Bank");
     }
   };
 
-  const remove = async (account: LembagaBankAccount) => {
-    if (!window.confirm(`Nonaktifkan rekening ${account.chartOfAccount.name}?`)) return;
-    try {
-      await deactivate.mutateAsync(account.id);
-      toast.success("Rekening berhasil dinonaktifkan.");
-    } catch (error: any) {
-      toast.error(error?.message || "Rekening tidak dapat dinonaktifkan");
-    }
-  };
-
   return (
     <div className="space-y-6">
       <PageHeader title="Rekening Bank Lembaga"
-        description="Kelola beberapa rekening pencairan. Setiap rekening otomatis mempunyai akun COA sendiri." />
+        description="Satu rekening resmi digunakan untuk seluruh pencairan dana Lembaga." />
 
-      <div className="flex justify-end">
-        <Button onClick={() => setForm({ ...emptyForm, isDefault: accounts.length === 0 })}>
-          <Plus className="w-4 h-4 mr-2" /> Tambah Rekening
-        </Button>
-      </div>
+      {!accounts.length && !isLoading && (
+        <div className="flex justify-end">
+          <Button onClick={() => setForm({ ...emptyForm })}>
+            <Plus className="w-4 h-4 mr-2" /> Tambah Rekening
+          </Button>
+        </div>
+      )}
 
       {form && (
         <Card>
@@ -98,13 +73,10 @@ export function BankAccountPage() {
                 <label className="text-sm font-medium">Bank</label>
                 <Select value={form.bankCode} onChange={(event) => setForm({ ...form, bankCode: event.target.value })}>
                   <option value="">Pilih Bank</option>
-                  {BANKS.map(([code, label]) => <option key={code} value={code}>{label}</option>)}
+                  {BANK_OPTIONS.map((bank) => (
+                    <option key={bank.value} value={bank.value}>{bank.label}</option>
+                  ))}
                 </Select>
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Nama/Label Rekening (opsional)</label>
-                <Input value={form.label} placeholder="Contoh: Mandiri Operasional"
-                  onChange={(event) => setForm({ ...form, label: event.target.value })} />
               </div>
               <div className="space-y-2">
                 <label className="text-sm font-medium">Nomor Rekening</label>
@@ -117,11 +89,6 @@ export function BankAccountPage() {
                   onChange={(event) => setForm({ ...form, accountHolder: event.target.value })} />
               </div>
             </div>
-            <label className="flex items-center gap-2 text-sm">
-              <input type="checkbox" checked={form.isDefault} disabled={!!form.id && form.isDefault}
-                onChange={(event) => setForm({ ...form, isDefault: event.target.checked })} />
-              Jadikan rekening utama
-            </label>
             <div className="flex justify-end gap-2">
               <Button intent="outline" onClick={() => setForm(null)}>Batal</Button>
               <Button onClick={submit} isLoading={save.isPending}>Simpan</Button>
@@ -131,34 +98,90 @@ export function BankAccountPage() {
       )}
 
       {isLoading ? <p className="text-secondary">Memuat rekening...</p> : (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 gap-6">
           {accounts.map((account) => (
-            <Card key={account.id}>
-              <CardContent className="p-5 space-y-4">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex items-center gap-3">
-                    <span className="p-2 rounded-lg bg-blue-50"><Building2 className="w-5 h-5 text-blue-600" /></span>
-                    <div>
-                      <p className="font-bold text-primary">{account.label || account.chartOfAccount.name}</p>
-                      <p className="text-sm text-secondary">{account.bankCode.replace(/^ID_/, "")} · {account.accountNumber}</p>
+            <Card key={account.id} className="border-0 bg-transparent overflow-visible">
+              <CardContent className="p-0">
+                <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,560px)_1fr] gap-5 items-stretch">
+                  <div className="relative min-h-[290px] overflow-hidden rounded-[28px] bg-gradient-to-br from-zinc-950 via-zinc-900 to-slate-800 p-6 sm:p-8 text-white shadow-2xl shadow-black/20 ring-1 ring-white/10">
+                    <div className="absolute -right-20 -top-24 h-64 w-64 rounded-full border border-white/10 bg-white/[0.03]" />
+                    <div className="absolute -bottom-28 -left-16 h-64 w-64 rounded-full border border-white/10 bg-white/[0.02]" />
+                    <div className="absolute inset-0 bg-[linear-gradient(115deg,transparent_25%,rgba(255,255,255,0.06)_48%,transparent_68%)]" />
+
+                    <div className="relative flex h-full flex-col justify-between gap-8">
+                      <div className="flex items-start justify-between gap-4">
+                        <div>
+                          <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-white/50">Rekening Pencairan</p>
+                          <p className="mt-1 text-lg font-bold tracking-wide">RUANG BERBAGI</p>
+                        </div>
+                        <div className="flex items-center gap-2 rounded-full border border-white/10 bg-white/10 px-3 py-1.5 text-xs text-white/80 backdrop-blur-sm">
+                          <ShieldCheck className="h-3.5 w-3.5 text-emerald-300" /> Rekening Utama
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-between">
+                        <div className="grid h-10 w-14 grid-cols-3 grid-rows-2 overflow-hidden rounded-lg border border-amber-200/40 bg-gradient-to-br from-amber-200 via-amber-400 to-amber-600 shadow-inner">
+                          {Array.from({ length: 6 }).map((_, index) => (
+                            <span key={index} className="border border-amber-900/20" />
+                          ))}
+                        </div>
+                        <Wifi className="h-7 w-7 rotate-90 text-white/60" />
+                      </div>
+
+                      <div>
+                        <p className="font-mono text-xl sm:text-2xl font-semibold tracking-[0.16em] sm:tracking-[0.22em] text-white break-all">
+                          {account.accountNumber.replace(/(.{4})/g, "$1 ").trim()}
+                        </p>
+                        <div className="mt-6 flex items-end justify-between gap-4">
+                          <div className="min-w-0">
+                            <p className="text-[10px] uppercase tracking-[0.2em] text-white/40">Pemilik Rekening</p>
+                            <p className="mt-1 truncate text-sm font-semibold uppercase tracking-wider">{account.accountHolder}</p>
+                          </div>
+                          <div className="shrink-0 text-right">
+                            <p className="text-[10px] uppercase tracking-[0.2em] text-white/40">Bank</p>
+                            <p className="mt-1 text-lg font-black tracking-wider">{account.bankCode.replace(/^ID_/, "")}</p>
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   </div>
-                  {account.isDefault && <span className="inline-flex items-center gap-1 text-xs text-amber-700"><Star className="w-3 h-3" /> Utama</span>}
-                </div>
-                <div className="rounded-lg bg-surface-soft p-3 text-sm">
-                  <p>a.n. <strong>{account.accountHolder}</strong></p>
-                  <p className="mt-1 text-secondary">COA: <strong>{account.chartOfAccount.code} — {account.chartOfAccount.name}</strong></p>
-                </div>
-                <div className="flex justify-end gap-2">
-                  <Button size="sm" intent="outline" onClick={() => edit(account)}><Pencil className="w-4 h-4 mr-1" /> Ubah</Button>
-                  {!account.isDefault && (
-                    <Button size="sm" intent="outline" onClick={() => edit(account, true)}>
-                      <CheckCircle2 className="w-4 h-4 mr-1" /> Jadikan Utama
-                    </Button>
-                  )}
-                  <Button size="sm" intent="destructive" onClick={() => remove(account)} disabled={deactivate.isPending}>
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
+
+                  <div className="flex flex-col justify-between rounded-2xl border border-border/40 bg-surface p-5 sm:p-6">
+                    <div>
+                      <div className="flex items-center gap-3">
+                        <span className="rounded-xl bg-surface-soft p-2.5">
+                          <Building2 className="h-5 w-5 text-primary" />
+                        </span>
+                        <div>
+                          <p className="font-bold text-primary">Detail Rekening Utama</p>
+                          <p className="text-sm text-secondary">Digunakan otomatis untuk seluruh pencairan.</p>
+                        </div>
+                      </div>
+                      <dl className="mt-6 space-y-4 text-sm">
+                        <div className="flex items-center justify-between gap-4 border-b border-border/40 pb-3">
+                          <dt className="text-secondary">Bank</dt>
+                          <dd className="text-right font-semibold text-primary">
+                            {getBankLabel(account.bankCode)}
+                          </dd>
+                        </div>
+                        <div className="flex items-center justify-between gap-4 border-b border-border/40 pb-3">
+                          <dt className="text-secondary">Nomor rekening</dt>
+                          <dd className="font-mono font-semibold text-primary">{account.accountNumber}</dd>
+                        </div>
+                        <div className="flex items-center justify-between gap-4">
+                          <dt className="text-secondary">Akun pencatatan</dt>
+                          <dd className="text-right font-semibold text-primary">
+                            {account.chartOfAccount.code} — {account.chartOfAccount.name}
+                          </dd>
+                        </div>
+                      </dl>
+                    </div>
+                    <div className="mt-6 flex justify-end">
+                      <Button size="sm" intent="outline" onClick={() => edit(account)}>
+                        <Pencil className="mr-1.5 h-4 w-4" /> Ubah Rekening
+                      </Button>
+                    </div>
+                  </div>
                 </div>
               </CardContent>
             </Card>

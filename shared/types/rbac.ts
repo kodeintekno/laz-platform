@@ -7,7 +7,7 @@ import type { PermissionKey } from "../constants/permissions";
 
 // ─── Role ────────────────────────────────────────────────────────────────────
 
-export type RoleName = "SUPER_ADMIN" | "LEMBAGA_ADMIN";
+export type RoleName = "SUPER_ADMIN" | "FINANCE_PLATFORM" | "LEMBAGA_ADMIN";
 
 export interface RBACRole {
   id: string;
@@ -29,7 +29,7 @@ export interface RBACSessionUser {
   roleId?: string;
   roleName?: RoleName;
   permissions: PermissionKey[];
-  /** Null for SUPER_ADMIN (platform-level); required for LEMBAGA_ADMIN. */
+  /** Null for platform-level roles; required for LEMBAGA_ADMIN. */
   lembagaId?: string | null;
   avatarUrl?: string | null;
   avatarPublicId?: string | null;

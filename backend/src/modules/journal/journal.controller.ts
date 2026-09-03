@@ -8,6 +8,7 @@ import { AppError } from "../../common/errors/app.error";
 import { ZodValidationPipe } from "../../common/pipes/zod-validation.pipe";
 import { journalSchema, voidJournalSchema, type JournalInput, type VoidJournalInput } from "../../../../shared/validations/journal.schema";
 import type { RBACSessionUser } from "../../../../shared/types/rbac";
+import { hasPermission } from "../../../../shared/lib/permissions";
 
 @Controller("api/journal")
 export class JournalController {
@@ -24,7 +25,9 @@ export class JournalController {
     @Query("scope") scope?: string,
   ) {
     if (scope === "platform") {
-      if (user.roleName !== "SUPER_ADMIN") throw new AppError("FORBIDDEN", "Buku Platform hanya untuk SUPER_ADMIN", 403);
+      if (!hasPermission(user, PERMISSIONS.PLATFORM_FINANCE_READ)) {
+        throw new AppError("FORBIDDEN", "Buku Platform hanya untuk staf keuangan platform", 403);
+      }
       return this.journalService.getJournals(null, Number(page), Number(limit), search);
     }
     const lembagaId = resolveLembagaScope(user, queryLembagaId);
@@ -44,7 +47,9 @@ export class JournalController {
     @Query("scope") scope?: string,
   ) {
     if (scope === "platform") {
-      if (user.roleName !== "SUPER_ADMIN") throw new AppError("FORBIDDEN", "Buku Platform hanya untuk SUPER_ADMIN", 403);
+      if (!hasPermission(user, PERMISSIONS.PLATFORM_FINANCE_READ)) {
+        throw new AppError("FORBIDDEN", "Buku Platform hanya untuk staf keuangan platform", 403);
+      }
       return this.journalService.getJournalById(id, null);
     }
     const lembagaId = resolveLembagaScope(user, queryLembagaId);

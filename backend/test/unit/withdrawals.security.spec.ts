@@ -19,7 +19,8 @@ describe("Withdrawals Security", () => {
   beforeEach(async () => {
     prisma = {
       lembaga: { findUnique: vi.fn() },
-      lembagaBankAccount: { findFirst: vi.fn() },
+      lembagaBankAccount: { findUnique: vi.fn() },
+      programBalance: { findFirst: vi.fn() },
       withdrawal: { findUnique: vi.fn() },
     };
 
@@ -78,20 +79,35 @@ describe("Withdrawals Security", () => {
       prisma.lembaga.findUnique.mockResolvedValue({
         status: "APPROVED",
       });
-      prisma.lembagaBankAccount.findFirst.mockResolvedValue({
+      prisma.programBalance.findFirst.mockResolvedValue({ programId: "program-1" });
+      prisma.lembagaBankAccount.findUnique.mockResolvedValue({
         id: "bank-1", bankCode: "ID_BCA", accountNumber: "12345", accountHolder: "John",
+        isActive: true,
       });
 
       // Even if attacker tries to pass a different lembagaId in body, 
       // the controller signature doesn't even accept it. It hardcodes user.lembagaId.
-      await controller.createWithdrawal(mockReq as any, { amount: 10000, bankAccountId: "bank-1" });
+      await controller.createWithdrawal(mockReq as any, { amount: 10000, programId: "program-1" });
 
       expect(repository.createWithdrawal).toHaveBeenCalledWith(
         "lembaga-1", 
+        "program-1",
         10000, 
         "user-1",
         "bank-1", "ID_BCA", "12345", "John"
       );
+    });
+
+    it("rejects a program balance that does not belong to the authenticated institution", async () => {
+      prisma.lembaga.findUnique.mockResolvedValue({ status: "APPROVED" });
+      prisma.programBalance.findFirst.mockResolvedValue(null);
+
+      await expect(
+        service.createWithdrawal("lembaga-1", "user-1", 10000, "program-milik-lembaga-lain"),
+      ).rejects.toMatchObject({ code: "PROGRAM_BALANCE_NOT_FOUND" });
+
+      expect(repository.createWithdrawal).not.toHaveBeenCalled();
+      expect(prisma.lembagaBankAccount.findUnique).not.toHaveBeenCalled();
     });
   });
 
@@ -111,6 +127,37 @@ describe("Withdrawals Security", () => {
       expect(xenditService.createPayout).toHaveBeenCalledWith(expect.objectContaining({
         idempotencyKey: "uuid-1234"
       }));
+      expect(repository.updatePayoutStatus).toHaveBeenCalledWith(
+        "with-1",
+        "py-1",
+        "PROCESSING",
+        "PROCESSING",
+      );
+    });
+
+    it("does not mark a withdrawal completed from the create-payout response alone", async () => {
+      repository.createPayoutRecord.mockResolvedValue({
+        status: "REQUESTED",
+        idempotencyKey: "uuid-1234",
+        referenceId: "payout-with-1",
+      });
+      xenditService.createPayout.mockResolvedValue({ status: "SUCCEEDED", payoutId: "py-1" });
+
+      await service.processApprovedWithdrawal({
+        id: "with-1",
+        status: "APPROVED",
+        amount: 10000,
+        bankCode: "BCA",
+        accountNumber: "123",
+        accountHolder: "John",
+      });
+
+      expect(repository.updatePayoutStatus).toHaveBeenCalledWith(
+        "with-1",
+        "py-1",
+        "PROCESSING",
+        "PROCESSING",
+      );
     });
   });
 

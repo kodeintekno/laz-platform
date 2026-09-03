@@ -9,7 +9,8 @@ interface VolunteerProfile {
   name: string;
   email: string;
   phone: string;
-  address?: string | null;
+  addressDomicile?: string | null;
+  addressKtp?: string | null;
   photoUrl?: string | null;
   photoPublicId?: string | null;
   ktpUrl?: string | null;
@@ -52,7 +53,8 @@ export function VolunteerProfileForm({ initialData }: { initialData: VolunteerPr
         defaultValues={{
           name: initialData.name,
           phone: initialData.phone,
-          address: initialData.address ?? "",
+          addressDomicile: initialData.addressDomicile ?? "",
+          addressKtp: initialData.addressKtp ?? "",
         }}
       >
         <CardContent className="space-y-6">
@@ -61,7 +63,8 @@ export function VolunteerProfileForm({ initialData }: { initialData: VolunteerPr
             Email: <span className="font-semibold text-primary">{initialData.email}</span> (tidak dapat diubah)
           </div>
           <FormField name="phone" label="Nomor Telepon" type="input" inputType="tel" disabled={isPending} />
-          <FormField name="address" label="Alamat" type="textarea" rows={2} disabled={isPending} />
+          <FormField name="addressDomicile" label="Alamat Domisili" required type="textarea" rows={2} placeholder="Alamat tempat tinggal saat ini" disabled={isPending} />
+          <FormField name="addressKtp" label="Alamat KTP" required type="textarea" rows={2} placeholder="Alamat sesuai KTP" disabled={isPending} />
 
           <FileUpload
             name="photoUrl"

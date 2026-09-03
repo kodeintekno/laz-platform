@@ -77,6 +77,7 @@ model Lembaga {
   users                      User[]
   documents                  LembagaDocument[]
   journals                   Journal[]
+  programBalances            ProgramBalance[]
   volunteerApplications      VolunteerApplication[]
   volunteerActivities        VolunteerActivity[]
   balance                    InstitutionBalance?
@@ -217,6 +218,9 @@ model Program {
   amilPlatformPercentage     Decimal                     @db.Decimal(5, 2)
   amilInstitutionPercentage  Decimal                     @db.Decimal(5, 2)
   amilMaxTotalPercentage     Decimal                     @db.Decimal(5, 2)
+  /// Usulan porsi amil platform khusus program ini. Null berarti memakai default snapshot.
+  requestedAmilPlatformPercentage Decimal?               @db.Decimal(5, 2)
+  amilPlatformChangeReason   String?
   amilLockedAt               DateTime?
   createdAt                  DateTime                    @default(now())
   updatedAt                  DateTime                    @updatedAt
@@ -228,9 +232,42 @@ model Program {
   lembaga                    Lembaga                     @relation(fields: [lembagaId], references: [id], onDelete: Cascade)
   volunteerActivities        VolunteerActivity[]
   amilPlatformChangeRequests AmilPlatformChangeRequest[]
+  reviewHistory              ProgramReviewHistory[]
+  balance                    ProgramBalance?
+  withdrawals                Withdrawal[]
 
   @@unique([lembagaId, slug])
+  @@unique([id, lembagaId])
   @@map("programs")
+}
+
+enum ProgramReviewStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  WITHDRAWN
+}
+
+/// Snapshot setiap kali program diajukan untuk direview. Riwayat ini tetap ada
+/// ketika program ditolak, diperbaiki, lalu diajukan ulang.
+model ProgramReviewHistory {
+  id                          String              @id @default(cuid())
+  programId                   String
+  status                      ProgramReviewStatus @default(PENDING)
+  defaultPlatformPercentage   Decimal             @db.Decimal(5, 2)
+  requestedPlatformPercentage Decimal?            @db.Decimal(5, 2)
+  institutionPercentage       Decimal             @db.Decimal(5, 2)
+  maxTotalPercentage           Decimal             @db.Decimal(5, 2)
+  platformChangeReason        String?
+  rejectionReason             String?
+  submittedAt                 DateTime            @default(now())
+  reviewedAt                  DateTime?
+
+  program Program @relation(fields: [programId], references: [id], onDelete: Cascade)
+
+  @@index([programId, submittedAt])
+  @@index([status, submittedAt])
+  @@map("program_review_history")
 }
 
 model Donation {
@@ -304,23 +341,24 @@ model Distribution {
 }
 
 model Volunteer {
-  id            String                 @id @default(cuid())
-  name          String
-  email         String                 @unique
-  password      String
-  phone         String
-  address       String?
-  photoUrl      String?
-  photoPublicId String?
-  ktpUrl        String?
-  ktpPublicId   String?
-  cvUrl         String?
-  cvPublicId    String?
-  status        VolunteerStatus        @default(ACTIVE)
-  createdAt     DateTime               @default(now())
-  updatedAt     DateTime               @updatedAt
-  applications  VolunteerApplication[]
-  notifications Notification[]
+  id               String                 @id @default(cuid())
+  name             String
+  email            String                 @unique
+  password         String
+  phone             String
+  addressDomicile  String?
+  addressKtp       String?
+  photoUrl         String?
+  photoPublicId    String?
+  ktpUrl           String?
+  ktpPublicId      String?
+  cvUrl            String?
+  cvPublicId       String?
+  status           VolunteerStatus        @default(ACTIVE)
+  createdAt        DateTime               @default(now())
+  updatedAt        DateTime               @updatedAt
+  applications     VolunteerApplication[]
+  notifications    Notification[]
 
   @@map("volunteers")
 }
@@ -714,8 +752,30 @@ model InstitutionBalance {
   @@map("institution_balances")
 }
 
-/// Rekening pencairan milik Lembaga. Setiap rekening mempunyai akun COA
-/// detail sendiri di bawah kelompok Rekening Bank.
+/// Saldo dana yang masih berada di payment gateway, terisolasi untuk satu
+/// program. Saldo ini adalah sumber otoritatif saat Lembaga mengajukan
+/// penarikan; InstitutionBalance hanya menyimpan agregat lintas program.
+model ProgramBalance {
+  id                      String   @id @default(cuid())
+  programId               String   @unique
+  lembagaId               String
+  balance                 Decimal  @default(0) @db.Decimal(15, 2)
+  mustahiqBalance         Decimal  @default(0) @db.Decimal(15, 2)
+  amilBalance             Decimal  @default(0) @db.Decimal(15, 2)
+  reservedBalance         Decimal  @default(0) @db.Decimal(15, 2)
+  reservedMustahiqBalance Decimal  @default(0) @db.Decimal(15, 2)
+  reservedAmilBalance     Decimal  @default(0) @db.Decimal(15, 2)
+  updatedAt               DateTime @updatedAt
+
+  program Program @relation(fields: [programId, lembagaId], references: [id, lembagaId], onDelete: Cascade)
+  lembaga Lembaga @relation(fields: [lembagaId], references: [id], onDelete: Cascade)
+
+  @@index([lembagaId])
+  @@unique([programId, lembagaId])
+  @@map("program_balances")
+}
+
+/// Satu-satunya rekening pencairan milik Lembaga, terhubung ke akun COA Bank.
 model LembagaBankAccount {
   id               String   @id @default(cuid())
   lembagaId        String
@@ -733,7 +793,7 @@ model LembagaBankAccount {
   chartOfAccount ChartOfAccount @relation(fields: [chartOfAccountId], references: [id], onDelete: Restrict)
   withdrawals    Withdrawal[]
 
-  @@unique([lembagaId, accountNumber])
+  @@unique([lembagaId])
   @@index([lembagaId, isActive])
   @@map("lembaga_bank_accounts")
 }
@@ -758,7 +818,12 @@ model Withdrawal {
   lembagaId       String?
   isPlatform      Boolean          @default(false)
   bankAccountId   String?
+  programId       String?
   amount          Decimal          @db.Decimal(15, 2)
+  /// Komponen saldo program yang dikunci saat request dibuat. Snapshot ini
+  /// memastikan reject/failure mengembalikan dana ke sumber yang persis sama.
+  mustahiqAmount  Decimal          @default(0) @db.Decimal(15, 2)
+  amilAmount      Decimal          @default(0) @db.Decimal(15, 2)
   status          WithdrawalStatus @default(PENDING)
   bankCode        String
   accountNumber   String
@@ -774,8 +839,10 @@ model Withdrawal {
   approvedBy  User?               @relation("WithdrawalApprover", fields: [approvedById], references: [id])
   payout      Payout?
   bankAccount LembagaBankAccount? @relation(fields: [bankAccountId], references: [id], onDelete: SetNull)
+  program     Program?            @relation(fields: [programId, lembagaId], references: [id, lembagaId], onDelete: Restrict)
 
   @@index([bankAccountId])
+  @@index([programId])
   @@map("withdrawals")
 }
 

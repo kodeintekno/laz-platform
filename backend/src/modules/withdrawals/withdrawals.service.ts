@@ -6,6 +6,7 @@ import { XenditService } from "../../lib/xendit/xendit.service";
 import * as crypto from "crypto";
 import { NotificationsService } from "../notifications/notifications.service";
 import { COA_KEYS } from "../coa/coa.template";
+import { Prisma } from "@prisma/client";
 
 @Injectable()
 export class WithdrawalsService {
@@ -18,7 +19,7 @@ export class WithdrawalsService {
     @Optional() private readonly notifications?: NotificationsService,
   ) { }
 
-  async createWithdrawal(lembagaId: string, userId: string, amount: number, bankAccountId: string) {
+  async createWithdrawal(lembagaId: string, userId: string, amount: number, programId: string) {
     if (amount <= 0 || !Number.isInteger(amount)) {
       throw new AppError("INVALID_AMOUNT", "Withdrawal amount must be a positive integer.", 400);
     }
@@ -36,13 +37,30 @@ export class WithdrawalsService {
       throw new AppError("FORBIDDEN", "Institution is not eligible to withdraw funds.", 403);
     }
 
-    const bankAccount = await this.prisma.lembagaBankAccount.findFirst({
-      where: { id: bankAccountId, lembagaId, isActive: true },
+    if (!programId?.trim()) {
+      throw new AppError("PROGRAM_REQUIRED", "Program sumber dana wajib dipilih.", 400);
+    }
+
+    const programBalance = await this.prisma.programBalance.findFirst({
+      where: { programId, lembagaId },
+      select: { programId: true },
     });
-    if (!bankAccount) throw new AppError("BANK_NOT_FOUND", "Rekening Bank tidak ditemukan atau tidak aktif", 404);
+    if (!programBalance) {
+      throw new AppError("PROGRAM_BALANCE_NOT_FOUND", "Program tidak memiliki saldo yang dapat ditarik.", 404);
+    }
+
+    // Rekening tidak diterima dari client. Backend selalu mengambil satu-satunya
+    // rekening aktif milik tenant sehingga IDOR/cross-tenant tidak mungkin.
+    const bankAccount = await this.prisma.lembagaBankAccount.findUnique({
+      where: { lembagaId },
+    });
+    if (!bankAccount?.isActive) {
+      throw new AppError("BANK_NOT_FOUND", "Rekening Bank tidak ditemukan atau tidak aktif", 404);
+    }
 
     const withdrawal = await this.withdrawalsRepository.createWithdrawal(
       lembagaId,
+      programId,
       amount,
       userId,
       bankAccount.id,
@@ -59,11 +77,41 @@ export class WithdrawalsService {
     return withdrawal;
   }
 
+  async listProgramBalances(lembagaId: string) {
+    const programs = await this.prisma.program.findMany({
+      where: { lembagaId },
+      select: {
+        id: true,
+        title: true,
+        slug: true,
+        status: true,
+        createdAt: true,
+        balance: {
+          select: {
+            balance: true,
+            mustahiqBalance: true,
+            amilBalance: true,
+            reservedBalance: true,
+          },
+        },
+      },
+      orderBy: { createdAt: "desc" },
+    });
+    return programs.map(({ balance, ...program }) => ({
+      programId: program.id,
+      balance: balance?.balance ?? 0,
+      mustahiqBalance: balance?.mustahiqBalance ?? 0,
+      amilBalance: balance?.amilBalance ?? 0,
+      reservedBalance: balance?.reservedBalance ?? 0,
+      program,
+    }));
+  }
+
   async listBankAccounts(lembagaId: string) {
     return this.prisma.lembagaBankAccount.findMany({
       where: { lembagaId, isActive: true },
       include: { chartOfAccount: { select: { id: true, code: true, name: true } } },
-      orderBy: [{ isDefault: "desc" }, { createdAt: "asc" }],
+      take: 1,
     });
   }
 
@@ -72,11 +120,55 @@ export class WithdrawalsService {
   }) {
     this.validateBankAccount(input);
     return this.prisma.$transaction(async (tx) => {
+      // Serialisasi create pada tenant yang sama; unique(lembagaId) tetap
+      // menjadi lapisan pertahanan terakhir di database.
+      await tx.$queryRaw(Prisma.sql`SELECT pg_advisory_xact_lock(hashtext(${lembagaId}))`);
+
+      const existingBank = await tx.lembagaBankAccount.findUnique({
+        where: { lembagaId },
+        include: { chartOfAccount: { select: { id: true, code: true, name: true } } },
+      });
+      if (existingBank?.isActive) {
+        throw new AppError(
+          "BANK_ACCOUNT_ALREADY_EXISTS",
+          "Lembaga hanya boleh memiliki satu rekening Bank. Ubah rekening yang sudah ada.",
+          409,
+        );
+      }
+
+      if (existingBank) {
+        const accountName = this.bankCoaName(input);
+        await tx.chartOfAccount.update({
+          where: { id: existingBank.chartOfAccountId },
+          data: { name: accountName, isActive: true },
+        });
+        const reactivated = await tx.lembagaBankAccount.update({
+          where: { id: existingBank.id },
+          data: {
+            bankCode: input.bankCode.trim(),
+            accountNumber: input.accountNumber.trim(),
+            accountHolder: input.accountHolder.trim(),
+            label: input.label?.trim() || null,
+            isDefault: true,
+            isActive: true,
+          },
+          include: { chartOfAccount: { select: { id: true, code: true, name: true } } },
+        });
+        await tx.lembaga.update({
+          where: { id: lembagaId },
+          data: {
+            bankCode: reactivated.bankCode,
+            accountNumber: reactivated.accountNumber,
+            accountHolder: reactivated.accountHolder,
+          },
+        });
+        return reactivated;
+      }
+
       const parent = await tx.chartOfAccount.findFirst({
         where: { lembagaId, key: COA_KEYS.BANK_ACCOUNTS, isActive: true },
       });
       if (!parent) throw new AppError("BANK_COA_NOT_FOUND", "Kelompok COA Rekening Bank belum tersedia", 500);
-      const existing = await tx.lembagaBankAccount.count({ where: { lembagaId, isActive: true } });
       const usedCodes = new Set((await tx.chartOfAccount.findMany({
         where: { accountingBookId: parent.accountingBookId, code: { startsWith: "1103" } },
         select: { code: true },
@@ -87,8 +179,6 @@ export class WithdrawalsService {
         if (!usedCodes.has(candidate)) { code = candidate; break; }
       }
       if (!code) throw new AppError("BANK_COA_LIMIT", "Maksimal rekening Bank telah tercapai", 409);
-      const makeDefault = existing === 0 || input.isDefault === true;
-      if (makeDefault) await tx.lembagaBankAccount.updateMany({ where: { lembagaId }, data: { isDefault: false } });
       const accountName = this.bankCoaName(input);
       const coa = await tx.chartOfAccount.create({
         data: {
@@ -115,11 +205,11 @@ export class WithdrawalsService {
           accountNumber: input.accountNumber.trim(),
           accountHolder: input.accountHolder.trim(),
           label: input.label?.trim() || null,
-          isDefault: makeDefault,
+          isDefault: true,
         },
         include: { chartOfAccount: { select: { id: true, code: true, name: true } } },
       });
-      if (makeDefault) await tx.lembaga.update({
+      await tx.lembaga.update({
         where: { id: lembagaId },
         data: { bankCode: bank.bankCode, accountNumber: bank.accountNumber, accountHolder: bank.accountHolder },
       });
@@ -132,20 +222,22 @@ export class WithdrawalsService {
   }) {
     this.validateBankAccount(input);
     return this.prisma.$transaction(async (tx) => {
-      const current = await tx.lembagaBankAccount.findFirst({ where: { id, lembagaId, isActive: true } });
-      if (!current) throw new AppError("BANK_NOT_FOUND", "Rekening Bank tidak ditemukan", 404);
-      if (input.isDefault) await tx.lembagaBankAccount.updateMany({ where: { lembagaId }, data: { isDefault: false } });
+      const current = await tx.lembagaBankAccount.findUnique({ where: { lembagaId } });
+      if (current?.id !== id || !current.isActive) {
+        throw new AppError("BANK_NOT_FOUND", "Rekening Bank tidak ditemukan", 404);
+      }
       const bank = await tx.lembagaBankAccount.update({
         where: { id },
         data: {
           bankCode: input.bankCode.trim(), accountNumber: input.accountNumber.trim(),
           accountHolder: input.accountHolder.trim(), label: input.label?.trim() || null,
-          isDefault: input.isDefault ? true : current.isDefault,
+          isDefault: true,
+          isActive: true,
           chartOfAccount: { update: { name: this.bankCoaName(input) } },
         },
         include: { chartOfAccount: { select: { id: true, code: true, name: true } } },
       });
-      if (bank.isDefault) await tx.lembaga.update({
+      await tx.lembaga.update({
         where: { id: lembagaId },
         data: { bankCode: bank.bankCode, accountNumber: bank.accountNumber, accountHolder: bank.accountHolder },
       });
@@ -217,9 +309,7 @@ export class WithdrawalsService {
   }
 
   async updatePlatformBankAccount(userId: string, input: { bankCode: string; accountNumber: string; accountHolder: string }) {
-    if (!input.bankCode?.trim() || !input.accountNumber?.trim() || !input.accountHolder?.trim()) {
-      throw new AppError("INVALID_BANK_ACCOUNT", "Data rekening Bank Platform wajib lengkap.", 400);
-    }
+    this.validateBankAccount(input);
     const balance = await this.prisma.platformBalance.upsert({
       where: { id: "platform" },
       update: {
@@ -298,10 +388,15 @@ export class WithdrawalsService {
       accountHolderName: withdrawal.accountHolder,
     });
 
-    // 3. Update Status
-    // If accepted/processing by Xendit, we transition to PROCESSING locally
-    const newPayoutStatus = payoutResult.status === "ACCEPTED" || payoutResult.status === "REQUESTED" ? "PROCESSING" : payoutResult.status;
-    const newWithdrawalStatus = newPayoutStatus === "PROCESSING" ? "PROCESSING" : undefined;
+    // 3. Respons create-payout hanya acknowledgement. Status COMPLETED dan
+    // konsumsi saldo reservasi hanya boleh terjadi lewat webhook sukses yang
+    // terverifikasi, yaitu saat gateway menyatakan dana benar-benar terkirim.
+    const payoutRejected = ["FAILED", "CANCELLED", "REVERSED"].includes(payoutResult.status);
+    // Kegagalan acknowledgement bukan bukti dana gagal secara terminal;
+    // pertahankan REQUESTED agar retry aman dan webhook gagal masih dapat
+    // melepaskan reservasi tepat satu kali.
+    const newPayoutStatus = payoutRejected ? "REQUESTED" : "PROCESSING";
+    const newWithdrawalStatus = payoutRejected ? undefined : "PROCESSING";
 
     await this.withdrawalsRepository.updatePayoutStatus(
       withdrawal.id,
@@ -353,6 +448,7 @@ export class WithdrawalsService {
     const [data, total] = await Promise.all([
       this.prisma.withdrawal.findMany({
         where: { lembagaId },
+        include: { program: { select: { id: true, title: true, slug: true } } },
         orderBy: { createdAt: "desc" },
         skip,
         take: limit,
@@ -375,6 +471,7 @@ export class WithdrawalsService {
           lembaga: { select: { name: true, slug: true } },
           requestedBy: { select: { name: true, email: true } },
           approvedBy: { select: { name: true, email: true } },
+          program: { select: { id: true, title: true, slug: true } },
         },
         skip,
         take: limit,

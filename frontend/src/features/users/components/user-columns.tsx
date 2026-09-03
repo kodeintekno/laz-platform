@@ -83,6 +83,9 @@ export function getUserColumns({
         if (normalized === "SUPER_ADMIN") {
           intent = "destructive";
           label = "Super Admin";
+        } else if (normalized === "FINANCE_PLATFORM") {
+          intent = "success";
+          label = "Finance Platform";
         } else if (normalized === "LEMBAGA_ADMIN") {
           intent = "info";
           label = "Admin Lembaga";

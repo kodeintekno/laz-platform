@@ -141,7 +141,26 @@ export class PaymentsRepository {
           program.category
         );
 
-        // 6. Update Saldo Lembaga secara Atomic
+        // 6. Saldo gateway disimpan per program terlebih dahulu. Ini adalah
+        // sumber dana yang boleh dipakai saat membuat withdrawal dan mencegah
+        // satu program memakai saldo program lain.
+        await tx.programBalance.upsert({
+          where: { programId: params.programId },
+          update: {
+            balance: { increment: institutionAmount },
+            mustahiqBalance: { increment: netAmount },
+            amilBalance: { increment: amilInstitutionAmount },
+          },
+          create: {
+            programId: params.programId,
+            lembagaId: program.lembagaId,
+            balance: institutionAmount,
+            mustahiqBalance: netAmount,
+            amilBalance: amilInstitutionAmount,
+          },
+        });
+
+        // 7. InstitutionBalance tetap dipelihara sebagai agregat lintas program.
         await tx.institutionBalance.upsert({
           where: { lembagaId: program.lembagaId },
           update: {
@@ -164,7 +183,7 @@ export class PaymentsRepository {
         });
       }
 
-      // 7. Audit log inside transaction for atomicity
+      // 8. Audit log inside transaction for atomicity
       if (params.xenditEvent) {
         await tx.auditLog.create({
           data: {

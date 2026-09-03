@@ -6,6 +6,7 @@ import { resolveLembagaScope } from "../../common/utils/lembaga-scope";
 import { PERMISSIONS } from "../../../../shared/constants/permissions";
 import { AppError } from "../../common/errors/app.error";
 import type { RBACSessionUser } from "../../../../shared/types/rbac";
+import { hasPermission } from "../../../../shared/lib/permissions";
 
 @Controller("api/coa")
 export class CoaController {
@@ -27,7 +28,9 @@ export class CoaController {
     @Query("scope") scope?: string,
   ) {
     if (scope === "platform") {
-      if (user.roleName !== "SUPER_ADMIN") throw new AppError("FORBIDDEN", "Buku Platform hanya untuk SUPER_ADMIN", 403);
+      if (!hasPermission(user, PERMISSIONS.PLATFORM_FINANCE_READ)) {
+        throw new AppError("FORBIDDEN", "Buku Platform hanya untuk staf keuangan platform", 403);
+      }
       return this.coaService.getPlatformCoa();
     }
     const lembagaId = resolveLembagaScope(user, queryLembagaId);
@@ -50,7 +53,7 @@ export class CoaController {
    */
   @Post("provision")
   @HttpCode(200)
-  @RequirePermission(PERMISSIONS.COA_READ)
+  @RequirePermission(PERMISSIONS.COA_MANAGE)
   async provision(
     @CurrentUser() user: RBACSessionUser,
     @Body("lembagaId") bodyLembagaId?: string,
@@ -70,7 +73,7 @@ export class CoaController {
   }
 
   @Post("accounts")
-  @RequirePermission(PERMISSIONS.COA_READ)
+  @RequirePermission(PERMISSIONS.COA_MANAGE)
   async createAccount(
     @CurrentUser() user: RBACSessionUser,
     @Body() body: { lembagaId?: string; parentId: string; code: string; name: string },
@@ -81,7 +84,7 @@ export class CoaController {
   }
 
   @Patch("accounts/:id")
-  @RequirePermission(PERMISSIONS.COA_READ)
+  @RequirePermission(PERMISSIONS.COA_MANAGE)
   async updateAccount(
     @CurrentUser() user: RBACSessionUser,
     @Param("id") id: string,
@@ -93,7 +96,7 @@ export class CoaController {
   }
 
   @Delete("accounts/:id")
-  @RequirePermission(PERMISSIONS.COA_READ)
+  @RequirePermission(PERMISSIONS.COA_MANAGE)
   async deleteAccount(
     @CurrentUser() user: RBACSessionUser,
     @Param("id") id: string,

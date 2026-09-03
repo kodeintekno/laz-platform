@@ -81,6 +81,36 @@ export class VolunteerApplicationsService {
     return this.applicationsRepository.findOwnApplications(volunteerId);
   }
 
+  /** Data lengkap untuk generate Surat Tugas relawan di frontend. */
+  async getAssignmentLetterData(applicationId: string, volunteerId: string) {
+    const application = await this.prisma.volunteerApplication.findUnique({
+      where: { id: applicationId },
+      include: {
+        volunteer: {
+          select: { id: true, name: true, phone: true, email: true, addressDomicile: true },
+        },
+        activity: {
+          select: { title: true, description: true, location: true, activityDate: true },
+        },
+        lembaga: {
+          select: { id: true, name: true, logoUrl: true, address: true, picName: true, picPhone: true },
+        },
+      },
+    });
+
+    if (!application) {
+      throw new AppError("NOT_FOUND", "Pendaftaran tidak ditemukan", 404);
+    }
+    if (application.volunteerId !== volunteerId) {
+      throw new AppError("FORBIDDEN", "Akses ditolak", 403);
+    }
+    if (application.status !== "APPROVED") {
+      throw new AppError("INVALID_STATUS", "Surat tugas hanya tersedia untuk pendaftaran yang disetujui", 422);
+    }
+
+    return application;
+  }
+
   async getDashboardApplications(
     page: number,
     limit: number,

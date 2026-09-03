@@ -67,27 +67,33 @@ export const NAV_ITEMS: NavItem[] = [
     icon: "Landmark",
     children: [
       {
+        label: "Ringkasan Platform",
+        href: "/dashboard/finance/overview",
+        icon: "TrendingUp",
+        permission: PERMISSIONS.PLATFORM_FINANCE_READ,
+      },
+      {
         label: "Pengajuan Penarikan",
         href: "/dashboard/withdrawals",
         icon: "Banknote",
-        permission: PERMISSIONS.WITHDRAWALS_MANAGE as any,
+        permission: PERMISSIONS.WITHDRAWALS_READ_ALL,
       },
       {
         label: "Riwayat Penarikan",
         href: "/dashboard/payouts",
-        icon: "Receipt",
-        permission: PERMISSIONS.WITHDRAWALS_MANAGE as any,
+        icon: "History",
+        permission: PERMISSIONS.WITHDRAWALS_READ_ALL,
+      },
+      {
+        label: "Tarik Amil Platform",
+        href: "/dashboard/withdrawals/platform",
+        icon: "ArrowUpFromLine",
+        permission: PERMISSIONS.PLATFORM_WITHDRAWALS_CREATE,
       },
       {
         label: "Porsi Amil",
         href: "/dashboard/amil-global",
         icon: "Coins",
-        permission: PERMISSIONS.SETTINGS_MANAGE,
-      },
-      {
-        label: "Permohonan Amil",
-        href: "/dashboard/amil-platform-requests",
-        icon: "Activity",
         permission: PERMISSIONS.SETTINGS_MANAGE,
       },
     ],
@@ -119,27 +125,12 @@ export const NAV_ITEMS: NavItem[] = [
         permission: PERMISSIONS.LEMBAGA_READ,
         requiresLembaga: true,
       },
-      {
-        label: "Porsi Amil",
-        href: "/dashboard/lembaga/finance/amil",
-        icon: "Coins",
-        permission: PERMISSIONS.LEMBAGA_READ,
-        requiresLembaga: true,
-      },
-      {
-        label: "Pengajuan Amil Platform",
-        href: "/dashboard/lembaga/finance/amil-platform-request",
-        icon: "Activity",
-        permission: PERMISSIONS.LEMBAGA_READ,
-        requiresLembaga: true,
-      },
     ],
   },
   {
     label: "Akuntansi",
     href: "#akuntansi",
     icon: "BookA",
-    requiresLembaga: true,
     children: [
       {
         label: "Chart of Accounts",

@@ -26,6 +26,12 @@ export function EditProgramPage() {
     targetAmount: Number(program.targetAmount),
     currentAmount: Number(program.currentAmount),
     distributedAmount: Number(program.distributedAmount),
+    amilPlatformPercentage: Number(program.amilPlatformPercentage),
+    amilInstitutionPercentage: Number(program.amilInstitutionPercentage),
+    amilMaxTotalPercentage: Number(program.amilMaxTotalPercentage),
+    requestedAmilPlatformPercentage: program.requestedAmilPlatformPercentage == null
+      ? null
+      : Number(program.requestedAmilPlatformPercentage),
   };
 
   return (

@@ -8,6 +8,7 @@ import { createUserAction } from "../actions/users.actions";
 import { type User } from "@prisma/client";
 import { FormWrapper, FormField, Button, Card, CardContent, CardFooter } from "@/components/ui";
 import { toast } from "@/stores/toast.store";
+import { isPlatformRoleName } from "@shared/lib/roles";
 
 interface UserFormProps {
   initialData?: User;
@@ -23,9 +24,9 @@ function LembagaSelector({ isSuperAdmin, isPending, isSelf, lembagaOptions, role
   const roleId = useWatch({ control, name: "roleId" });
   
   const selectedRole = roles.find((r: any) => r.id === roleId);
-  const isSuperAdminRole = selectedRole?.name === "SUPER_ADMIN";
+  const isPlatformRole = isPlatformRoleName(selectedRole?.name);
 
-  if (!isSuperAdmin || isSuperAdminRole) return null;
+  if (!isSuperAdmin || isPlatformRole) return null;
 
   return (
     <div className="md:col-span-2">
@@ -35,7 +36,7 @@ function LembagaSelector({ isSuperAdmin, isPending, isSelf, lembagaOptions, role
         type="select"
         options={lembagaOptions}
         disabled={isPending || isSelf}
-        description={isSelf ? "Super Admin tidak terikat pada lembaga manapun." : "Pilih lembaga tempat pengguna ini bernaung."}
+        description={isSelf ? "User platform tidak terikat pada lembaga manapun." : "Pilih lembaga tempat pengguna ini bernaung."}
       />
     </div>
   );

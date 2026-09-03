@@ -163,6 +163,17 @@ export class VolunteersController {
     });
   }
 
+  /** Data lengkap untuk mencetak Surat Tugas Relawan (PDF di frontend). */
+  @Get("applications/:id/assignment-letter-data")
+  @Public()
+  @UseGuards(VolunteerAuthGuard)
+  async assignmentLetterData(
+    @Param("id") id: string,
+    @CurrentVolunteer() volunteer: VolunteerSessionUser,
+  ) {
+    return this.applicationsService.getAssignmentLetterData(id, volunteer.id);
+  }
+
   private establishSession(req: Request, volunteerId: string): Promise<void> {
     return new Promise((resolve, reject) => {
       req.session.regenerate((err) => {
