@@ -15,10 +15,7 @@ export class ApiError extends Error {
     public readonly status: number,
     public readonly code: string,
     message: string,
-    public readonly details?: {
-      formErrors: string[];
-      fieldErrors: Record<string, string[] | undefined>;
-    },
+    public readonly details?: ApiErrorBody["error"]["details"],
   ) {
     super(message);
   }

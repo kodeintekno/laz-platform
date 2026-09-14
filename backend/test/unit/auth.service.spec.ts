@@ -2,6 +2,8 @@ import { describe, it, expect, beforeEach, vi } from "vitest";
 import bcrypt from "bcryptjs";
 import { AuthService } from "../../src/modules/auth/auth.service";
 import { AppError } from "../../src/common/errors/app.error";
+import { ConfigService } from "@nestjs/config";
+import { AllExceptionsFilter } from "../../src/common/filters/all-exceptions.filter";
 
 vi.mock("bcryptjs", () => ({
   default: {
@@ -42,7 +44,7 @@ describe("AuthService", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     userRepository = makeUserRepository();
-    service = new AuthService(userRepository as any);
+    service = new AuthService(userRepository as any, new ConfigService({ SUPER_ADMIN_WHATSAPP_NUMBER: "" }));
   });
 
   // ──────────────────────────────────────────────
@@ -141,6 +143,42 @@ describe("AuthService", () => {
 
       const result = await service.signIn(credentials);
       expect(result).toMatchObject({ roleName: "SUPER_ADMIN" });
+    });
+
+    it("returns an encoded WhatsApp contact through the error envelope for a rejected Lembaga", async () => {
+      service = new AuthService(userRepository as any, new ConfigService({ SUPER_ADMIN_WHATSAPP_NUMBER: "6281234567890" }));
+      userRepository.findByEmail.mockResolvedValue({
+        ...ACTIVE_USER,
+        lembaga: { name: "Yayasan A & B", status: "REJECTED", rejectionReason: "Dokumen #1 kurang\nPerbaiki izin & alamat." },
+      });
+      vi.mocked(bcrypt.compare).mockResolvedValue(true as never);
+      const error = await service.signIn(credentials).catch((err) => err);
+      expect(error).toBeInstanceOf(AppError);
+      expect(error.getStatus()).toBe(403);
+      const response = { status: vi.fn().mockReturnThis(), json: vi.fn() };
+      new AllExceptionsFilter().catch(error, { switchToHttp: () => ({ getResponse: () => response }) } as any);
+      const body = response.json.mock.calls[0][0];
+      const url = new URL(body.error.details.whatsappUrl);
+      expect(url.origin + url.pathname).toBe("https://wa.me/6281234567890");
+      expect(url.searchParams.get("text")).toContain("Yayasan A & B");
+      expect(url.searchParams.get("text")).toContain("Dokumen #1 kurang\nPerbaiki izin & alamat.");
+      expect([...url.searchParams.keys()]).toEqual(["text"]);
+      expect(userRepository.updateLastLogin).not.toHaveBeenCalled();
+    });
+
+    it("does not reveal rejection contact when password is incorrect", async () => {
+      userRepository.findByEmail.mockResolvedValue({ ...ACTIVE_USER, lembaga: { name: "Rahasia", status: "REJECTED", rejectionReason: "Dokumen kurang" } });
+      vi.mocked(bcrypt.compare).mockResolvedValue(false as never);
+      expect(await service.signIn(credentials)).toBeNull();
+    });
+
+    it.each(["", "081234567890", "invalid"])("omits WhatsApp link when number is unavailable or invalid: %s", async (phone) => {
+      service = new AuthService(userRepository as any, new ConfigService({ SUPER_ADMIN_WHATSAPP_NUMBER: phone }));
+      userRepository.findByEmail.mockResolvedValue({ ...ACTIVE_USER, lembaga: { name: "Lembaga Uji", status: "REJECTED", rejectionReason: null } });
+      vi.mocked(bcrypt.compare).mockResolvedValue(true as never);
+      const error = await service.signIn(credentials).catch((err) => err);
+      expect(error.code).toBe("LEMBAGA_REJECTED");
+      expect(error.details).toBeUndefined();
     });
   });
 

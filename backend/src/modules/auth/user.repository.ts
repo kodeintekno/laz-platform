@@ -26,7 +26,7 @@ export class UserRepository {
             },
           },
         },
-        lembaga: { select: { status: true, rejectionReason: true } },
+        lembaga: { select: { name: true, status: true, rejectionReason: true } },
       },
     });
   }
