@@ -65,7 +65,7 @@ describe("Webhook Security", () => {
       const payload = {
         event: "payment.capture",
         data: {
-          reference_id: "don-1",
+          payment_id: "py-1", reference_id: "don-1",
           payment_request_id: "pr-1",
           status: "SUCCEEDED",
           request_amount: 10000, // Attacker modified the webhook to say it's paid for a smaller amount
@@ -90,7 +90,7 @@ describe("Webhook Security", () => {
       const payload = {
         event: "payment.capture",
         data: {
-          reference_id: "don-1",
+          payment_id: "py-1", reference_id: "don-1",
           payment_request_id: "pr-1",
           status: "SUCCEEDED",
           request_amount: 50000,
@@ -119,7 +119,7 @@ describe("Webhook Security", () => {
       const payload = {
         event: "payment.capture",
         data: {
-          reference_id: "don-1",
+          payment_id: "py-1", reference_id: "don-1",
           payment_request_id: "pr-1",
           status: "SUCCEEDED",
           request_amount: 50000,

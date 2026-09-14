@@ -8,18 +8,20 @@ import type { DonationStatus, PaymentStatus } from "@prisma/client";
 import type { Env } from "../../config/env";
 
 /**
- * Xendit payment.capture webhook payload (v3 API).
- * See: https://docs.xendit.co/apidocs/payment-webhook-notification
+ * Payment callbacks: v2 (used by xendit-node PaymentRequest) and v3.
+ * v2: payment.succeeded/payment.failed, data.id and data.amount.
+ * v3: payment.capture/payment.failure, data.payment_id and data.request_amount.
  */
 export interface XenditPaymentWebhookPayload {
-  /** Event type: "payment.capture" | "payment.failure" */
+  /** Only recognized payment outcome events may update donation balances. */
   event: string;
   business_id: string;
   created: string;
-  api_version?: string;
+  api_version?: string | null;
   data: {
     /** Xendit payment attempt ID (py-xxxx) */
-    payment_id: string;
+    payment_id?: string;
+    id?: string;
     /** Xendit payment request ID (pr-xxxx) */
     payment_request_id: string;
     /** Our donationId — passed as reference_id during creation */
@@ -27,7 +29,8 @@ export interface XenditPaymentWebhookPayload {
     /** Payment status: "SUCCEEDED" | "FAILED" | "EXPIRED" etc. */
     status: string;
     /** Amount in IDR */
-    request_amount: number;
+    request_amount?: number;
+    amount?: number;
     /** Currency code */
     currency: string;
     /** Channel code e.g. "QRIS" or "BCA_VIRTUAL_ACCOUNT" */
@@ -95,21 +98,39 @@ export class WebhookService {
     // 1. Verify webhook token
     if (!this.verifyXenditToken(callbackToken)) {
       this.logger.warn(
-        { event: payload.event },
+        { event: payload?.event },
         "Xendit webhook rejected: invalid x-callback-token",
       );
       throw new AppError("INVALID_WEBHOOK_TOKEN", "Invalid webhook token", 401);
     }
 
-    const { data } = payload;
+    const data = payload?.data;
 
-    // Handle Xendit dashboard "Test Webhook" ping which might not have full data
+    // Payment-method expiry can follow a successful ONE_TIME_USE payment in v2.
+    // It is not a payment failure and must never finalize the donation.
+    const isV2 = payload?.event === "payment.succeeded" || payload?.event === "payment.failed";
+    const isV3 = payload?.event === "payment.capture" || payload?.event === "payment.failure";
+    if (!isV2 && !isV3) {
+      return { status: "Unhandled event — no action taken" };
+    }
+
+    // A recognized payment event must carry a usable reference.
     if (!data || !data.reference_id) {
       this.logger.warn(
         { payload },
-        "Xendit webhook: received ping or malformed payload without reference_id",
+        "Xendit webhook: payment payload missing reference_id",
       );
-      return { status: "Test ping received" };
+      throw new AppError("INVALID_WEBHOOK_PAYLOAD", "Missing payment reference", 400);
+    }
+
+    const webhookAmount = isV2 ? data.amount : data.request_amount;
+    const webhookPaymentId = isV2 ? data.id : data.payment_id;
+    const expectedStatus = payload.event === "payment.succeeded" || payload.event === "payment.capture"
+      ? "SUCCEEDED" : "FAILED";
+    if (!webhookPaymentId || !data.payment_request_id ||
+        typeof webhookAmount !== "number" || !Number.isFinite(webhookAmount) ||
+        data.status !== expectedStatus) {
+      throw new AppError("INVALID_WEBHOOK_PAYLOAD", "Invalid payment outcome payload", 400);
     }
 
     this.logger.log(
@@ -159,12 +180,12 @@ export class WebhookService {
 
     // 4. Validate amount from DB (never trust webhook amount)
     const dbAmount = Number(payment.amount);
-    if (data.request_amount !== dbAmount) {
+    if (webhookAmount !== dbAmount) {
       this.logger.error(
         {
           paymentId: payment.id,
           dbAmount,
-          webhookAmount: data.request_amount,
+          webhookAmount,
         },
         "Xendit webhook: AMOUNT MISMATCH — possible tampering",
       );
@@ -173,7 +194,7 @@ export class WebhookService {
     }
 
     // 5. Validate currency
-    if (data.currency && data.currency !== "IDR") {
+    if (data.currency !== "IDR") {
       this.logger.error(
         { currency: data.currency, paymentId: payment.id },
         "Xendit webhook: unexpected currency",
@@ -186,23 +207,13 @@ export class WebhookService {
     let newDonationStatus: DonationStatus = "PENDING";
     let paidAt: Date | undefined;
 
-    if (payload.event === "payment.capture" || data.status === "SUCCEEDED") {
+    if (expectedStatus === "SUCCEEDED") {
       newPaymentStatus = "SUCCESS";
       newDonationStatus = "PAID";
       paidAt = new Date();
-    } else if (payload.event === "payment.failure" || data.status === "FAILED") {
+    } else {
       newPaymentStatus = "FAILED";
       newDonationStatus = "FAILED";
-    } else if (data.status === "EXPIRED") {
-      newPaymentStatus = "EXPIRED";
-      newDonationStatus = "EXPIRED";
-    } else {
-      // Unknown event — log and return 200 to acknowledge receipt
-      this.logger.warn(
-        { event: payload.event, status: data.status },
-        "Xendit webhook: unhandled event/status",
-      );
-      return { status: "Unhandled event — no action taken" };
     }
 
     // 7. Update DB in a transaction
@@ -216,7 +227,7 @@ export class WebhookService {
       paidAt,
       metadata: payload as any,
       auditUserId: null,
-      xenditPaymentId: data.payment_id,
+      xenditPaymentId: webhookPaymentId,
       xenditEvent: payload.event,
     });
 
@@ -267,7 +278,7 @@ export class WebhookService {
     const referenceId = payload.data?.reference_id;
     const status = payload.data?.status;
 
-    if (!payoutId || !referenceId || !status) {
+    if (!payoutId || typeof referenceId !== "string" || !referenceId || !status) {
       this.logger.error("Xendit payout webhook: missing required fields");
       throw new AppError("INVALID_PAYLOAD", "Missing required fields", 400);
     }
@@ -280,8 +291,12 @@ export class WebhookService {
       newWithdrawalStatus = "COMPLETED";
     }
 
-    // The reference_id is "payout-<withdrawalId>"
-    const withdrawalId = referenceId.replace("payout-", "");
+    // Our payout creation always uses payout-<withdrawalId>. Dashboard samples
+    // and unrelated payouts must be acknowledged without touching our ledger.
+    if (!referenceId.startsWith("payout-")) {
+      return { status: "Unrelated payout reference — ignored" };
+    }
+    const withdrawalId = referenceId.slice("payout-".length);
     
     // Find the withdrawal to get lembagaId and amount
     const w = await this.withdrawalsRepository.findById(withdrawalId);
