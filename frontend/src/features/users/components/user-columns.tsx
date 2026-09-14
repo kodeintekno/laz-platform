@@ -1,4 +1,5 @@
 import React from "react";
+import { formatCurrency } from "@/lib/utils";
 import { Badge, ActionDropdown } from "@/components/ui";
 import type { ColumnDef } from "@/components/ui/data-table";
 import type { Prisma } from "@prisma/client";
@@ -102,9 +103,14 @@ export function getUserColumns({
 
   if (showLembagaColumn) {
     columns.push({
+      header: "Batas Approval",
+      cell: (user) => user.role?.name === "FINANCE_PLATFORM"
+        ? formatCurrency(Number(user.withdrawalApprovalLimit ?? 0)) : "Tidak Ada",
+    });
+    columns.push({
       header: "Lembaga",
       accessorKey: "lembaga.name",
-      cell: (user) => <span className="text-secondary text-sm">{user.lembaga?.name || "N/A"}</span>,
+      cell: (user) => <span className="text-secondary text-sm">{user.lembaga?.name || "-"}</span>,
     });
   }
 

@@ -4,7 +4,7 @@ import { useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useFormContext, useWatch } from "react-hook-form";
 import { createUserSchema, updateUserSchema } from "../validations/users.schema";
-import { createUserAction } from "../actions/users.actions";
+import { createUserAction, updateUserAction } from "../actions/users.actions";
 import { type User } from "@prisma/client";
 import { FormWrapper, FormField, Button, Card, CardContent, CardFooter } from "@/components/ui";
 import { toast } from "@/stores/toast.store";
@@ -16,7 +16,6 @@ interface UserFormProps {
   lembagas?: { id: string; name: string }[];
   isSuperAdmin?: boolean;
   currentUserId: string;
-  action?: (prevState: any, formData: FormData) => Promise<any>;
 }
 
 function LembagaSelector({ isSuperAdmin, isPending, isSelf, lembagaOptions, roles }: any) {
@@ -42,13 +41,23 @@ function LembagaSelector({ isSuperAdmin, isPending, isSelf, lembagaOptions, role
   );
 }
 
+function ApprovalLimitField({ isSuperAdmin, isPending, roles }: Pick<UserFormProps, "isSuperAdmin" | "roles"> & { isPending: boolean }) {
+  const { control } = useFormContext();
+  const roleId = useWatch({ control, name: "roleId" });
+  if (!isSuperAdmin || roles.find((role) => role.id === roleId)?.name !== "FINANCE_PLATFORM") return null;
+  return <div className="md:col-span-2">
+    <FormField name="withdrawalApprovalLimit" label="Batas maksimal approval pencairan (Rp)"
+      type="currency" disabled={isPending} placeholder="Contoh: 50.000.000"
+      description="Berlaku per pengajuan. Nominal sampai dengan batas ini dapat disetujui. Isi 0 untuk menonaktifkan approval akun ini." />
+  </div>;
+}
+
 export function UserForm({
   initialData,
   roles,
   lembagas = [],
   isSuperAdmin = false,
   currentUserId,
-  action,
 }: UserFormProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -66,8 +75,8 @@ export function UserForm({
       });
 
       let result;
-      if (action && initialData) {
-        result = await action(null, formData);
+      if (initialData) {
+        result = await updateUserAction(initialData.id, formData);
       } else {
         result = await createUserAction(formData);
       }
@@ -118,6 +127,7 @@ export function UserForm({
                 roleId: initialData.roleId || "",
                 lembagaId: initialData.lembagaId,
                 status: initialData.status,
+                withdrawalApprovalLimit: Number(initialData.withdrawalApprovalLimit ?? 0),
                 password: "",
                 confirmPassword: "",
               }
@@ -127,6 +137,7 @@ export function UserForm({
                 roleId: "",
                 lembagaId: isSuperAdmin ? "" : undefined,
                 status: "ACTIVE",
+                withdrawalApprovalLimit: 0,
                 password: "",
                 confirmPassword: "",
               }
@@ -170,6 +181,8 @@ export function UserForm({
               disabled={isPending || isSelf}
               description={isSelf ? "Anda tidak dapat mengubah status akun Anda sendiri." : "Menentukan apakah akun aktif atau nonaktif."}
             />
+
+            <ApprovalLimitField isSuperAdmin={isSuperAdmin} isPending={isPending} roles={roles} />
 
             <LembagaSelector
               isSuperAdmin={isSuperAdmin}

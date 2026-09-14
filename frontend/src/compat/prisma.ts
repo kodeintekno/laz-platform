@@ -128,6 +128,7 @@ export interface Permission {
 }
 
 export interface User {
+  withdrawalApprovalLimit?: number | string;
   id: string;
   name: string;
   email: string;

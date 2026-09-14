@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useAuth } from "@/auth/AuthProvider";
 import { useNavigate } from "react-router-dom";
 import { useGetAllWithdrawals, useApproveWithdrawal, useRejectWithdrawal, useRetryPayout, Withdrawal, type WithdrawalScope } from "../api/withdrawals";
 import {
@@ -20,6 +21,9 @@ import { PERMISSIONS } from "@shared/constants/permissions";
 import { useTablePagination, useTablePaginationMeta } from "@/hooks/useTablePagination";
 
 export function AdminWithdrawalPage({ scope }: { scope: WithdrawalScope }) {
+  const { user } = useAuth();
+  const approvalLimit = user?.roleName === "FINANCE_PLATFORM" ? Number(user.withdrawalApprovalLimit ?? 0) : null;
+  const exceedsLimit = (amount: number | string) => approvalLimit !== null && Number(amount) > approvalLimit;
   const isPlatform = scope === "platform";
   const navigate = useNavigate();
   const { can } = usePermission();
@@ -123,6 +127,7 @@ export function AdminWithdrawalPage({ scope }: { scope: WithdrawalScope }) {
           <h1 className="text-2xl font-bold text-surface-stronger">Approval Penarikan</h1>
           <p className="mt-1 text-sm text-secondary">
             Tinjau pengajuan penarikan lembaga dan saldo amil platform.
+            {approvalLimit !== null && <span className="block mt-1">Batas approval Anda: {formatCurrency(approvalLimit)} per pengajuan.</span>}
           </p>
         </div>
       </div>
@@ -224,9 +229,10 @@ export function AdminWithdrawalPage({ scope }: { scope: WithdrawalScope }) {
                               size="sm"
                               intent="primary"
                               onClick={() => openApproveConfirm(w.id)}
-                              disabled={approveWithdrawal.isPending || rejectWithdrawal.isPending || retryPayout.isPending}
+                              title={exceedsLimit(w.amount) ? "Nominal melebihi batas approval Anda" : undefined}
+                              disabled={exceedsLimit(w.amount) || approveWithdrawal.isPending || rejectWithdrawal.isPending || retryPayout.isPending}
                             >
-                              Setuju
+                              {exceedsLimit(w.amount) ? "Melebihi limit" : "Setuju"}
                             </Button>
                             <Button
                               size="sm"

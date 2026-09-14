@@ -36,6 +36,7 @@ export interface RBACSessionUser {
   phoneNumber?: string | null;
   emailNotifications?: boolean;
   waNotifications?: boolean;
+  withdrawalApprovalLimit?: number;
 }
 
 // ─── Permission Check Context ────────────────────────────────────────────────

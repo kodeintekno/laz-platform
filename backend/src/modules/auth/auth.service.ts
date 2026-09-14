@@ -83,6 +83,7 @@ export class AuthService {
       phoneNumber: user.phoneNumber,
       emailNotifications: user.emailNotifications,
       waNotifications: user.waNotifications,
+      withdrawalApprovalLimit: Number(user.withdrawalApprovalLimit),
     };
   }
 
@@ -109,6 +110,7 @@ export class AuthService {
       phoneNumber: user.phoneNumber,
       emailNotifications: user.emailNotifications,
       waNotifications: user.waNotifications,
+      withdrawalApprovalLimit: Number(user.withdrawalApprovalLimit),
     };
   }
 }

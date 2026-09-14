@@ -18,6 +18,7 @@ model User {
   roleId                             String
   lembagaId                          String?
   isPlatformAdmin                    Boolean                     @default(false)
+  withdrawalApprovalLimit            Decimal                     @default(0) @db.Decimal(15, 2)
   createdAt                          DateTime                    @default(now())
   updatedAt                          DateTime                    @updatedAt
   avatarPublicId                     String?
