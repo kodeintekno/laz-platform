@@ -4,6 +4,7 @@ import {
   Controller,
   Delete,
   Get,
+  ForbiddenException,
   NotFoundException,
   Param,
   Patch,
@@ -36,12 +37,29 @@ export class UsersController {
     @Query("limit") limit?: string,
     @Query("search") search?: string,
     @Query("lembagaId") lembagaId?: string,
+    @Query("category") category?: string,
   ) {
+    if (category && !["all", "lembaga", "finance", "volunteer"].includes(category)) {
+      throw new BadRequestException("Kategori pengguna tidak valid.");
+    }
+    if (category && category !== "all" && user.roleName !== "SUPER_ADMIN") {
+      throw new ForbiddenException("Filter kategori hanya tersedia untuk Super Admin.");
+    }
+    const pageNumber = Number(page) || 1;
+    const pageSize = Number(limit) || 10;
+    if (!Number.isInteger(pageNumber) || pageNumber < 1 || !Number.isInteger(pageSize) || pageSize < 1 || pageSize > 100) {
+      throw new BadRequestException("Pagination tidak valid.");
+    }
+    if (category === "volunteer") {
+      const { items, metadata } = await this.usersService.getVolunteers(pageNumber, pageSize, search || undefined);
+      return { data: items, meta: metadata };
+    }
     const { items, metadata } = await this.usersService.getUsers(
-      Number(page) || 1,
-      Number(limit) || 10,
+      pageNumber,
+      pageSize,
       search || undefined,
-      resolveLembagaScope(user, lembagaId),
+      resolveLembagaScope(user, category === "finance" ? undefined : lembagaId),
+      category === "lembaga" ? "LEMBAGA_ADMIN" : category === "finance" ? "FINANCE_PLATFORM" : undefined,
     );
     return { data: items, meta: metadata };
   }

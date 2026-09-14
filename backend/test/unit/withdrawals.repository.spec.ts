@@ -1,3 +1,4 @@
+import { Prisma } from "@prisma/client";
 import { Test, TestingModule } from "@nestjs/testing";
 import { WithdrawalsRepository } from "../../src/modules/withdrawals/withdrawals.repository";
 import { PrismaService } from "../../src/prisma/prisma.service";
@@ -14,6 +15,7 @@ describe("WithdrawalsRepository", () => {
     prisma = {
       $transaction: vi.fn(async (cb) => cb(prisma)),
       $queryRaw: vi.fn(),
+      user: { findUnique: vi.fn().mockResolvedValue({ status: "ACTIVE", role: { name: "SUPER_ADMIN" }, lembagaId: null }) },
       institutionBalance: {
         update: vi.fn(),
       },
@@ -110,6 +112,32 @@ describe("WithdrawalsRepository", () => {
   });
 
   describe("approveWithdrawal", () => {
+    it.each([
+      [10000000, 50000000, false],
+      [50000000, 50000000, true],
+      [50000000, 49999999, true],
+      [0, 1, false],
+    ])("limit %s for amount %s allows=%s", async (limit, amount, allowed) => {
+      prisma.user.findUnique.mockResolvedValue({ status: "ACTIVE", role: { name: "FINANCE_PLATFORM" }, lembagaId: null, withdrawalApprovalLimit: new Prisma.Decimal(limit) });
+      prisma.withdrawal.updateMany.mockImplementation(async ({ where }: any) => ({ count: new Prisma.Decimal(amount).lte(where.amount.lte) ? 1 : 0 }));
+      prisma.withdrawal.findUnique.mockResolvedValue({ id: "with-1", status: "PENDING", amount: new Prisma.Decimal(amount), lembagaId: "lembaga-A" });
+      if (allowed) {
+        await expect(repository.approveWithdrawal("with-1", "finance")).resolves.toBeTruthy();
+        expect(prisma.auditLog.create).toHaveBeenCalled();
+      } else {
+        await expect(repository.approveWithdrawal("with-1", "finance")).rejects.toMatchObject({ code: "WITHDRAWAL_APPROVAL_LIMIT_EXCEEDED" });
+        expect(prisma.auditLog.create).not.toHaveBeenCalled();
+      }
+      expect(prisma.$queryRaw).toHaveBeenCalled();
+      expect(prisma.user.findUnique).toHaveBeenCalledWith(expect.objectContaining({ where: { id: "finance" } }));
+    });
+
+    it("rejects inactive approvers before changing a withdrawal", async () => {
+      prisma.user.findUnique.mockResolvedValue({ status: "SUSPENDED" });
+      await expect(repository.approveWithdrawal("with-1", "finance")).rejects.toMatchObject({ code: "FORBIDDEN" });
+      expect(prisma.withdrawal.updateMany).not.toHaveBeenCalled();
+    });
+
     it("should throw error if already approved or not found", async () => {
       prisma.withdrawal.updateMany.mockResolvedValue({ count: 0 }); // Optimistic lock fails
 

@@ -18,6 +18,10 @@ const envSchema = z.object({
   CLOUDINARY_API_KEY: z.string().optional(),
   CLOUDINARY_API_SECRET: z.string().optional(),
   LOG_LEVEL: z.string().optional(),
+  // International format, digits only (e.g. 62812...), empty disables contact.
+  SUPER_ADMIN_WHATSAPP_NUMBER: z.string().trim()
+    .regex(/^(?:[1-9]\d{7,14})?$/, "Gunakan format internasional tanpa + atau spasi, contoh 6281234567890")
+    .default(""),
 });
 
 export type Env = z.infer<typeof envSchema>;

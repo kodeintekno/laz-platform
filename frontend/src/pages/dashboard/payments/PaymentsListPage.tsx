@@ -5,10 +5,6 @@ import { PaymentTable } from "@/features/payments/components/PaymentTable";
 import { PageHeader, TableSkeleton } from "@/components/ui";
 import { DataTableToolbar } from "@/components/ui/data-table";
 import { UserLembagaFilter } from "@/features/users/components/UserLembagaFilter";
-import { Button } from "@/components/ui";
-import { Play } from "lucide-react";
-import { useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
 import { usePermission } from "@/hooks/usePermission";
 import { PERMISSIONS } from "@shared/constants/permissions";
 
@@ -16,22 +12,6 @@ export function PaymentsListPage() {
   const { can } = usePermission();
   const [searchParams] = useSearchParams();
   const hasPlatformFinanceAccess = can(PERMISSIONS.PLATFORM_FINANCE_READ);
-  const queryClient = useQueryClient();
-  const [isSimulating, setIsSimulating] = useState(false);
-
-  const handleSimulate = async () => {
-    try {
-      setIsSimulating(true);
-      await api.post("/webhooks/dev/simulate/payment");
-      alert("Simulasi pembayaran berhasil!");
-      queryClient.invalidateQueries({ queryKey: ["payments"] });
-    } catch (e: any) {
-      alert("Error: " + e.message);
-    } finally {
-      setIsSimulating(false);
-    }
-  };
-
   const page = Number(searchParams.get("page") ?? 1);
   const limit = Number(searchParams.get("limit") ?? 10);
   const search = searchParams.get("search") ?? undefined;
@@ -63,18 +43,6 @@ export function PaymentsListPage() {
       <PageHeader
         title="Manajemen Pembayaran"
         description="Kelola transaksi pembayaran donasi, detail invoice, dan integrasi payment gateway."
-        action={can(PERMISSIONS.PAYMENTS_MANAGE) ? (
-          <Button 
-            onClick={handleSimulate} 
-            disabled={isSimulating}
-            intent="outline"
-            size="sm"
-            className="flex items-center gap-2"
-          >
-            <Play className="w-4 h-4" />
-            {isSimulating ? "Menyimulasikan..." : "Simulate Xendit (Paid)"}
-          </Button>
-        ) : undefined}
       />
 
       <DataTableToolbar

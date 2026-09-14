@@ -21,6 +21,7 @@ export interface NavItem {
    */
   requiresLembaga?: boolean;
   requiresPlatformFinance?: boolean;
+  requiresSuperAdmin?: boolean;
   children?: NavItem[];
 }
 
@@ -74,10 +75,17 @@ export const NAV_ITEMS: NavItem[] = [
         permission: PERMISSIONS.PLATFORM_FINANCE_READ,
       },
       {
-        label: "Pengajuan Penarikan",
+        label: "Approval Penarikan",
         href: "/dashboard/withdrawals",
         icon: "Banknote",
         permission: PERMISSIONS.WITHDRAWALS_READ_ALL,
+      },
+      {
+        label: "Approval Rekening",
+        href: "/dashboard/withdrawals/bank-approvals",
+        icon: "CreditCard",
+        permission: PERMISSIONS.WITHDRAWALS_MANAGE,
+        requiresSuperAdmin: true,
       },
       {
         label: "Riwayat Penarikan",
@@ -191,12 +199,6 @@ export const NAV_ITEMS: NavItem[] = [
         permission: PERMISSIONS.LEMBAGA_READ,
         requiresLembaga: true,
       },
-      {
-        label: "Manajemen User",
-        href: "/dashboard/users",
-        icon: "Users",
-        permission: PERMISSIONS.USERS_READ,
-      },
     ],
   },
   {
@@ -217,6 +219,12 @@ export const NAV_ITEMS: NavItem[] = [
         permission: PERMISSIONS.AUDIT_READ,
       },
     ],
+  },
+  {
+    label: "Manajemen User",
+    href: "/dashboard/users",
+    icon: "Users",
+    permission: PERMISSIONS.USERS_READ,
   },
   {
     label: "Settings",

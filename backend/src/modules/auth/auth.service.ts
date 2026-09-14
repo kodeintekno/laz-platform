@@ -1,4 +1,5 @@
 import { Injectable, Logger } from "@nestjs/common";
+import { ConfigService } from "@nestjs/config";
 import bcrypt from "bcryptjs";
 import { UserRepository } from "./user.repository";
 import { AppError } from "../../common/errors/app.error";
@@ -19,7 +20,10 @@ import type { PermissionKey } from "../../../../shared/constants/permissions";
 export class AuthService {
   private readonly logger = new Logger(AuthService.name);
 
-  constructor(private readonly userRepository: UserRepository) {}
+  constructor(
+    private readonly userRepository: UserRepository,
+    private readonly config: ConfigService,
+  ) {}
 
   /**
    * Verify credentials and return the session-user shape.
@@ -52,12 +56,24 @@ export class AuthService {
         );
       }
       if (user.lembaga.status === "REJECTED") {
+        const phone = this.config.get<string>("SUPER_ADMIN_WHATSAPP_NUMBER", "").trim();
+        const message = [
+          "Halo Super Admin Ruang Berbagi,",
+          `Saya admin Lembaga ${user.lembaga.name}.`,
+          "Pendaftaran Lembaga kami ditolak dengan alasan:",
+          user.lembaga.rejectionReason || "Alasan penolakan belum dicantumkan.",
+          "",
+          "Mohon arahan untuk perbaikan pendaftaran Lembaga kami. Terima kasih.",
+        ].join("\n");
         throw new AppError(
           "LEMBAGA_REJECTED",
           user.lembaga.rejectionReason
             ? `Pendaftaran lembaga Anda ditolak: ${user.lembaga.rejectionReason}`
             : "Pendaftaran lembaga Anda ditolak",
           403,
+          /^[1-9]\d{7,14}$/.test(phone)
+            ? { formErrors: [], fieldErrors: {}, whatsappUrl: `https://wa.me/${phone}?text=${encodeURIComponent(message)}` }
+            : undefined,
         );
       }
     }
@@ -83,6 +99,7 @@ export class AuthService {
       phoneNumber: user.phoneNumber,
       emailNotifications: user.emailNotifications,
       waNotifications: user.waNotifications,
+      withdrawalApprovalLimit: Number(user.withdrawalApprovalLimit),
     };
   }
 
@@ -109,6 +126,7 @@ export class AuthService {
       phoneNumber: user.phoneNumber,
       emailNotifications: user.emailNotifications,
       waNotifications: user.waNotifications,
+      withdrawalApprovalLimit: Number(user.withdrawalApprovalLimit),
     };
   }
 }

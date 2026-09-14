@@ -89,7 +89,7 @@ function PlatformFinanceOverview() {
     <div className="space-y-8">
       <PageHeader
         title="Ringkasan Keuangan Platform"
-        description="Saldo aktual dari transaksi donasi berhasil dan saldo payment gateway Platform serta seluruh Lembaga."
+        description="Saldo aktual dari transaksi donasi berhasil dan saldo rekening Platform serta seluruh Lembaga."
       />
 
       {isLoading ? (
@@ -128,7 +128,7 @@ function PlatformFinanceOverview() {
       {!isLoading && p && (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {[
-            { label: canManageWithdrawals ? "Kelola Withdrawals" : "Lihat Withdrawals", to: "/dashboard/withdrawals", icon: Truck },
+            { label: canManageWithdrawals ? "Approval Penarikan" : "Lihat Penarikan", to: "/dashboard/withdrawals", icon: Truck },
             { label: "Lihat Payouts", to: "/dashboard/payouts", icon: Banknote },
           ].map(({ label, to, icon: Icon }) => (
             <Link

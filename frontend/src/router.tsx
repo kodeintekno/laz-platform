@@ -68,6 +68,7 @@ import { LedgerPage } from "@/pages/dashboard/ledger/LedgerPage";
 import { LembagaWithdrawalPage } from "@/features/withdrawals/pages/LembagaWithdrawalPage";
 import { AdminWithdrawalPage } from "@/features/withdrawals/pages/AdminWithdrawalPage";
 import { PlatformWithdrawalPage } from "@/features/withdrawals/pages/PlatformWithdrawalPage";
+import { BankAccountApprovalPage } from "@/features/withdrawals/pages/BankAccountApprovalPage";
 import { FinanceOverviewPage } from "@/pages/dashboard/finance/FinanceOverviewPage";
 import { PayoutsListPage } from "@/pages/dashboard/finance/PayoutsListPage";
 import { LembagaFinanceOverviewPage } from "@/pages/dashboard/lembaga/finance/LembagaFinanceOverviewPage";
@@ -256,6 +257,14 @@ export const router = createBrowserRouter([
           },
           // Pencairan Dana (Withdrawal)
           {
+            path: "withdrawals/bank-approvals",
+            element: (
+              <RequirePermission permission={PERMISSIONS.WITHDRAWALS_MANAGE} requiresSuperAdmin>
+                <BankAccountApprovalPage />
+              </RequirePermission>
+            ),
+          },
+          {
             path: "withdrawals/mine",
             element: (
               <RequirePermission permission={PERMISSIONS.WITHDRAWALS_CREATE as any}>
@@ -267,7 +276,15 @@ export const router = createBrowserRouter([
             path: "withdrawals",
             element: (
               <RequirePermission permission={PERMISSIONS.WITHDRAWALS_READ_ALL}>
-                <AdminWithdrawalPage />
+                <AdminWithdrawalPage scope="lembaga" />
+              </RequirePermission>
+            ),
+          },
+          {
+            path: "withdrawals/approvals/platform",
+            element: (
+              <RequirePermission permission={PERMISSIONS.WITHDRAWALS_READ_ALL}>
+                <AdminWithdrawalPage scope="platform" />
               </RequirePermission>
             ),
           },

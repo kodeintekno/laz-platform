@@ -12,10 +12,12 @@ export class UsersRepository {
   /**
    * Find paginated users with their assigned roles and LAZs.
    */
-  async findMany(page = 1, limit = 10, search?: string, lembagaId?: string) {
+  async findMany(page = 1, limit = 10, search?: string, lembagaId?: string, roleName?: string) {
     const skip = (page - 1) * limit;
 
     const filterConditions: Prisma.UserWhereInput[] = [];
+
+    if (roleName) filterConditions.push({ role: { name: roleName } });
 
     if (search) {
       filterConditions.push({
@@ -56,6 +58,23 @@ export class UsersRepository {
         totalPages: Math.ceil(total / limit) || 1,
       },
     };
+  }
+
+  async findVolunteers(page: number, limit: number, search?: string) {
+    const where: Prisma.VolunteerWhereInput = search ? {
+      OR: [
+        { name: { contains: search, mode: "insensitive" } },
+        { email: { contains: search, mode: "insensitive" } },
+      ],
+    } : {};
+    const [items, total] = await Promise.all([
+      this.prisma.volunteer.findMany({
+        where, skip: (page - 1) * limit, take: limit, orderBy: { createdAt: "desc" },
+        select: { id: true, name: true, email: true, phone: true, status: true },
+      }),
+      this.prisma.volunteer.count({ where }),
+    ]);
+    return { items, metadata: { total, page, limit, totalPages: Math.ceil(total / limit) || 1 } };
   }
 
   /**
@@ -157,7 +176,7 @@ export class UsersRepository {
   async updateRole(userId: string, roleId: string) {
     return this.prisma.user.update({
       where: { id: userId },
-      data: { roleId },
+      data: { roleId, withdrawalApprovalLimit: 0 },
       include: { role: true },
     });
   }

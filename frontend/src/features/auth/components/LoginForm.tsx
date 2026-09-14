@@ -6,7 +6,7 @@ import { Link } from "react-router-dom";
 import { api, ApiError } from "@/lib/api-client";
 import { useAuth } from "@/auth/AuthProvider";
 import { useVolunteerAuth } from "@/auth/VolunteerAuthProvider";
-import { Clock, XCircle } from "lucide-react";
+import { Clock, MessageCircle, XCircle } from "lucide-react";
 
 type LembagaStatus = "PENDING" | "REJECTED" | null;
 
@@ -18,11 +18,13 @@ export function LoginForm() {
   const [error, setError] = useState<string | null>(null);
   const [lembagaStatus, setLembagaStatus] = useState<LembagaStatus>(null);
   const [rejectionReason, setRejectionReason] = useState<string | null>(null);
+  const [whatsappUrl, setWhatsappUrl] = useState<string | null>(null);
 
   const onSubmit = async (data: LoginInput) => {
     setError(null);
     setLembagaStatus(null);
     setRejectionReason(null);
+    setWhatsappUrl(null);
     setIsPending(true);
     try {
       await api.post("/auth/login", data);
@@ -39,6 +41,7 @@ export function LoginForm() {
         if (err.code === "LEMBAGA_REJECTED") {
           setLembagaStatus("REJECTED");
           setRejectionReason(err.message);
+          setWhatsappUrl(err.details?.whatsappUrl ?? null);
           setIsPending(false);
           return;
         }
@@ -90,13 +93,26 @@ export function LoginForm() {
           </span>
           <div className="flex-1 min-w-0">
             <p className="text-sm font-semibold text-red-800">Pendaftaran Ditolak</p>
-            <p className="text-sm text-red-700 mt-0.5 leading-relaxed">
+            <p className="text-sm text-red-700 mt-0.5 leading-relaxed whitespace-pre-wrap break-words">
               {rejectionReason ?? "Pendaftaran lembaga Anda tidak dapat disetujui."}
             </p>
             <p className="text-xs text-red-600 mt-2">
               Hubungi tim <span className="font-semibold">Ruang Berbagi</span> jika ada pertanyaan
               mengenai keputusan ini.
             </p>
+            {whatsappUrl ? (
+              <a
+                href={whatsappUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-3 inline-flex items-center justify-center gap-2 rounded-xl bg-green-700 px-4 py-2.5 text-sm font-semibold text-white hover:bg-green-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-green-700"
+              >
+                <MessageCircle className="h-4 w-4 shrink-0" aria-hidden="true" />
+                Hubungi Super Admin via WhatsApp
+              </a>
+            ) : (
+              <p className="mt-3 text-xs text-red-600">Kontak WhatsApp Super Admin belum tersedia.</p>
+            )}
           </div>
         </div>
       )}

@@ -31,6 +31,8 @@ export interface ApiErrorBody {
     details?: {
       formErrors: string[];
       fieldErrors: Record<string, string[] | undefined>;
+      /** Contact link returned only after authenticating a rejected Lembaga. */
+      whatsappUrl?: string;
     };
   };
 }

@@ -22,8 +22,22 @@ export class UsersService {
     private readonly auditService: AuditService,
   ) {}
 
-  async getUsers(page: number, limit: number, search?: string, lembagaId?: string) {
-    return this.usersRepository.findMany(page, limit, search, lembagaId);
+  private validateApprovalLimit(limit: number | undefined, isSuperAdmin?: boolean) {
+    if (limit === undefined) return;
+    if (!isSuperAdmin) {
+      throw new ForbiddenException("Hanya Super Admin yang dapat mengatur batas approval pencairan.");
+    }
+    if (!Number.isSafeInteger(limit) || limit < 0 || limit > 9999999999999) {
+      throw new AppError("INVALID_APPROVAL_LIMIT", "Batas approval harus berupa rupiah bulat antara 0 dan 9.999.999.999.999.", 422);
+    }
+  }
+
+  async getUsers(page: number, limit: number, search?: string, lembagaId?: string, roleName?: string) {
+    return this.usersRepository.findMany(page, limit, search, lembagaId, roleName);
+  }
+
+  async getVolunteers(page: number, limit: number, search?: string) {
+    return this.usersRepository.findVolunteers(page, limit, search);
   }
 
   async getRoles(isSuperAdmin: boolean = false) {
@@ -51,6 +65,8 @@ export class UsersService {
     adminLembagaId?: string,
     isSuperAdmin?: boolean,
   ) {
+    this.validateApprovalLimit(input.withdrawalApprovalLimit, isSuperAdmin);
+
     // 1. Check if email is unique
     const existing = await this.usersRepository.findByEmail(input.email);
     if (existing) {
@@ -88,6 +104,7 @@ export class UsersService {
       roleId: input.roleId,
       lembagaId: targetLembagaId,
       status: input.status,
+      withdrawalApprovalLimit: targetRole.name === "FINANCE_PLATFORM" ? (input.withdrawalApprovalLimit ?? 0) : 0,
     });
 
     // 5. Emit Audit Log
@@ -102,6 +119,7 @@ export class UsersService {
         roleId: user.roleId,
         lembagaId: user.lembagaId,
         status: user.status,
+        withdrawalApprovalLimit: user.withdrawalApprovalLimit,
       },
     });
 
@@ -118,6 +136,8 @@ export class UsersService {
     adminLembagaId?: string,
     isSuperAdmin?: boolean,
   ) {
+    this.validateApprovalLimit(input.withdrawalApprovalLimit, isSuperAdmin);
+
     // 1. Fetch current user state
     const existingUser = await this.usersRepository.findById(id);
     if (!existingUser) {
@@ -170,6 +190,9 @@ export class UsersService {
       email: input.email,
       roleId: input.roleId,
       status: input.status,
+      withdrawalApprovalLimit: targetRole.name === "FINANCE_PLATFORM"
+        ? (input.withdrawalApprovalLimit ?? (changingRole ? 0 : existingUser.withdrawalApprovalLimit))
+        : 0,
     };
 
     if (isSuperAdmin) {
@@ -204,6 +227,7 @@ export class UsersService {
         roleId: existingUser.roleId,
         lembagaId: existingUser.lembagaId,
         status: existingUser.status,
+        withdrawalApprovalLimit: existingUser.withdrawalApprovalLimit,
       },
       newData: {
         name: updatedUser.name,
@@ -211,6 +235,7 @@ export class UsersService {
         roleId: updatedUser.roleId,
         lembagaId: updatedUser.lembagaId,
         status: updatedUser.status,
+        withdrawalApprovalLimit: updatedUser.withdrawalApprovalLimit,
       },
     });
 

@@ -5,25 +5,45 @@ import { useAuth } from "@/auth/AuthProvider";
 import { usePermission } from "@/hooks/usePermission";
 import { PERMISSIONS } from "@shared/constants/permissions";
 import { UserTable } from "@/features/users/components/UserTable";
-import { PageHeader, Button, TableSkeleton } from "@/components/ui";
-import { DataTableToolbar } from "@/components/ui/data-table";
+import { PageHeader, Button, TableSkeleton, Badge } from "@/components/ui";
+import { DataTable, DataTableToolbar } from "@/components/ui/data-table";
 import { UserLembagaFilter } from "@/features/users/components/UserLembagaFilter";
 import { Link } from "react-router-dom";
 
 export function UsersListPage() {
   const { user } = useAuth();
   const { can } = usePermission();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const isSuperAdmin = user?.roleName === "SUPER_ADMIN";
+
+  const categories = [
+    { value: "all", label: "Semua Staf" },
+    { value: "lembaga", label: "Lembaga" },
+    { value: "finance", label: "Finance Platform" },
+    { value: "volunteer", label: "Relawan" },
+  ];
+  const requestedCategory = searchParams.get("category") ?? "all";
+  const category = isSuperAdmin && categories.some((item) => item.value === requestedCategory) ? requestedCategory : "all";
+  const isVolunteer = category === "volunteer";
+  const showLembagaFilter = isSuperAdmin && (category === "all" || category === "lembaga");
+  const changeCategory = (value: string) => {
+    setSearchParams((previous) => {
+      const next = new URLSearchParams(previous);
+      next.set("category", value);
+      next.set("page", "1");
+      next.delete("lembagaId");
+      return next;
+    });
+  };
 
   const page = Number(searchParams.get("page") ?? 1);
   const limit = Number(searchParams.get("limit") ?? 10);
   const search = searchParams.get("search") ?? undefined;
-  const lembagaId = searchParams.get("lembagaId") ?? undefined;
+  const lembagaId = showLembagaFilter ? searchParams.get("lembagaId") ?? undefined : undefined;
 
-  const { data: result, isLoading } = useQuery({
-    queryKey: ["users", { page, limit, search, lembagaId }],
-    queryFn: () => api.get<any[]>("/users", { page, limit, search, lembagaId }),
+  const { data: result, isLoading, isError } = useQuery({
+    queryKey: ["users", { page, limit, search, lembagaId, category }],
+    queryFn: () => api.get<any[]>("/users", { page, limit, search, lembagaId, category }),
   });
 
   const { data: rolesResult } = useQuery({
@@ -45,9 +65,9 @@ export function UsersListPage() {
     <div className="space-y-6">
       <PageHeader
         title="Manajemen Pengguna"
-        description="Daftar semua pengguna staff terdaftar (Super Admin dan Admin Lembaga)."
+        description="Kelola pengguna staf dan lihat daftar relawan berdasarkan kategori."
         action={
-          can(PERMISSIONS.USERS_CREATE) ? (
+          !isVolunteer && can(PERMISSIONS.USERS_CREATE) ? (
             <Link to="/dashboard/users/new">
               <Button size="md">Tambah Pengguna</Button>
             </Link>
@@ -55,21 +75,46 @@ export function UsersListPage() {
         }
       />
 
+      {isSuperAdmin && (
+        <div className="flex flex-wrap gap-2" role="group" aria-label="Kategori pengguna">
+          {categories.map((item) => (
+            <Button key={item.value} intent={category === item.value ? "primary" : "outline"}
+              aria-pressed={category === item.value} onClick={() => changeCategory(item.value)}>
+              {item.label}
+            </Button>
+          ))}
+        </div>
+      )}
+
       <DataTableToolbar
+        key={category}
         searchValue={search}
         searchPlaceholder="Cari nama atau email..."
         filterSlot={
-          isSuperAdmin && lembagasResult?.data?.length ? (
+          showLembagaFilter && lembagasResult?.data?.length ? (
             <UserLembagaFilter lembagas={lembagasResult.data} />
           ) : undefined
         }
       />
 
-      {isLoading ? (
+      {isError ? <p role="alert" className="text-destructive">Gagal memuat daftar pengguna. Silakan muat ulang halaman.</p> : isLoading ? (
         <TableSkeleton
-          headers={isSuperAdmin ? ["Nama", "Email", "Status", "Role / Peran", "Lembaga", "Aksi"] : ["Nama", "Email", "Status", "Role / Peran", "Aksi"]}
+          headers={isVolunteer ? ["Nama", "Email", "Telepon", "Status"] : isSuperAdmin ? ["Nama", "Email", "Status", "Role / Peran", "Lembaga", "Aksi"] : ["Nama", "Email", "Status", "Role / Peran", "Aksi"]}
           rowCount={limit}
-          columnTypes={isSuperAdmin ? ["avatar", "text", "text", "text", "text", "action"] : ["avatar", "text", "text", "text", "action"]}
+          columnTypes={isVolunteer ? ["text", "text", "text", "text"] : isSuperAdmin ? ["avatar", "text", "text", "text", "text", "action"] : ["avatar", "text", "text", "text", "action"]}
+        />
+      ) : isVolunteer ? (
+        <DataTable
+          data={result?.data ?? []}
+          columns={[
+            { header: "Nama", accessorKey: "name" },
+            { header: "Email", accessorKey: "email" },
+            { header: "Telepon", accessorKey: "phone" },
+            { header: "Status", cell: (volunteer: any) => <Badge intent={volunteer.status === "ACTIVE" ? "success" : "warning"}>{volunteer.status === "ACTIVE" ? "Aktif" : "Ditangguhkan"}</Badge> },
+          ]}
+          pagination={pagination}
+          emptyTitle="Tidak ada relawan ditemukan"
+          emptyDescription="Belum ada relawan atau tidak ada yang sesuai dengan pencarian."
         />
       ) : (
         <UserTable

@@ -1,4 +1,5 @@
 import { HttpException } from "@nestjs/common";
+import type { ApiErrorBody } from "../../../../shared/types/api";
 
 /**
  * AppError — HttpException dengan kode error mesin-terbaca.
@@ -10,6 +11,7 @@ export class AppError extends HttpException {
     public readonly code: string,
     message: string,
     status: number,
+    public readonly details?: ApiErrorBody["error"]["details"],
   ) {
     super(message, status);
   }

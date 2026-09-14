@@ -441,11 +441,26 @@ export class WithdrawalsRepository {
 
   async approveWithdrawal(withdrawalId: string, approvedById: string) {
     return this.prisma.$transaction(async (tx) => {
+      // Serialize with changes to this user's limit. Never trust a session's old limit.
+      await tx.$queryRaw`SELECT id FROM "users" WHERE id = ${approvedById} FOR UPDATE`;
+      const approver = await tx.user.findUnique({
+        where: { id: approvedById },
+        include: { role: { select: { name: true } } },
+      });
+      if (!approver || approver.status !== "ACTIVE") {
+        throw new AppError("FORBIDDEN", "Akun tidak memiliki akses approval pencairan.", 403);
+      }
+      const isFinance = approver.role.name === "FINANCE_PLATFORM";
+      if (isFinance && approver.lembagaId !== null) {
+        throw new AppError("FORBIDDEN", "Approval memerlukan akun Finance Platform.", 403);
+      }
+      const limit = isFinance ? approver.withdrawalApprovalLimit : undefined;
       // Optimistic concurrency check
       const updateResult = await tx.withdrawal.updateMany({
         where: {
           id: withdrawalId,
           status: "PENDING",
+          ...(limit !== undefined ? { amount: { lte: limit } } : {}),
         },
         data: {
           status: "APPROVED",
@@ -455,6 +470,10 @@ export class WithdrawalsRepository {
       });
 
       if (updateResult.count === 0) {
+        const pending = await tx.withdrawal.findUnique({ where: { id: withdrawalId } });
+        if (pending?.status === "PENDING" && limit !== undefined && pending.amount.gt(limit)) {
+          throw new AppError("WITHDRAWAL_APPROVAL_LIMIT_EXCEEDED", "Nominal pencairan melebihi batas approval Anda. Minta persetujuan Finance Platform dengan limit yang mencukupi.", 403);
+        }
         throw new AppError("INVALID_STATE", "Withdrawal is not pending or does not exist.", 400);
       }
 
