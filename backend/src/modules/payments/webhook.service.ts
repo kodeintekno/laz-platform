@@ -144,13 +144,18 @@ export class WebhookService {
     );
 
     // 2. Find payment by our donationId (stored as gatewayRef = reference_id during creation)
-    const payment = await this.paymentsRepository.findByGatewayRef(data.reference_id);
+    let payment = await this.paymentsRepository.findByGatewayRef(data.reference_id);
+    // QRIS callbacks can carry the payment-method reference instead of our donation ID.
+    // Only fall back to the unique request ID saved from the authenticated creation API.
+    if (!payment) {
+      payment = await this.paymentsRepository.findByXenditPaymentRequestId(data.payment_request_id);
+    }
 
     if (!payment) {
       // Could be a test event or unrelated payment — log and return 200 to stop retries
       this.logger.warn(
-        { referenceId: data.reference_id },
-        "Xendit webhook: payment not found for reference_id",
+        { referenceId: data.reference_id, paymentRequestId: data.payment_request_id },
+        "Xendit webhook: payment not found for reference or payment request ID",
       );
       return { status: "Payment not found — ignored" };
     }

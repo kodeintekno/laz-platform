@@ -18,6 +18,7 @@ describe("WebhookService", () => {
     withdrawalsRepo = { findById: vi.fn(), updatePayoutStatusAndFinalize: vi.fn() };
     paymentsRepo = {
       findByGatewayRef: vi.fn(),
+      findByXenditPaymentRequestId: vi.fn(),
       updatePaymentAndDonationStatus: vi.fn(),
       findManyPaged: vi.fn(),
     } as any;
@@ -130,6 +131,37 @@ describe("WebhookService", () => {
         amount: 100000, xenditPaymentId: "pymt-123", xenditEvent: event,
         newPaymentStatus: paymentStatus, newDonationStatus: donationStatus,
       }));
+    });
+
+    it("matches a QRIS callback with a different reference by its saved request ID", async () => {
+      paymentsRepo.findByGatewayRef.mockResolvedValue(null);
+      paymentsRepo.findByXenditPaymentRequestId.mockResolvedValue(mockPayment as any);
+      paymentsRepo.updatePaymentAndDonationStatus.mockResolvedValue({ success: true });
+      const result = await service.processXenditPaymentWebhook(validToken, {
+        ...v2Payload, data: { ...v2Payload.data, reference_id: "payment-method-reference" },
+      });
+      expect(result.status).toBe("Processed");
+      expect(paymentsRepo.findByXenditPaymentRequestId).toHaveBeenCalledWith("pr-123");
+      expect(paymentsRepo.updatePaymentAndDonationStatus).toHaveBeenCalledWith(expect.objectContaining({
+        donationId: "don-123", newPaymentStatus: "SUCCESS", newDonationStatus: "PAID",
+      }));
+    });
+
+    it("ignores callbacks when neither identifier matches", async () => {
+      paymentsRepo.findByGatewayRef.mockResolvedValue(null);
+      paymentsRepo.findByXenditPaymentRequestId.mockResolvedValue(null);
+      const result = await service.processXenditPaymentWebhook(validToken, v2Payload);
+      expect(result.status).toContain("Payment not found");
+      expect(paymentsRepo.updatePaymentAndDonationStatus).not.toHaveBeenCalled();
+    });
+
+    it("still validates the amount when matching by request ID", async () => {
+      paymentsRepo.findByGatewayRef.mockResolvedValue(null);
+      paymentsRepo.findByXenditPaymentRequestId.mockResolvedValue(mockPayment as any);
+      await expect(service.processXenditPaymentWebhook(validToken, {
+        ...v2Payload, data: { ...v2Payload.data, amount: 1 },
+      })).rejects.toThrow("Payment amount mismatch");
+      expect(paymentsRepo.updatePaymentAndDonationStatus).not.toHaveBeenCalled();
     });
 
     it("rejects a v2 amount mismatch", async () => {
