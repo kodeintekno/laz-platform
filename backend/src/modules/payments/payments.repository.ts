@@ -26,6 +26,13 @@ export class PaymentsRepository {
     });
   }
 
+  async findByXenditPaymentRequestId(xenditPaymentRequestId: string) {
+    return this.prisma.payment.findUnique({
+      where: { xenditPaymentRequestId },
+      include: { donation: true },
+    });
+  }
+
   /**
    * Atomically updates both Payment and Donation status,
    * and increments the Program funding if donation was PAID.
