@@ -8,7 +8,8 @@ import type { CreateAuditLogInput } from "./audit.types";
  *
  * RULES:
  * - Never expose update or delete.
- * - Audit failures must NOT cause the parent transaction to fail.
+ * - Legacy log() is best effort; required webhook writes propagate failure.
+ * - Financial domain triggers are atomic and fail closed with the mutation.
  */
 @Injectable()
 export class AuditService {
@@ -24,8 +25,13 @@ export class AuditService {
     try {
       await this.auditRepository.create(input);
     } catch (err) {
-      this.logger.error({ err, input }, "Failed to write audit log");
+      this.logger.error({ action: input.action, entity: input.entity }, "Failed to write audit log");
     }
+  }
+
+  /** A webhook must remain retryable when its receipt audit cannot be persisted. */
+  async logRequired(input: CreateAuditLogInput): Promise<void> {
+    await this.auditRepository.create(input);
   }
 
   /**
@@ -38,7 +44,8 @@ export class AuditService {
     lembagaId?: string,
     startDate?: string,
     endDate?: string,
+    filters: Record<string, string> = {},
   ) {
-    return this.auditRepository.getAuditLogs(page, limit, search, lembagaId, startDate, endDate);
+    return this.auditRepository.getAuditLogs(page, limit, search, lembagaId, startDate, endDate, filters);
   }
 }

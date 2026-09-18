@@ -29,6 +29,7 @@ describe("WebhookService", () => {
 
     auditService = {
       log: vi.fn(),
+      logRequired: vi.fn(),
       getLogs: vi.fn(),
     } as any;
 
@@ -56,11 +57,14 @@ describe("WebhookService", () => {
         .resolves.toEqual({ status: "Unrelated payout reference — ignored" });
       expect(withdrawalsRepo.findById).not.toHaveBeenCalled();
       expect(withdrawalsRepo.updatePayoutStatusAndFinalize).not.toHaveBeenCalled();
+      expect(auditService.logRequired).toHaveBeenLastCalledWith(expect.objectContaining({ transactionData: expect.objectContaining({ processingResult: "IGNORED" }) }));
     });
 
     it("still rejects dashboard samples with an invalid token", async () => {
       await expect(service.processXenditPayoutWebhook("wrong-token", sample)).rejects.toThrow("Invalid callback token");
       expect(withdrawalsRepo.findById).not.toHaveBeenCalled();
+      expect(auditService.logRequired).toHaveBeenLastCalledWith(expect.objectContaining({ status: "FAILED", errorMessage: "INVALID_TOKEN", transactionData: expect.objectContaining({ processingResult: "FAILED" }) }));
+      expect(JSON.stringify(auditService.logRequired.mock.calls)).not.toContain("wrong-token");
     });
 
     it("keeps missing application payouts retryable", async () => {
@@ -141,6 +145,7 @@ describe("WebhookService", () => {
         ...v2Payload, data: { ...v2Payload.data, reference_id: "payment-method-reference" },
       });
       expect(result.status).toBe("Processed");
+      expect(auditService.logRequired).toHaveBeenLastCalledWith(expect.objectContaining({ action: "WEBHOOK_RECEIVED", status: "SUCCESS", correlationId: "donation:don-123", transactionData: expect.objectContaining({ provider: "XENDIT", processingResult: "SUCCESS", paymentId: "pay-123" }) }));
       expect(paymentsRepo.findByXenditPaymentRequestId).toHaveBeenCalledWith("pr-123");
       expect(paymentsRepo.updatePaymentAndDonationStatus).toHaveBeenCalledWith(expect.objectContaining({
         donationId: "don-123", newPaymentStatus: "SUCCESS", newDonationStatus: "PAID",
@@ -213,6 +218,7 @@ describe("WebhookService", () => {
 
       const result = await service.processXenditPaymentWebhook(validToken, basePayload);
       expect(result.status).toBe("Already processed");
+      expect(auditService.logRequired).toHaveBeenLastCalledWith(expect.objectContaining({ transactionData: expect.objectContaining({ processingResult: "DUPLICATE" }) }));
       expect(paymentsRepo.updatePaymentAndDonationStatus).not.toHaveBeenCalled();
     });
 
@@ -246,6 +252,13 @@ describe("WebhookService", () => {
       expect(result.status).toBe("Already processed (concurrently)");
     });
 
+    it("keeps delivery retryable when receipt audit persistence fails", async () => {
+      paymentsRepo.findByGatewayRef.mockResolvedValue({ ...mockPayment, status: "SUCCESS" } as any);
+      auditService.logRequired.mockRejectedValueOnce(new Error("Audit unavailable"));
+      await expect(service.processXenditPaymentWebhook(validToken, basePayload)).rejects.toThrow("Audit unavailable");
+      expect(paymentsRepo.updatePaymentAndDonationStatus).not.toHaveBeenCalled();
+    });
+
     it("should process valid webhook and update db", async () => {
       paymentsRepo.findByGatewayRef.mockResolvedValue(mockPayment as any);
       paymentsRepo.updatePaymentAndDonationStatus.mockResolvedValue({ success: true } as any);
@@ -253,6 +266,7 @@ describe("WebhookService", () => {
       const result = await service.processXenditPaymentWebhook(validToken, basePayload);
       
       expect(result.status).toBe("Processed");
+      expect(auditService.logRequired).toHaveBeenLastCalledWith(expect.objectContaining({ action: "WEBHOOK_RECEIVED", status: "SUCCESS", correlationId: "donation:don-123", transactionData: expect.objectContaining({ provider: "XENDIT", processingResult: "SUCCESS", paymentId: "pay-123" }) }));
       expect(paymentsRepo.updatePaymentAndDonationStatus).toHaveBeenCalledWith(
         expect.objectContaining({
           newPaymentStatus: "SUCCESS",

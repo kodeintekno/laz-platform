@@ -1,3 +1,4 @@
+import type { AuditLogRecord } from "../types/audit.types";
 import { Badge } from "@/components/ui";
 import { ColumnDef } from "@/components/ui/data-table";
 
@@ -23,11 +24,11 @@ function getActionIntent(action: string): "success" | "warning" | "destructive" 
 const formatDate = (date: Date | string) => {
   return new Intl.DateTimeFormat("id-ID", {
     dateStyle: "medium",
-    timeStyle: "short",
+    timeStyle: "long",
   }).format(new Date(date));
 };
 
-export function getAuditTableColumns(): ColumnDef<any>[] {
+export function getAuditTableColumns(): ColumnDef<AuditLogRecord>[] {
   return [
     {
       header: "Waktu",
@@ -38,19 +39,20 @@ export function getAuditTableColumns(): ColumnDef<any>[] {
     {
       header: "Operator",
       cell: (log) =>
-        log.user ? (
+        (log.actorName || log.user) ? (
           <div>
-            <div className="font-semibold text-primary">{log.user.name}</div>
-            <div className="text-xs text-secondary">{log.user.email}</div>
+            <div className="font-semibold text-primary">{log.actorName || log.user?.name}</div>
+            <div className="text-xs text-secondary">{log.actorEmail || log.user?.email}</div>
+            <div className="text-xs">{log.actorRole} | {log.actorInstitutionName || "Platform"}</div>
           </div>
         ) : (
-          <span className="italic text-muted font-medium">System</span>
+          <span className="italic text-muted font-medium">{log.actor || "SYSTEM"}</span>
         ),
     },
     {
       header: "Aktivitas",
       cell: (log) => (
-        <Badge intent={getActionIntent(log.action)}>{log.action}</Badge>
+        <div><Badge intent={getActionIntent(log.action)}>{log.action}</Badge><div className="text-xs mt-1">{log.module} | {log.status}</div></div>
       ),
     },
     {
@@ -68,18 +70,15 @@ export function getAuditTableColumns(): ColumnDef<any>[] {
     },
     {
       header: "Perubahan Data",
-      cell: (log) =>
-        log.oldData || log.newData ? (
+      cell: (log) => (
           <details className="text-xs text-secondary font-mono cursor-pointer">
             <summary className="text-xs text-brand-primary font-semibold hover:underline outline-none">
-              Lihat snapshot
+              Lihat detail
             </summary>
             <pre className="mt-2 p-2 bg-surface-muted border border-border rounded-lg max-w-xs overflow-x-auto text-[10px] leading-tight select-all">
-              {JSON.stringify({ sebelum: log.oldData, sesudah: log.newData }, null, 2)}
+              {JSON.stringify({ actor: log.actor, userId: log.userId, name: log.actorName, email: log.actorEmail, role: log.actorRole, actorInstitutionId: log.actorInstitutionId, actorInstitution: log.actorInstitutionName, institutionId: log.institutionId, institution: log.institutionName, timestamp: log.createdAt, action: log.action, module: log.module, entityId: log.entityId, status: log.status, before: log.oldData, after: log.newData, changes: log.changes, transaction: log.transactionData, ip: log.ipAddress, device: log.userAgent, method: log.httpMethod, endpoint: log.endpoint, requestId: log.requestId, correlationId: log.correlationId, error: log.errorMessage }, null, 2)}
             </pre>
           </details>
-        ) : (
-          <span className="text-xs text-muted italic">No snapshot</span>
         ),
     },
     {

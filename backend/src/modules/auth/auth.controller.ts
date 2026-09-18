@@ -48,7 +48,7 @@ export class AuthController {
 
     await this.auditService.log({
       userId: user.id,
-      action: AuditAction.LOGIN,
+      action: "LOGIN_SUCCESS",
       entity: "User",
       entityId: user.id,
       ipAddress: req.ip,

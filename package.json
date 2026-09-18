@@ -7,9 +7,13 @@
     "build": "npm --prefix backend run build && npm --prefix frontend run build",
     "db:seed": "npm --prefix backend run db:seed",
     "db:migrate": "npm --prefix backend run db:migrate",
-    "db:push": "npm --prefix backend run db:push"
+    "db:push": "npm --prefix backend run db:push",
+    "lint": "eslint backend/src backend/test frontend/src"
   },
   "devDependencies": {
-    "concurrently": "^9.2.1"
+    "concurrently": "^9.2.1",
+    "eslint": "^10.10.0",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "typescript-eslint": "^8.70.0"
   }
 }

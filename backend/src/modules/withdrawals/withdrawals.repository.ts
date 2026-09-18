@@ -1,3 +1,5 @@
+import { randomUUID } from "node:crypto";
+import { setFinancialAuditContext } from "../audit/financial-audit";
 import { Injectable, Logger } from "@nestjs/common";
 import { PrismaService } from "../../prisma/prisma.service";
 import { AutoJournalService } from "../journal/auto-journal.service";
@@ -351,6 +353,8 @@ export class WithdrawalsRepository {
     accountHolder: string
   ) {
     return this.prisma.$transaction(async (tx) => {
+      const withdrawalId = randomUUID();
+      await setFinancialAuditContext(tx, { withdrawalId, amount });
       // Kunci saldo program dan agregat agar request paralel tidak dapat
       // memakai rupiah yang sama atau mengambil dana program lain.
       const allocation = await this.reserveProgramBalance(tx, lembagaId, programId, amount);
@@ -358,6 +362,7 @@ export class WithdrawalsRepository {
       // 3. Create PENDING Withdrawal
       const withdrawal = await tx.withdrawal.create({
         data: {
+          id: withdrawalId,
           lembagaId,
           programId,
           bankAccountId,
@@ -406,6 +411,8 @@ export class WithdrawalsRepository {
     accountHolder: string,
   ) {
     return this.prisma.$transaction(async (tx) => {
+      const withdrawalId = randomUUID();
+      await setFinancialAuditContext(tx, { withdrawalId, amount });
       const updated = await tx.platformBalance.updateMany({
         where: { id: "platform", balance: { gte: amount } },
         data: { balance: { decrement: amount }, reservedBalance: { increment: amount } },
@@ -415,6 +422,7 @@ export class WithdrawalsRepository {
       }
       const withdrawal = await tx.withdrawal.create({
         data: {
+          id: withdrawalId,
           lembagaId: null,
           isPlatform: true,
           amount,
@@ -441,6 +449,7 @@ export class WithdrawalsRepository {
 
   async approveWithdrawal(withdrawalId: string, approvedById: string) {
     return this.prisma.$transaction(async (tx) => {
+      await setFinancialAuditContext(tx, { withdrawalId });
       // Serialize with changes to this user's limit. Never trust a session's old limit.
       await tx.$queryRaw`SELECT id FROM "users" WHERE id = ${approvedById} FOR UPDATE`;
       const approver = await tx.user.findUnique({
@@ -496,6 +505,7 @@ export class WithdrawalsRepository {
 
   async rejectWithdrawal(withdrawalId: string, rejectedById: string, reason: string) {
     return this.prisma.$transaction(async (tx) => {
+      await setFinancialAuditContext(tx, { withdrawalId });
       // Optimistic concurrency check
       const updateResult = await tx.withdrawal.updateMany({
         where: {
@@ -590,6 +600,7 @@ export class WithdrawalsRepository {
     withdrawalStatus?: any
   ) {
     return this.prisma.$transaction(async (tx) => {
+      await setFinancialAuditContext(tx, { withdrawalId });
       // Jangan pernah menimpa status terminal yang mungkin sudah ditulis oleh
       // webhook ketika respons HTTP create-payout datang terlambat.
       const updated = await tx.payout.updateMany({
@@ -627,6 +638,7 @@ export class WithdrawalsRepository {
     metadata?: any
   ) {
     return this.prisma.$transaction(async (tx) => {
+      await setFinancialAuditContext(tx, { withdrawalId, payoutId, amount });
       // 1. Klaim terminal event secara atomik. Read-then-write saja tidak aman
       // terhadap dua webhook sukses/gagal yang tiba bersamaan.
       const currentPayout = await tx.payout.findUnique({ where: { id: payoutId } });

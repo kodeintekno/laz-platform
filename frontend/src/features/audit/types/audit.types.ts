@@ -34,7 +34,7 @@ export interface CreateAuditLogInput {
   userId: string | null;
 
   /** What happened (e.g. CREATE, UPDATE, DELETE). */
-  action: AuditAction;
+  action: AuditAction | string;
 
   /** The entity type affected (e.g. "User", "Program", "Donation"). */
   entity: string;
@@ -62,5 +62,23 @@ export interface CreateAuditLogInput {
  */
 export interface AuditLogRecord extends CreateAuditLogInput {
   id: string;
-  createdAt: Date;
+  createdAt: string;
+  actor: "USER" | "SUPER_ADMIN" | "SYSTEM" | "WEBHOOK";
+  actorName?: string | null;
+  actorEmail?: string | null;
+  actorRole?: string | null;
+  actorInstitutionId?: string | null;
+  actorInstitutionName?: string | null;
+  institutionId?: string | null;
+  institutionName?: string | null;
+  module: string;
+  status: "SUCCESS" | "FAILED";
+  changes?: Record<string, { before: unknown; after: unknown }> | null;
+  transactionData?: Record<string, unknown> | null;
+  httpMethod?: string | null;
+  endpoint?: string | null;
+  requestId?: string | null;
+  correlationId?: string | null;
+  errorMessage?: string | null;
+  user?: { name?: string | null; email?: string | null } | null;
 }

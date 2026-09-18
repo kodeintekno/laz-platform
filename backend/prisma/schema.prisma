@@ -25,7 +25,6 @@ model User {
   emailNotifications                 Boolean                     @default(true)
   phoneNumber                        String?
   waNotifications                    Boolean                     @default(true)
-  auditLogs                          AuditLog[]
   distributionsApproved              Distribution[]              @relation("DistributionApprover")
   distributionsCreated               Distribution[]              @relation("DistributionCreator")
   programs                           Program[]
@@ -71,7 +70,6 @@ model Lembaga {
   accountHolder              String?
   createdAt                  DateTime                    @default(now())
   updatedAt                  DateTime                    @updatedAt
-  auditLogs                  AuditLog[]
   chartOfAccounts            ChartOfAccount[]
   distributions              Distribution[]
   donations                  Donation[]
@@ -181,7 +179,7 @@ model AuditLog {
   id        String      @id @default(cuid())
   userId    String?
   lembagaId String?
-  action    AuditAction
+  action    String
   entity    String
   entityId  String?
   oldData   Json?
@@ -189,9 +187,33 @@ model AuditLog {
   ipAddress String?
   userAgent String?
   createdAt DateTime    @default(now())
-  lembaga   Lembaga?    @relation(fields: [lembagaId], references: [id])
-  user      User?       @relation(fields: [userId], references: [id])
 
+  actor String @default("SYSTEM")
+  actorName String?
+  actorEmail String?
+  actorRole String?
+  actorInstitutionId String?
+  actorInstitutionName String?
+  institutionId String?
+  institutionName String?
+  module String @default("legacy")
+  status String @default("SUCCESS")
+  changes Json?
+  transactionData Json?
+  httpMethod String?
+  endpoint String?
+  requestId String?
+  correlationId String?
+  errorMessage String?
+  @@index([createdAt])
+  @@index([lembagaId, createdAt])
+  @@index([requestId])
+  @@index([correlationId])
+  @@index([entityId])
+  @@index([action, status])
+  @@index([userId, createdAt])
+  @@index([module, createdAt])
+  @@index([actorRole, createdAt])
   @@map("audit_logs")
 }
 

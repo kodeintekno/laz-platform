@@ -8,7 +8,7 @@ import type { CreateAuditLogInput } from "./audit.types";
  * RULES:
  * - Audit logs are IMMUTABLE. Only `create` is allowed here.
  * - Never expose update or delete methods.
- * - This repository is the ONLY place that writes to `audit_logs`.
+ * - Domain triggers also write atomic financial/data-change events.
  */
 @Injectable()
 export class AuditRepository {
@@ -18,22 +18,17 @@ export class AuditRepository {
    * Create an immutable audit log entry.
    */
   async create(input: CreateAuditLogInput) {
-    let lembagaId = input.lembagaId;
-    if (!lembagaId && input.userId) {
-      const user = await this.prisma.user.findUnique({
-        where: { id: input.userId },
-        select: { lembagaId: true },
-      });
-      if (user) {
-        lembagaId = user.lembagaId ?? undefined;
-      }
-    }
+    const lembagaId = input.lembagaId;
 
     return this.prisma.auditLog.create({
       data: {
         userId: input.userId,
+        status: input.status,
+        errorMessage: input.errorMessage,
+        transactionData: input.transactionData as any,
+        correlationId: input.correlationId,
         lembagaId: lembagaId || undefined,
-        action: input.action as never, // Prisma enum cast
+        action: input.action,
         entity: input.entity,
         entityId: input.entityId,
         oldData: input.oldData ? (input.oldData as any) : undefined,
@@ -54,49 +49,40 @@ export class AuditRepository {
     lembagaId?: string,
     startDate?: string,
     endDate?: string,
+    filters: Record<string, string> = {},
   ) {
+    page = Math.max(1, (Number.isFinite(page) ? Math.floor(page) : 1) || 1);
+    limit = Math.min(100, Math.max(1, (Number.isFinite(limit) ? Math.floor(limit) : 10) || 10));
     const skip = (page - 1) * limit;
 
     const where: any = {};
+    for (const key of ["userId", "actorRole", "action", "module", "entityId", "status", "ipAddress", "requestId", "correlationId"]) {
+      if (filters[key]) where[key] = filters[key];
+    }
     if (lembagaId) {
       where.lembagaId = lembagaId;
     }
-    if (startDate) {
+    if (startDate && !Number.isNaN(Date.parse(startDate))) {
       where.createdAt = { gte: new Date(startDate) };
     }
-    if (endDate) {
-      where.createdAt = { ...(where.createdAt || {}), lte: new Date(endDate) };
+    if (endDate && !Number.isNaN(Date.parse(endDate))) {
+      where.createdAt = { ...(where.createdAt || {}), lte: new Date(endDate.length === 10 ? `${endDate}T23:59:59.999Z` : endDate) };
     }
     if (search) {
-      const isActionEnum = [
-        "LOGIN", "LOGOUT", "CREATE", "UPDATE", "DELETE",
-        "ROLE_CHANGE", "PAYMENT_UPDATE", "DISTRIBUTION_UPDATE",
-        "LEMBAGA_APPROVE", "LEMBAGA_REJECT", "VOLUNTEER_APPLICATION_REVIEW",
-      ].includes(search.toUpperCase());
-
       where.OR = [
+        { action: { contains: search, mode: "insensitive" } },
+        { actorName: { contains: search, mode: "insensitive" } },
+        { actorEmail: { contains: search, mode: "insensitive" } },
         { entity: { contains: search, mode: "insensitive" } },
         { entityId: { contains: search, mode: "insensitive" } },
-        { user: { name: { contains: search, mode: "insensitive" } } },
-        { user: { email: { contains: search, mode: "insensitive" } } },
       ];
 
-      if (isActionEnum) {
-        where.OR.push({ action: { equals: search.toUpperCase() as any } });
-      }
+
     }
 
     const [items, total] = await Promise.all([
       this.prisma.auditLog.findMany({
         where,
-        include: {
-          user: {
-            select: {
-              name: true,
-              email: true,
-            },
-          },
-        },
         orderBy: { createdAt: "desc" },
         skip,
         take: limit,
@@ -105,7 +91,7 @@ export class AuditRepository {
     ]);
 
     return {
-      items,
+      items: items.map((item) => ({ ...item, before: item.oldData, after: item.newData, user: item.actorName || item.actorEmail ? { name: item.actorName, email: item.actorEmail } : null })),
       metadata: {
         total,
         page,

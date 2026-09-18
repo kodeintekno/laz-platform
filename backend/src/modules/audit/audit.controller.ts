@@ -20,6 +20,7 @@ export class AuditController {
     @Query("lembagaId") lembagaId?: string,
     @Query("startDate") startDate?: string,
     @Query("endDate") endDate?: string,
+    @Query() filters: Record<string, string> = {},
   ) {
     const { items, metadata } = await this.auditService.getLogs(
       Number(page) || 1,
@@ -28,6 +29,7 @@ export class AuditController {
       resolveLembagaScope(user, lembagaId),
       startDate || undefined,
       endDate || undefined,
+      filters,
     );
     return { data: items, meta: metadata };
   }
