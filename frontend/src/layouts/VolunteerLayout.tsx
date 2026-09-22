@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { WhatsAppChatButton } from "@/components/WhatsAppChatButton";
 import { Outlet, Link, useLocation } from "react-router-dom";
 import { LayoutDashboard, Search, ClipboardList, ListChecks, Award, Settings, LogOut, Menu, X, ChevronRight } from "lucide-react";
 import { useVolunteerAuth } from "@/auth/VolunteerAuthProvider";
@@ -164,6 +165,7 @@ export function VolunteerLayout() {
           <Outlet />
         </main>
       </div>
+      <WhatsAppChatButton />
       <ConfirmDialog
         isOpen={isLogoutOpen}
         onClose={() => { if (!isLoggingOut) setIsLogoutOpen(false); }}

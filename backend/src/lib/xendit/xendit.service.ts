@@ -100,11 +100,32 @@ export class XenditService {
     } catch (err) {
       if (err instanceof AppError) throw err;
 
+      const gatewayCode =
+        err && typeof err === "object" && "errorCode" in err &&
+        typeof err.errorCode === "string" ? err.errorCode : undefined;
+      const gatewayMessage =
+        err && typeof err === "object" && "errorMessage" in err &&
+        typeof err.errorMessage === "string" ? err.errorMessage : undefined;
+      // Some VA channels report missing activation as API_VALIDATION_ERROR.
+      // Match that specific message; other validation failures have different causes.
+      const bankNotActivated = gatewayCode === "API_VALIDATION_ERROR" &&
+        gatewayMessage?.startsWith(
+          `Bank code ${channel.replace("_VIRTUAL_ACCOUNT", "")} is not activated yet.`,
+        );
+
       // Xendit API errors
       this.logger.error(
-        { referenceId, channel, error: err },
+        { referenceId, channel, gatewayCode, error: err },
         "Xendit payment request failed",
       );
+      if (gatewayCode === "CHANNEL_NOT_ACTIVATED" || gatewayCode === "BANK_NOT_SUPPORTED_ERROR" || bankNotActivated) {
+        const method = channel === "QRIS" ? "QRIS" : `Virtual Account ${channel.replace("_VIRTUAL_ACCOUNT", "")}`;
+        throw new AppError(
+          "PAYMENT_CHANNEL_UNAVAILABLE",
+          `${method} belum tersedia. Silakan pilih metode pembayaran lain.`,
+          503,
+        );
+      }
       throw new AppError(
         "PAYMENT_GATEWAY_ERROR",
         "Gagal membuat pembayaran. Silakan coba lagi.",
@@ -204,6 +225,18 @@ export class XenditService {
       vaAction?.url ||
       vaAction?.value ||
       response.paymentMethod?.virtualAccount?.channelProperties?.virtualAccountNumber;
+
+    if (!vaNumber) {
+      this.logger.error(
+        { referenceId, paymentRequestId, channel },
+        "Xendit response did not contain a Virtual Account number",
+      );
+      throw new AppError(
+        "PAYMENT_INSTRUCTIONS_UNAVAILABLE",
+        "Nomor Virtual Account belum tersedia. Silakan coba lagi atau pilih metode pembayaran lain.",
+        502,
+      );
+    }
 
     this.logger.log(
       { referenceId, paymentRequestId, channel, hasVaNumber: !!vaNumber },

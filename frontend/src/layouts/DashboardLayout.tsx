@@ -1,4 +1,5 @@
 import { Outlet } from "react-router-dom";
+import { WhatsAppChatButton } from "@/components/WhatsAppChatButton";
 import { Sidebar } from "@/features/dashboard/components/Sidebar";
 import { Header } from "@/features/dashboard/components/Header";
 import { useAuth } from "@/auth/AuthProvider";
@@ -18,6 +19,7 @@ export function DashboardLayout() {
           </main>
         </div>
       </div>
+      <WhatsAppChatButton />
     </BreadcrumbProvider>
   );
 }

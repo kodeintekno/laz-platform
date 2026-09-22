@@ -1,4 +1,6 @@
-import { BadRequestException, Body, Controller, Patch, Post, Put, Req } from "@nestjs/common";
+import { BadRequestException, Body, Controller, Get, Patch, Post, Put, Req } from "@nestjs/common";
+import { ConfigService } from "@nestjs/config";
+import { Public } from "../../common/decorators/public.decorator";
 import { Throttle } from "@nestjs/throttler";
 import type { Request } from "express";
 import { SettingsService } from "./settings.service";
@@ -16,7 +18,22 @@ import type { RBACSessionUser } from "../../../../shared/types/rbac";
 
 @Controller("api/settings")
 export class SettingsController {
-  constructor(private readonly settingsService: SettingsService) {}
+  constructor(
+    private readonly settingsService: SettingsService,
+    private readonly config: ConfigService,
+  ) {}
+
+  @Get("contact")
+  @Public()
+  contact() {
+    const phone = this.config.get<string>("SUPER_ADMIN_WHATSAPP_NUMBER", "").trim();
+    const message = "Halo Admin Ruang Berbagi, saya membutuhkan bantuan.";
+    return {
+      whatsappUrl: /^[1-9]\d{7,14}$/.test(phone)
+        ? `https://wa.me/${phone}?text=${encodeURIComponent(message)}`
+        : null,
+    };
+  }
 
   @Patch("profile")
   async updateProfile(
