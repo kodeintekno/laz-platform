@@ -1,10 +1,10 @@
 "use client";
 
-import React from "react";
+import type { AuditLogRecord } from "../types/audit.types";
 import { DataTable } from "@/components/ui/data-table";
 
 interface AuditTableProps {
-  logs: any[];
+  logs: AuditLogRecord[];
   pagination: {
     currentPage: number;
     totalPages: number;
@@ -12,32 +12,6 @@ interface AuditTableProps {
     pageSize: number;
   };
 }
-
-function getActionIntent(action: string): "success" | "warning" | "destructive" | "info" | "muted" {
-  switch (action) {
-    case "CREATE":
-      return "success";
-    case "UPDATE":
-    case "PAYMENT_UPDATE":
-    case "DISTRIBUTION_UPDATE":
-      return "warning";
-    case "DELETE":
-    case "ROLE_CHANGE":
-      return "destructive";
-    case "LOGIN":
-      return "info";
-    case "LOGOUT":
-    default:
-      return "muted";
-  }
-}
-
-const formatDate = (date: Date | string) => {
-  return new Intl.DateTimeFormat("id-ID", {
-    dateStyle: "medium",
-    timeStyle: "short",
-  }).format(new Date(date));
-};
 
 import { getAuditTableColumns } from "@/features/audit/components/audit-columns";
 

@@ -1,3 +1,4 @@
+import type { AuditLogRecord } from "@/features/audit/types/audit.types";
 import { useQuery } from "@tanstack/react-query";
 import { useSearchParams } from "react-router-dom";
 import { api } from "@/lib/api-client";
@@ -8,7 +9,9 @@ import { DataTableToolbar } from "@/components/ui/data-table";
 
 export function AuditPage() {
   const { user } = useAuth();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const filterFields = [["userId", "User ID"], ["lembagaId", "Lembaga ID"], ["actorRole", "Role"], ["action", "Action"], ["module", "Module"], ["entityId", "Entity ID"], ["status", "SUCCESS / FAILED"], ["ipAddress", "IP"], ["requestId", "Request ID"], ["correlationId", "Correlation ID"]];
+  const filters = Object.fromEntries(filterFields.map(([key]) => [key, searchParams.get(key) || undefined]));
 
   const page = Number(searchParams.get("page") ?? 1);
   const limit = Number(searchParams.get("limit") ?? 10);
@@ -17,9 +20,9 @@ export function AuditPage() {
   const endDate = searchParams.get("endDate") ?? undefined;
 
   const { data: result, isLoading } = useQuery({
-    queryKey: ["audit", { page, limit, search, startDate, endDate }],
+    queryKey: ["audit", { page, limit, search, startDate, endDate, filters, scope: user?.lembagaId }],
     queryFn: () =>
-      api.get<any[]>("/audit", { page, limit, search, startDate, endDate, lembagaId: user?.lembagaId }),
+      api.get<AuditLogRecord[]>("/audit", { page, limit, search, startDate, endDate, ...filters, lembagaId: user?.lembagaId || filters.lembagaId }),
   });
 
   const pagination = result?.meta
@@ -42,6 +45,18 @@ export function AuditPage() {
         </div>
       </div>
 
+      <form key={searchParams.toString()} className="grid grid-cols-2 md:grid-cols-5 gap-3" onSubmit={(event) => {
+        event.preventDefault();
+        const values = new FormData(event.currentTarget);
+        const next = new URLSearchParams(searchParams);
+        filterFields.forEach(([key]) => { const value = String(values.get(key) || "").trim(); if (value) next.set(key, value); else next.delete(key); });
+        next.set("page", "1"); setSearchParams(next);
+      }}>
+        {filterFields.map(([key, label]) => <label key={key} className="text-xs text-secondary">{label}
+          <input name={key} disabled={key === "lembagaId" && Boolean(user?.lembagaId)} defaultValue={key === "lembagaId" ? user?.lembagaId || filters[key] : filters[key]} className="mt-1 block w-full rounded border border-border bg-surface p-2" />
+        </label>)}
+        <button type="submit" className="rounded border border-border p-2">Terapkan filter</button>
+      </form>
       {isLoading ? (
         <TableSkeleton
           headers={["Waktu", "Operator", "Aktivitas", "Entitas / ID", "Perubahan Data", "Klien Info"]}

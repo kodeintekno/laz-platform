@@ -1,4 +1,5 @@
 import { Outlet } from "react-router-dom";
+import { WhatsAppChatButton } from "@/components/WhatsAppChatButton";
 import { PublicHeader } from "@/components/ui/PublicHeader";
 import { PublicFooter } from "@/components/ui/PublicFooter";
 import { useAuth } from "@/auth/AuthProvider";
@@ -12,6 +13,7 @@ export function PublicLayout() {
         <Outlet />
       </div>
       <PublicFooter />
+      <WhatsAppChatButton />
     </div>
   );
 }

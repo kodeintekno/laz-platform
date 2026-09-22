@@ -22,6 +22,9 @@ export class AllExceptionsFilter implements ExceptionFilter {
 
   catch(exception: unknown, host: ArgumentsHost) {
     const res = host.switchToHttp().getResponse<Response>();
+    if (res.locals) res.locals.auditError = exception instanceof AppError
+      ? exception.code : exception instanceof ZodError ? "VALIDATION_ERROR"
+      : exception instanceof HttpException ? `HTTP_${exception.getStatus()}` : "INTERNAL_ERROR";
 
     // Multer throws its own error type before the controller is entered. Keep
     // the documented upload limit visible instead of turning this into a

@@ -2,7 +2,6 @@ import { Injectable, Logger, Inject, forwardRef, Optional } from "@nestjs/common
 import { ConfigService } from "@nestjs/config";
 import { PaymentsRepository } from "./payments.repository";
 import { AuditService } from "../audit/audit.service";
-import { AuditAction } from "../audit/audit.types";
 import { AppError } from "../../common/errors/app.error";
 import type { DonationStatus, PaymentStatus } from "@prisma/client";
 import type { Env } from "../../config/env";
@@ -59,6 +58,43 @@ export class WebhookService {
     @Optional() private readonly notifications?: NotificationsService,
   ) {}
 
+  async processXenditPaymentWebhook(token: string, payload: XenditPaymentWebhookPayload) {
+    return this.auditWebhook("Payment", payload, (audit) => this.processPayment(token, payload, audit));
+  }
+
+  async processXenditPayoutWebhook(token: string, payload: any) {
+    return this.auditWebhook("Payout", payload, (audit) => this.processPayout(token, payload, audit));
+  }
+
+  private async auditWebhook(kind: string, payload: any, work: (audit: Record<string, any>) => Promise<any>) {
+    const audit: Record<string, any> = {
+      provider: "XENDIT", event: payload?.event, receivedAt: new Date().toISOString(),
+      externalTransactionId: payload?.data?.payment_id ?? payload?.data?.id,
+      externalReference: payload?.data?.reference_id, status: payload?.data?.status,
+    };
+    let processing = "FAILED";
+    let errorMessage: string | undefined;
+    try {
+      const result = await work(audit);
+      processing = result.reason === "NOT_FOUND" ? "IGNORED" : result.status?.startsWith("Already processed") ? "DUPLICATE"
+        : result.status === "Processed" ? "SUCCESS" : "IGNORED";
+      return result;
+    } catch (error) {
+      // Store a bounded application error code, never provider error bodies/headers.
+      errorMessage = error instanceof AppError ? error.code : "WEBHOOK_PROCESSING_ERROR";
+      throw error;
+    } finally {
+      await this.auditService.logRequired({
+        userId: null, action: "WEBHOOK_RECEIVED", entity: kind,
+        entityId: audit.paymentId ?? audit.payoutId,
+        lembagaId: audit.institutionId ?? undefined,
+        status: processing === "FAILED" ? "FAILED" : "SUCCESS", errorMessage,
+        correlationId: audit.donationId ? `donation:${audit.donationId}` : audit.withdrawalId ? `withdrawal:${audit.withdrawalId}` : undefined,
+        transactionData: { ...audit, processingResult: processing },
+      });
+    }
+  }
+
   /**
    * Verifies the Xendit webhook authenticity.
    *
@@ -91,9 +127,10 @@ export class WebhookService {
    * - Idempotent: skips if already in terminal state
    * - Runs DB updates in a transaction
    */
-  async processXenditPaymentWebhook(
+  private async processPayment(
     callbackToken: string,
     payload: XenditPaymentWebhookPayload,
+    audit: Record<string, any>,
   ) {
     // 1. Verify webhook token
     if (!this.verifyXenditToken(callbackToken)) {
@@ -117,7 +154,7 @@ export class WebhookService {
     // A recognized payment event must carry a usable reference.
     if (!data || !data.reference_id) {
       this.logger.warn(
-        { payload },
+        { event: payload?.event },
         "Xendit webhook: payment payload missing reference_id",
       );
       throw new AppError("INVALID_WEBHOOK_PAYLOAD", "Missing payment reference", 400);
@@ -159,6 +196,8 @@ export class WebhookService {
       );
       return { status: "Payment not found — ignored" };
     }
+
+    Object.assign(audit, { paymentId: payment.id, donationId: payment.donationId, institutionId: payment.lembagaId, amount: String(payment.amount) });
 
     // 3. Idempotency: skip if already in a terminal state
     const terminalPaymentStatuses: PaymentStatus[] = ["SUCCESS", "FAILED", "EXPIRED", "CANCELLED"];
@@ -267,7 +306,7 @@ export class WebhookService {
     return { status: "Processed", newStatus: newPaymentStatus };
   }
 
-  async processXenditPayoutWebhook(callbackToken: string, payload: any) {
+  private async processPayout(callbackToken: string, payload: any, audit: Record<string, any>) {
     const expectedToken = this.configService.get<string>("XENDIT_WEBHOOK_TOKEN");
     if (!expectedToken || callbackToken !== expectedToken) {
       this.logger.error("Xendit payout webhook: invalid callback token");
@@ -310,6 +349,7 @@ export class WebhookService {
       throw new AppError("NOT_FOUND", "Withdrawal or payout not found", 404);
     }
 
+    Object.assign(audit, { withdrawalId: w.id, payoutId: w.payout.id, institutionId: w.lembagaId, amount: String(w.amount) });
     const lembagaId = w.lembagaId;
     if (!w.isPlatform && !lembagaId) {
       this.logger.error({ withdrawalId }, "Xendit payout webhook: withdrawal has no lembagaId");

@@ -25,7 +25,7 @@ describe("Webhook Security", () => {
       }),
     };
 
-    auditService = { log: vi.fn() };
+    auditService = { log: vi.fn(), logRequired: vi.fn() };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [

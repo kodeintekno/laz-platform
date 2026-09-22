@@ -15,6 +15,7 @@ describe("WithdrawalsRepository", () => {
     prisma = {
       $transaction: vi.fn(async (cb) => cb(prisma)),
       $queryRaw: vi.fn(),
+      $executeRaw: vi.fn().mockResolvedValue(1),
       user: { findUnique: vi.fn().mockResolvedValue({ status: "ACTIVE", role: { name: "SUPER_ADMIN" }, lembagaId: null }) },
       institutionBalance: {
         update: vi.fn(),

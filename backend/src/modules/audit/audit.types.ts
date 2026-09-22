@@ -28,7 +28,11 @@ export enum AuditAction {
 export interface CreateAuditLogInput {
   /** The user who performed the action. Null for system-initiated actions. */
   userId: string | null;
-  action: AuditAction;
+  action: AuditAction | string;
+  status?: string;
+  errorMessage?: string;
+  transactionData?: Record<string, unknown>;
+  correlationId?: string;
   entity: string;
   entityId?: string;
   oldData?: Record<string, unknown>;

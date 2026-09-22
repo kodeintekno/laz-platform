@@ -1,4 +1,6 @@
 import "reflect-metadata";
+import { auditRequestMiddleware } from "./modules/audit/audit.middleware";
+import { AuditService } from "./modules/audit/audit.service";
 import { NestFactory } from "@nestjs/core";
 import { Logger as PinoLogger } from "nestjs-pino";
 import type { NestExpressApplication } from "@nestjs/platform-express";
@@ -36,12 +38,14 @@ async function bootstrap() {
   expressApp.set("trust proxy", 1);
   expressApp.disable("x-powered-by");
 
+  app.use(auditRequestMiddleware(app.get(AuditService)));
   app.use(helmet());
   app.enableCors({
     origin: (process.env.CORS_ORIGIN ?? "http://localhost:5173")
       .split(",")
       .map((o) => o.trim()),
     credentials: true,
+    exposedHeaders: ["X-Request-ID"],
   });
   app.use(express.json({ limit: "1mb" }));
   app.use(cookieParser());

@@ -2,7 +2,7 @@
 "use client";
 
 import React from "react";
-import { useRouter } from "next/navigation";
+import { useSearchParams } from "react-router-dom";
 import { Input } from "@/components/ui/Input";
 
 interface DateRangeFilterProps {
@@ -16,14 +16,13 @@ interface DateRangeFilterProps {
  * Reusable date range filter used in the Audit Logs toolbar.
  * It auto‑submits on change by updating the URL query parameters.
  */
-export function DateRangeFilter({ startDate, endDate, search, page }: DateRangeFilterProps) {
-  const router = useRouter();
+export function DateRangeFilter({ startDate, endDate }: DateRangeFilterProps) {
+  const [searchParams, setSearchParams] = useSearchParams();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    const params = new URLSearchParams();
-    if (search) params.set("search", search);
-    if (page !== undefined) params.set("page", page.toString());
+    const params = new URLSearchParams(searchParams);
+    params.set("page", "1");
     if (startDate) params.set("startDate", startDate);
     if (endDate) params.set("endDate", endDate);
     // Update the changed field
@@ -32,7 +31,7 @@ export function DateRangeFilter({ startDate, endDate, search, page }: DateRangeF
     } else {
       params.delete(name);
     }
-    router.push(`?${params.toString()}`);
+    setSearchParams(params);
   };
 
   return (
@@ -42,7 +41,7 @@ export function DateRangeFilter({ startDate, endDate, search, page }: DateRangeF
         <Input
           type="date"
           name="startDate"
-          defaultValue={startDate}
+          value={startDate || ""}
           onChange={handleChange}
           className="w-32"
         />
@@ -52,7 +51,7 @@ export function DateRangeFilter({ startDate, endDate, search, page }: DateRangeF
         <Input
           type="date"
           name="endDate"
-          defaultValue={endDate}
+          value={endDate || ""}
           onChange={handleChange}
           className="w-32"
         />

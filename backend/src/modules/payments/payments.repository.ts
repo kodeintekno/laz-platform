@@ -1,3 +1,4 @@
+import { setFinancialAuditContext } from "../audit/financial-audit";
 import { Injectable } from "@nestjs/common";
 import { PrismaService } from "../../prisma/prisma.service";
 import { AutoJournalService } from "../journal/auto-journal.service";
@@ -51,6 +52,7 @@ export class PaymentsRepository {
     xenditEvent?: string;
   }) {
     return this.prisma.$transaction(async (tx) => {
+      await setFinancialAuditContext(tx, { paymentId: params.paymentId, donationId: params.donationId, amount: params.amount, gatewayReference: params.xenditPaymentId });
       // 1. Conditional update to prevent Race Conditions
       // We only update if the current status is PENDING.
       const paymentUpdate = await tx.payment.updateMany({
