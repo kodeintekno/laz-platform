@@ -182,6 +182,50 @@ export class ProgramsRepository {
     });
   }
 
+  /** Public detail must never return raw donor records. */
+  async getPublicProgramBySlug(slug: string) {
+    const program = await this.prisma.program.findFirst({
+      where: { slug },
+      include: {
+        lembaga: { select: { name: true, slug: true, logoUrl: true } },
+        createdBy: { select: { name: true, avatarUrl: true } },
+        donations: {
+          where: { status: "PAID" },
+          orderBy: { createdAt: "desc" },
+          take: 20,
+          select: {
+            id: true,
+            donorName: true,
+            isAnonymous: true,
+            amount: true,
+            createdAt: true,
+            message: true,
+          },
+        },
+        distributions: {
+          where: { status: "COMPLETED" },
+          orderBy: { createdAt: "desc" },
+        },
+        _count: { select: { donations: { where: { status: "PAID" } } } },
+      },
+    });
+    if (!program) return null;
+
+    return {
+      ...program,
+      // Explicit response allowlist: do not spread donor rows, even if the
+      // query is later extended. Anonymity is enforced before serialization.
+      donations: program.donations.map((donation) => ({
+        id: donation.id,
+        donorName: donation.isAnonymous ? "Hamba Allah" : donation.donorName,
+        isAnonymous: donation.isAnonymous,
+        amount: donation.amount,
+        createdAt: donation.createdAt,
+        message: donation.message,
+      })),
+    };
+  }
+
   /**
    * Create a new program.
    */

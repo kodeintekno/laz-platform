@@ -99,6 +99,10 @@ export class ProgramsService {
     return this.programsRepository.getProgramBySlug(slug);
   }
 
+  async getPublicProgramBySlug(slug: string) {
+    return this.programsRepository.getPublicProgramBySlug(slug);
+  }
+
   async createProgram(data: ProgramInput, actor: RBACSessionUser) {
     this.assertAllowedStatus(actor, data.status);
     const adminId = actor.id;
