@@ -10,6 +10,9 @@ import type {
   UpdateUserInput,
 } from "../../../../shared/validations/users.schema";
 import { isPlatformRoleName } from "../../../../shared/lib/roles";
+import { hasPermission } from "../../../../shared/lib/permissions";
+import { PERMISSIONS } from "../../../../shared/constants/permissions";
+import type { RBACSessionUser } from "../../../../shared/types/rbac";
 
 /**
  * Users Service — orchestrates user management business logic,
@@ -48,8 +51,19 @@ export class UsersService {
     return roles;
   }
 
-  async getUserById(id: string) {
-    return this.usersRepository.findById(id);
+  async getUserById(id: string, actor: RBACSessionUser) {
+    if (!actor?.id || !hasPermission(actor, PERMISSIONS.USERS_READ)) {
+      throw new ForbiddenException("Akses ditolak");
+    }
+    // Global account administration is reserved for Super Admin, as in the
+    // mutation paths. Missing tenant scope must never become an unscoped read.
+    if (actor.roleName === "SUPER_ADMIN") {
+      return this.usersRepository.findById(id);
+    }
+    if (!actor.lembagaId) {
+      throw new ForbiddenException("Lembaga pengguna tidak ditemukan");
+    }
+    return this.usersRepository.findById(id, actor.lembagaId);
   }
 
   async getAllLembagas() {

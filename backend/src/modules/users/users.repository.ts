@@ -98,9 +98,9 @@ export class UsersRepository {
   /**
    * Find a user by their unique ID, including role and LAZ details.
    */
-  async findById(id: string) {
+  async findById(id: string, lembagaId?: string) {
     return this.prisma.user.findUnique({
-      where: { id },
+      where: { id, ...(lembagaId !== undefined ? { lembagaId } : {}) },
       include: {
         role: { select: { id: true, name: true } },
         lembaga: { select: { id: true, name: true } },
