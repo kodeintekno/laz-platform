@@ -105,8 +105,8 @@ export class DonationsController {
 
   @Get(":id")
   @RequirePermission(PERMISSIONS.DONATIONS_READ)
-  async detail(@Param("id") id: string) {
-    const donation = await this.donationsService.getDonationById(id);
+  async detail(@Param("id") id: string, @CurrentUser() user: RBACSessionUser) {
+    const donation = await this.donationsService.getDonationById(id, user);
     if (!donation) throw new NotFoundException("Donasi tidak ditemukan");
     return donation;
   }

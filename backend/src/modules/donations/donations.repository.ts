@@ -1,7 +1,10 @@
-import { Injectable } from "@nestjs/common";
+import { ForbiddenException, Injectable } from "@nestjs/common";
 import { PrismaService } from "../../prisma/prisma.service";
 import type { Prisma } from "@prisma/client";
 import { AppError } from "../../common/errors/app.error";
+import type { RBACSessionUser } from "../../../../shared/types/rbac";
+import { PERMISSIONS } from "../../../../shared/constants/permissions";
+import { hasPermission } from "../../../../shared/lib/permissions";
 
 @Injectable()
 export class DonationsRepository {
@@ -215,9 +218,39 @@ export class DonationsRepository {
   /**
    * Get a donation by ID for admin editing
    */
-  async getDonationById(id: string) {
+  async getDonationById(id: string, actor: RBACSessionUser) {
+    if (!actor?.id || !hasPermission(actor, PERMISSIONS.DONATIONS_READ)) {
+      throw new ForbiddenException("Akses ditolak");
+    }
+    const platformAccess = hasPermission(actor, PERMISSIONS.PLATFORM_FINANCE_READ);
+    if (!platformAccess && !actor.lembagaId) {
+      throw new ForbiddenException("Lembaga pengguna tidak ditemukan");
+    }
     return this.prisma.donation.findUnique({
-      where: { id },
+      where: { id, ...(platformAccess ? {} : { lembagaId: actor.lembagaId! }) },
+      // Preserve the authorized administrative contract without exposing new
+      // columns or payment relations implicitly when the schema grows.
+      select: {
+        id: true,
+        lembagaId: true,
+        programId: true,
+        donorName: true,
+        donorEmail: true,
+        donorPhone: true,
+        amount: true,
+        platformFee: true,
+        institutionAmount: true,
+        platformPercentage: true,
+        institutionPercentage: true,
+        amilPlatformAmount: true,
+        amilInstitutionAmount: true,
+        netAmount: true,
+        message: true,
+        isAnonymous: true,
+        status: true,
+        createdAt: true,
+        updatedAt: true,
+      },
     });
   }
 

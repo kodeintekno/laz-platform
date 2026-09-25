@@ -3,6 +3,7 @@ import { DonationsRepository } from "./donations.repository";
 import { XenditService } from "../../lib/xendit/xendit.service";
 import type { PaymentMethodChannel } from "../../lib/xendit/xendit.service";
 import type { DonationInput } from "../../../../shared/validations/donations.schema";
+import type { RBACSessionUser } from "../../../../shared/types/rbac";
 
 export interface CreateDonationResult {
   donationId: string;
@@ -106,8 +107,8 @@ export class DonationsService {
     };
   }
 
-  async getDonationById(id: string) {
-    return this.donationsRepository.getDonationById(id);
+  async getDonationById(id: string, actor: RBACSessionUser) {
+    return this.donationsRepository.getDonationById(id, actor);
   }
 
   /** Public payment status polling — no auth required, returns safe subset */
