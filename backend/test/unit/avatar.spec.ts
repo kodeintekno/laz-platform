@@ -40,15 +40,24 @@ describe("Cloudinary avatar cleanup", () => {
   });
 
   it("deletes image assets using the image resource type", async () => {
+    vi.spyOn(cloudinary.api, "resource").mockResolvedValue({
+      public_id: "laz-avatars/old", resource_type: "image",
+      context: { custom: { laz_owner_version: "1", laz_owner_user: "current-user" } },
+    });
     const destroy = vi.spyOn(cloudinary.uploader, "destroy").mockResolvedValue({ result: "ok" });
-    await new CloudinaryProvider().delete("laz-avatars/old");
+    await new CloudinaryProvider().delete("laz-avatars/old", { userId: "current-user" });
     expect(destroy).toHaveBeenCalledExactlyOnceWith("laz-avatars/old", { resource_type: "image" });
   });
 
-  it("falls back to raw when Cloudinary returns not found without throwing", async () => {
+  it("authorizes raw independently when image deletion returns not found", async () => {
+    const metadata = { public_id: "documents/old",
+      context: { custom: { laz_owner_version: "1", laz_owner_user: "current-user" } },
+    };
+    vi.spyOn(cloudinary.api, "resource").mockResolvedValueOnce({ ...metadata, resource_type: "image" })
+      .mockResolvedValueOnce({ ...metadata, resource_type: "raw" });
     const destroy = vi.spyOn(cloudinary.uploader, "destroy")
       .mockResolvedValueOnce({ result: "not found" }).mockResolvedValueOnce({ result: "ok" });
-    await new CloudinaryProvider().delete("documents/old");
+    await new CloudinaryProvider().delete("documents/old", { userId: "current-user" });
     expect(destroy).toHaveBeenNthCalledWith(2, "documents/old", { resource_type: "raw" });
   });
 });

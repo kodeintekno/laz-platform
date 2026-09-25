@@ -12,6 +12,8 @@ import { FileInterceptor } from "@nestjs/platform-express";
 import { Public } from "../../common/decorators/public.decorator";
 import { CloudinaryProvider } from "../../lib/upload/cloudinary.provider";
 import { FileProcessingService } from "../../lib/upload/file-processing.service";
+import { CurrentUser } from "../../common/decorators/current-user.decorator";
+import type { RBACSessionUser } from "../../../../shared/types/rbac";
 
 /** Hard limit — FileProcessingService will also validate, but Multer stops huge uploads early */
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
@@ -57,6 +59,7 @@ export class UploadsController {
   async upload(
     @UploadedFile() file: Express.Multer.File | undefined,
     @Body("folder") folder?: string,
+    @CurrentUser() user?: RBACSessionUser,
   ) {
     if (!file) {
       throw new BadRequestException("No file provided");
@@ -68,7 +71,7 @@ export class UploadsController {
     // Upload processed buffer to Cloudinary
     const result = await this.cloudinaryProvider.upload(
       { buffer: processed.buffer, mimetype: processed.mimetype },
-      { folder: folder || undefined },
+      { folder: folder || undefined, owner: user ? { userId: user.id, lembagaId: user.lembagaId } : undefined },
     );
 
     return {
@@ -81,11 +84,11 @@ export class UploadsController {
   }
 
   @Delete()
-  async remove(@Query("publicId") publicId?: string) {
+  async remove(@Query("publicId") publicId: string | undefined, @CurrentUser() user: RBACSessionUser) {
     if (!publicId) {
       throw new BadRequestException("publicId query param required");
     }
-    await this.cloudinaryProvider.delete(publicId);
+    await this.cloudinaryProvider.delete(publicId, { userId: user.id, lembagaId: user.lembagaId });
     return { deleted: true };
   }
 }

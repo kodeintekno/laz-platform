@@ -1,7 +1,7 @@
-import { Injectable } from "@nestjs/common";
+import { ForbiddenException, Injectable } from "@nestjs/common";
 import { v2 as cloudinary } from "cloudinary";
 import type { UploadApiResponse } from "cloudinary";
-import type { IUploadProvider, UploadFile, UploadOptions, UploadResult } from "./provider";
+import type { IUploadProvider, UploadFile, UploadOptions, UploadOwner, UploadResult } from "./provider";
 
 /**
  * Cloudinary implementation of the upload provider.
@@ -56,6 +56,14 @@ export class CloudinaryProvider implements IUploadProvider {
           transformation,
           // Let Cloudinary route images and PDFs to the appropriate resource type.
           resource_type: "auto",
+          // Ownership comes only from the server principal, never the folder
+          // or an attachment URL. Never overwrite another asset's ownership.
+          overwrite: false,
+          context: {
+            laz_owner_version: "1",
+            ...(options?.owner?.userId ? { laz_owner_user: options.owner.userId } : {}),
+            ...(options?.owner?.lembagaId ? { laz_owner_lembaga: options.owner.lembagaId } : {}),
+          },
         },
         (error, result) => {
           if (error) return reject(error);
@@ -74,12 +82,34 @@ export class CloudinaryProvider implements IUploadProvider {
     };
   }
 
-  async delete(publicId: string): Promise<void> {
+  async delete(publicId: string, owner: UploadOwner): Promise<void> {
+    if (!owner || (!owner.userId && !owner.lembagaId) || typeof publicId !== "string" || !publicId) {
+      throw new ForbiddenException("Kepemilikan file tidak dapat diverifikasi");
+    }
     this.ensureConfigured();
-    // Missing assets return "not found", rather than throwing an error.
-    const result = await cloudinary.uploader.destroy(publicId, { resource_type: "image" });
-    if (result.result === "not found") {
-      await cloudinary.uploader.destroy(publicId, { resource_type: "raw" });
+    for (const resourceType of ["image", "raw"] as const) {
+      let asset;
+      try {
+        asset = await cloudinary.api.resource(publicId, { resource_type: resourceType, context: true });
+      } catch (error) {
+        // Only a confirmed missing resource permits checking the other type.
+        const missing = error as { http_code?: number; error?: { http_code?: number } };
+        if (missing?.http_code === 404 || missing?.error?.http_code === 404) continue;
+        throw error;
+      }
+      const ownership = asset.context?.custom;
+      const allowed = ownership?.laz_owner_version === "1" && (
+        ownership.laz_owner_lembaga
+          ? ownership.laz_owner_lembaga === owner.lembagaId
+          : !!owner.userId && ownership.laz_owner_user === owner.userId
+      );
+      // Legacy/pre-login uploads have no trusted owner. Retain them rather
+      // than inferring ownership from caller-controlled stored references.
+      if (!allowed || asset.public_id !== publicId || asset.resource_type !== resourceType) {
+        throw new ForbiddenException("Anda tidak memiliki izin untuk menghapus file ini");
+      }
+      const result = await cloudinary.uploader.destroy(publicId, { resource_type: resourceType });
+      if (result.result !== "not found") return;
     }
   }
 }

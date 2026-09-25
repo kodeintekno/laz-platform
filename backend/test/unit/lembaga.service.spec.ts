@@ -69,7 +69,7 @@ describe("LembagaService.deleteLembaga", () => {
     await expect(service.deleteLembaga("lembaga-1", "super-admin-1")).resolves.toMatchObject({
       id: "lembaga-1",
     });
-    expect(repository.delete).toHaveBeenCalledWith("lembaga-1");
+    expect(repository.delete).toHaveBeenCalledWith("lembaga-1", "super-admin-1");
     expect(auditService.log).toHaveBeenCalledOnce();
   });
 });

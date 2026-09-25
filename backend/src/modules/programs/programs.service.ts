@@ -315,7 +315,7 @@ export class ProgramsService {
       if (oldPublicId) {
         try {
           const provider = new CloudinaryProvider();
-          await provider.delete(oldPublicId);
+          await provider.delete(oldPublicId, { lembagaId: oldProgram.lembagaId, userId: adminId });
         } catch (e) {
           this.logger.error({ err: e }, "Gagal menghapus gambar lama program");
         }

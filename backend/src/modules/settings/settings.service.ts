@@ -148,7 +148,7 @@ export class SettingsService {
     if (oldPublicId && oldPublicId !== publicId) {
       try {
         const provider = new CloudinaryProvider();
-        await provider.delete(oldPublicId);
+        await provider.delete(oldPublicId, { userId, lembagaId: existing?.lembagaId });
         this.logger.log({ publicId: oldPublicId }, "Deleted old avatar file");
       } catch (e) {
         this.logger.error({ err: e }, "Failed to delete old avatar file");
