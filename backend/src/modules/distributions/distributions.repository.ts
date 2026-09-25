@@ -4,6 +4,9 @@ import { AutoJournalService } from "../journal/auto-journal.service";
 import { Prisma } from "@prisma/client";
 import { AppError } from "../../common/errors/app.error";
 import type { DistributionInput } from "../../../../shared/validations/distributions.schema";
+import type { RBACSessionUser } from "../../../../shared/types/rbac";
+import { PERMISSIONS } from "../../../../shared/constants/permissions";
+import { hasPermission } from "../../../../shared/lib/permissions";
 
 @Injectable()
 export class DistributionsRepository {
@@ -73,7 +76,13 @@ export class DistributionsRepository {
    * the WHERE clause re-verifies the remaining balance atomically under the
    * row lock Postgres takes for the UPDATE itself.
    */
-  async create(data: DistributionInput, userId: string) {
+  async create(data: DistributionInput, actor: RBACSessionUser) {
+    // Read access must never widen a tenant actor's mutation scope. Unscoped
+    // actors need both explicit platform access and distribution write access.
+    if (!actor?.id || !hasPermission(actor, PERMISSIONS.DISTRIBUTIONS_MANAGE)
+      || (!actor.lembagaId && !hasPermission(actor, PERMISSIONS.PLATFORM_FINANCE_READ))) {
+      throw new AppError("FORBIDDEN_DISTRIBUTION", "Anda tidak memiliki izin untuk mencatat penyaluran ini", 403);
+    }
     return this.prisma.$transaction(async (tx) => {
       const program = await tx.program.findUnique({
         where: { id: data.programId },
@@ -81,6 +90,9 @@ export class DistributionsRepository {
       });
       if (!program) {
         throw new AppError("PROGRAM_NOT_FOUND", "Program tidak ditemukan", 404);
+      }
+      if (actor.lembagaId && program.lembagaId !== actor.lembagaId) {
+        throw new AppError("FORBIDDEN_DISTRIBUTION", "Anda tidak memiliki izin untuk mencatat penyaluran lembaga lain", 403);
       }
 
       if (data.fundSource === "MUSTAHIQ") {
@@ -90,6 +102,7 @@ export class DistributionsRepository {
             "distributedAmount" = "distributedAmount" + ${data.amount},
             "mustahiqDistributedAmount" = "mustahiqDistributedAmount" + ${data.amount}
           WHERE "id" = ${data.programId}
+            AND "lembagaId" = ${program.lembagaId}
             AND "programFundAmount" - "mustahiqDistributedAmount" >= ${data.amount}
         `;
         if (affected === 0) {
@@ -130,7 +143,7 @@ export class DistributionsRepository {
         }
 
         await tx.program.update({
-          where: { id: data.programId },
+          where: { id: data.programId, lembagaId: program.lembagaId },
           data: {
             distributedAmount: { increment: data.amount },
             amilDistributedAmount: { increment: data.amount },
@@ -146,7 +159,7 @@ export class DistributionsRepository {
           description: data.description,
           receiptImageUrl: data.receiptImageUrl,
           programId: data.programId,
-          createdById: userId,
+          createdById: actor.id,
           status: "COMPLETED",
           lembagaId: program.lembagaId,
         },
@@ -160,7 +173,7 @@ export class DistributionsRepository {
         program.lembagaId,
         program.category,
         data.fundSource,
-        userId
+        actor.id
       );
 
       return distribution;
