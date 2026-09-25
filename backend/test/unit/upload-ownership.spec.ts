@@ -157,11 +157,12 @@ describe("Cloudinary deletion ownership boundary", () => {
       amilPlatformPercentage: 5, amilInstitutionPercentage: 5, amilMaxTotalPercentage: 20,
       requestedAmilPlatformPercentage: null,
     };
-    const update = vi.fn().mockResolvedValue({ ...old, imageUrl: null });
+    const update = vi.fn().mockResolvedValue({ count: 1 });
     const prisma = {
       user: { findUnique: vi.fn().mockResolvedValue({ lembagaId: actor.lembagaId }) },
       program: { findUnique: vi.fn().mockResolvedValue(old) },
-      $transaction: vi.fn((run) => run({ program: { update } })),
+      $transaction: vi.fn((run) => run({ program: { updateMany: update,
+        findUniqueOrThrow: vi.fn().mockResolvedValue({ ...old, imageUrl: null }) } })),
     };
     const service = new ProgramsService({} as any, { log: vi.fn() } as any, prisma as any,
       { validateProgramAmilSnapshot: vi.fn() } as any);

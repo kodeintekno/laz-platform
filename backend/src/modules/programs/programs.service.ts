@@ -9,7 +9,7 @@ import { hasPermission } from "../../../../shared/lib/permissions";
 import { PERMISSIONS } from "../../../../shared/constants/permissions";
 import { MAX_FEATURED_PROGRAMS, type ProgramInput } from "../../../../shared/validations/programs.schema";
 import type { RBACSessionUser } from "../../../../shared/types/rbac";
-import { Prisma } from "@prisma/client";
+import { Prisma, type Program } from "@prisma/client";
 import { AmilService } from "../amil/amil.service";
 import { NotificationsService } from "../notifications/notifications.service";
 
@@ -59,6 +59,27 @@ export class ProgramsService {
         "Hanya Super Admin yang dapat mempublikasikan atau menolak program. Ajukan program untuk direview.",
         403,
       );
+    }
+  }
+
+  /** Match the exact financial snapshot validated before this atomic write. */
+  private unchangedSplit(program: Program): Prisma.ProgramWhereInput {
+    return {
+      id: program.id,
+      status: program.status,
+      category: program.category,
+      amilPlatformPercentage: program.amilPlatformPercentage,
+      amilInstitutionPercentage: program.amilInstitutionPercentage,
+      amilMaxTotalPercentage: program.amilMaxTotalPercentage,
+      requestedAmilPlatformPercentage: program.requestedAmilPlatformPercentage,
+      amilPlatformChangeReason: program.amilPlatformChangeReason,
+      amilLockedAt: program.amilLockedAt,
+    };
+  }
+
+  private assertSnapshotClaimed(count: number) {
+    if (count !== 1) {
+      throw new AppError("PROGRAM_CHANGED", "Program telah berubah. Muat ulang dan tinjau kembali sebelum melanjutkan.", 409);
     }
   }
 
@@ -256,8 +277,8 @@ export class ProgramsService {
           }
         : this.resolvePlatformProposal(data, snapshot);
 
-      const program = await tx.program.update({
-        where: { id },
+      const claimed = await tx.program.updateMany({
+        where: this.unchangedSplit(oldProgram),
         data: {
           title: data.title,
           description: data.description,
@@ -276,6 +297,8 @@ export class ProgramsService {
           ...(!oldProgram.amilLockedAt && data.status === "PUBLISHED" ? { amilLockedAt: new Date() } : {}),
         },
       });
+
+      this.assertSnapshotClaimed(claimed.count);
 
       const reviewSnapshot = {
         defaultPlatformPercentage: snapshot.platformPercentage,
@@ -304,7 +327,7 @@ export class ProgramsService {
         });
       }
 
-      return program;
+      return tx.program.findUniqueOrThrow({ where: { id } });
     });
 
     // If the image was changed or removed, delete the old image from Cloudinary
@@ -365,7 +388,7 @@ export class ProgramsService {
 
     const updated = await this.prisma.$transaction(async (tx) => {
       const claimed = await tx.program.updateMany({
-        where: { id, status: "PENDING_REVIEW" },
+        where: this.unchangedSplit(existing),
         data: {
           status: "PUBLISHED",
           approvedAt: new Date(),
@@ -373,11 +396,11 @@ export class ProgramsService {
           approvedById: approverId,
           rejectionReason: null,
           amilPlatformPercentage: effectivePlatformPercentage,
+          requestedAmilPlatformPercentage: null,
+          amilPlatformChangeReason: null,
         },
       });
-      if (claimed.count !== 1) {
-        throw new AppError("INVALID_STATUS", "Pengajuan program ini sudah diproses", 409);
-      }
+      this.assertSnapshotClaimed(claimed.count);
 
       const pendingReview = await tx.programReviewHistory.findFirst({
         where: { programId: id, status: "PENDING" },
@@ -444,18 +467,17 @@ export class ProgramsService {
 
     const updated = await this.prisma.$transaction(async (tx) => {
       const claimed = await tx.program.updateMany({
-        where: { id, status: "PENDING_REVIEW" },
+        where: this.unchangedSplit(existing),
         data: {
           status: "REJECTED",
           rejectionReason: reason,
           approvedById: approverId,
           approvedAt: null,
-          amilLockedAt: null,
+          // A later review decision must never unlock a previously published split.
+          amilLockedAt: existing.amilLockedAt,
         },
       });
-      if (claimed.count !== 1) {
-        throw new AppError("INVALID_STATUS", "Pengajuan program ini sudah diproses", 409);
-      }
+      this.assertSnapshotClaimed(claimed.count);
 
       const pendingReview = await tx.programReviewHistory.findFirst({
         where: { programId: id, status: "PENDING" },

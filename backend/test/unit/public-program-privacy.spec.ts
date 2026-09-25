@@ -70,7 +70,7 @@ describe("public program donor privacy", () => {
   it("does not fetch contact, payment or internal allocation fields for public detail", async () => {
     await response();
     expect(findFirst).toHaveBeenCalledWith(expect.objectContaining({
-      where: { slug: "program" },
+      where: { slug: "program", status: "PUBLISHED" },
       include: expect.objectContaining({ donations: {
         where: { status: "PAID" }, orderBy: { createdAt: "desc" }, take: 20,
         select: { id: true, donorName: true, isAnonymous: true, amount: true, createdAt: true, message: true },

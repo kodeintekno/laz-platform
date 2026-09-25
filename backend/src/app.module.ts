@@ -65,8 +65,8 @@ const isDev = process.env.NODE_ENV !== "production";
           : undefined,
       },
     }),
-    // Rate limit global /api ~300/menit; override per-route via @Throttle
-    ThrottlerModule.forRoot([{ name: "global", ttl: 60_000, limit: 300 }]),
+    // Match the default name used by route @Throttle and @SkipThrottle decorators.
+    ThrottlerModule.forRoot([{ name: "default", ttl: 60_000, limit: 300 }]),
     PrismaModule,
     NotificationsModule,
     AuditModule,

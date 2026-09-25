@@ -185,7 +185,7 @@ export class ProgramsRepository {
   /** Public detail must never return raw donor records. */
   async getPublicProgramBySlug(slug: string) {
     const program = await this.prisma.program.findFirst({
-      where: { slug },
+      where: { slug, status: "PUBLISHED" },
       include: {
         lembaga: { select: { name: true, slug: true, logoUrl: true } },
         createdBy: { select: { name: true, avatarUrl: true } },
