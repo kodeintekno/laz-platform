@@ -18,12 +18,11 @@ import { FileUpload } from "@/components/ui/FileUpload";
 import { Alert } from "@/components/ui/Alert";
 import { api } from "@/lib/api-client";
 import { toast } from "@/stores/toast.store";
+import { DRAFT_KEY, STEP_KEY, loadDraft, saveDraft, loadStep } from "../lib/registration-draft";
 
 // ---------------------------------------------------------------------------
 // Draft persistence helpers
 // ---------------------------------------------------------------------------
-const DRAFT_KEY = "laz_lembaga_reg_draft";
-const STEP_KEY = "laz_lembaga_reg_step";
 
 type UploadState = { url: string; publicId: string };
 const EMPTY_UPLOAD: UploadState = { url: "", publicId: "" };
@@ -46,15 +45,6 @@ const EMPTY_UPLOADS: UploadDraft = {
   otherDocument: EMPTY_UPLOAD,
 };
 
-function loadDraft(): Partial<LembagaRegistrationInput> {
-  try {
-    const raw = localStorage.getItem(DRAFT_KEY);
-    return raw ? JSON.parse(raw) : {};
-  } catch {
-    return {};
-  }
-}
-
 function loadUploadDraft(): UploadDraft {
   try {
     const raw = localStorage.getItem(`${DRAFT_KEY}_uploads`);
@@ -62,21 +52,6 @@ function loadUploadDraft(): UploadDraft {
   } catch {
     return EMPTY_UPLOADS;
   }
-}
-
-function loadStep(): number {
-  try {
-    const raw = localStorage.getItem(STEP_KEY);
-    return raw ? Math.max(0, Math.min(3, parseInt(raw, 10))) : 0;
-  } catch {
-    return 0;
-  }
-}
-
-function saveDraft(data: Partial<LembagaRegistrationInput>) {
-  try {
-    localStorage.setItem(DRAFT_KEY, JSON.stringify(data));
-  } catch {}
 }
 
 function saveUploadDraft(uploads: UploadDraft) {
