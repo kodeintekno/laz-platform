@@ -2,6 +2,33 @@ import { Injectable } from "@nestjs/common";
 import { PrismaService } from "../../prisma/prisma.service";
 import type { Prisma } from "@prisma/client";
 
+// Management responses must never load credentials or implicitly expose new columns.
+const USER_FIELDS = {
+  id: true,
+  email: true,
+  name: true,
+  avatarUrl: true,
+  emailVerified: true,
+  status: true,
+  lastLoginAt: true,
+  roleId: true,
+  lembagaId: true,
+  isPlatformAdmin: true,
+  withdrawalApprovalLimit: true,
+  createdAt: true,
+  updatedAt: true,
+  avatarPublicId: true,
+  emailNotifications: true,
+  phoneNumber: true,
+  waNotifications: true,
+} satisfies Prisma.UserSelect;
+
+const USER_DETAILS = {
+  ...USER_FIELDS,
+  role: { select: { id: true, name: true } },
+  lembaga: { select: { id: true, name: true } },
+} satisfies Prisma.UserSelect;
+
 /**
  * Users Repository — admin-facing database access for the User entity.
  */
@@ -41,10 +68,7 @@ export class UsersRepository {
         skip,
         take: limit,
         orderBy: { createdAt: "desc" },
-        include: {
-          role: { select: { id: true, name: true } },
-          lembaga: { select: { id: true, name: true } },
-        },
+        select: USER_DETAILS,
       }),
       this.prisma.user.count({ where }),
     ]);
@@ -101,10 +125,7 @@ export class UsersRepository {
   async findById(id: string, lembagaId?: string) {
     return this.prisma.user.findUnique({
       where: { id, ...(lembagaId !== undefined ? { lembagaId } : {}) },
-      include: {
-        role: { select: { id: true, name: true } },
-        lembaga: { select: { id: true, name: true } },
-      },
+      select: USER_DETAILS,
     });
   }
 
@@ -114,7 +135,8 @@ export class UsersRepository {
   async findByEmail(email: string) {
     return this.prisma.user.findUnique({
       where: { email },
-      include: {
+      select: {
+        ...USER_FIELDS,
         role: { select: { id: true, name: true } },
       },
     });
@@ -126,10 +148,7 @@ export class UsersRepository {
   async create(data: Prisma.UserUncheckedCreateInput) {
     return this.prisma.user.create({
       data,
-      include: {
-        role: { select: { id: true, name: true } },
-        lembaga: { select: { id: true, name: true } },
-      },
+      select: USER_DETAILS,
     });
   }
 
@@ -140,10 +159,7 @@ export class UsersRepository {
     return this.prisma.user.update({
       where: { id },
       data,
-      include: {
-        role: { select: { id: true, name: true } },
-        lembaga: { select: { id: true, name: true } },
-      },
+      select: USER_DETAILS,
     });
   }
 
@@ -153,10 +169,7 @@ export class UsersRepository {
   async delete(id: string) {
     return this.prisma.user.delete({
       where: { id },
-      include: {
-        role: { select: { id: true, name: true } },
-        lembaga: { select: { id: true, name: true } },
-      },
+      select: USER_DETAILS,
     });
   }
 
@@ -177,7 +190,10 @@ export class UsersRepository {
     return this.prisma.user.update({
       where: { id: userId },
       data: { roleId, withdrawalApprovalLimit: 0 },
-      include: { role: true },
+      select: {
+        ...USER_FIELDS,
+        role: { select: { id: true, name: true, description: true, createdAt: true, updatedAt: true } },
+      },
     });
   }
 

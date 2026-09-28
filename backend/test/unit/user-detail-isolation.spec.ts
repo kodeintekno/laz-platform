@@ -19,8 +19,11 @@ describe("user detail tenant isolation", () => {
   let service: UsersService;
   beforeEach(() => {
     // Respect the actual query predicate: an id-only query exposes the fixture.
-    findUnique = vi.fn(async ({ where }) => records.find((record) => record.id === where.id
-      && (where.lembagaId === undefined || record.lembagaId === where.lembagaId)) ?? null);
+    findUnique = vi.fn(async ({ where, select }) => {
+      const record = records.find((record) => record.id === where.id
+        && (where.lembagaId === undefined || record.lembagaId === where.lembagaId));
+      return record ? Object.fromEntries(Object.entries(record).filter(([key]) => !select || select[key])) : null;
+    });
     service = new UsersService(new UsersRepository({ user: { findUnique } } as any), {} as any);
     controller = new UsersController(service);
   });
@@ -34,7 +37,7 @@ describe("user detail tenant isolation", () => {
     await expect((controller.detail as any)(id, staff)).resolves.toEqual(records.find((r) => r.id === id));
     expect(findUnique).toHaveBeenCalledWith(expect.objectContaining({
       where: { id, lembagaId: "tenant-a" },
-      include: { role: { select: { id: true, name: true } }, lembaga: { select: { id: true, name: true } } },
+      select: expect.objectContaining({ role: { select: { id: true, name: true } }, lembaga: { select: { id: true, name: true } } }),
     }));
   });
 
@@ -58,7 +61,7 @@ describe("user detail tenant isolation", () => {
 
   it.each(["staff-b", "platform"])("preserves Super Admin access to %s", async (id) => {
     await expect((controller.detail as any)(id, { id: "admin", roleName: "SUPER_ADMIN", lembagaId: null, permissions: [] }))
-      .resolves.toEqual(records.find((r) => r.id === id));
+      .resolves.toEqual(Object.fromEntries(Object.entries(records.find((r) => r.id === id)!).filter(([key]) => key !== "password")));
   });
 
   it("retains the missing-account 404 and does not reveal foreign existence", async () => {
