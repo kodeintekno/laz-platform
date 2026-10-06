@@ -1,6 +1,9 @@
-import { Injectable } from "@nestjs/common";
+import { ForbiddenException, Injectable } from "@nestjs/common";
 import { PrismaService } from "../../prisma/prisma.service";
 import type { Prisma } from "@prisma/client";
+import type { RBACSessionUser } from "../../../../shared/types/rbac";
+import { PERMISSIONS } from "../../../../shared/constants/permissions";
+import { hasPermission } from "../../../../shared/lib/permissions";
 
 @Injectable()
 export class ProgramsRepository {
@@ -156,9 +159,16 @@ export class ProgramsRepository {
   /**
    * Find a specific program by its slug.
    */
-  async getProgramBySlug(slug: string) {
+  async getProgramBySlug(slug: string, actor: RBACSessionUser) {
+    if (!actor?.id || !hasPermission(actor, PERMISSIONS.PROGRAMS_READ)) {
+      throw new ForbiddenException("Akses ditolak");
+    }
+    const platformAccess = hasPermission(actor, PERMISSIONS.PLATFORM_FINANCE_READ);
+    if (!platformAccess && !actor.lembagaId) {
+      throw new ForbiddenException("Lembaga pengguna tidak ditemukan");
+    }
     return this.prisma.program.findFirst({
-      where: { slug },
+      where: { slug, ...(platformAccess ? {} : { lembagaId: actor.lembagaId! }) },
       include: {
         lembaga: {
           select: { name: true, slug: true, logoUrl: true },

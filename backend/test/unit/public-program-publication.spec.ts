@@ -16,13 +16,14 @@ describe("public program publication boundary", () => {
 
   beforeEach(() => {
     record = {
-      id: "program-1", slug: "known-program", status: "PUBLISHED", title: "Program",
+      id: "program-1", lembagaId: "tenant-1", slug: "known-program", status: "PUBLISHED", title: "Program",
       description: "Program content", donations: [], distributions: [], _count: { donations: 0 },
     };
     // An id/slug-only lookup intentionally returns unpublished records, as
     // Prisma would. Tests exercise the real controller/service/repository.
     findFirst = vi.fn(async ({ where }) => where.slug === record.slug
-      && (where.status === undefined || where.status === record.status) ? record : null);
+      && (where.status === undefined || where.status === record.status)
+      && (where.lembagaId === undefined || where.lembagaId === record.lembagaId) ? record : null);
     const repository = new ProgramsRepository({ program: { findFirst } } as any);
     const service = new ProgramsService(repository, {} as any, {} as any, {} as any);
     publicController = new PublicController(service, {} as any, {} as any);
@@ -62,7 +63,9 @@ describe("public program publication boundary", () => {
 
   it.each(unpublished)("keeps %s accessible through the separate authenticated detail path", async (status) => {
     record.status = status;
-    await expect(staffController.detail(record.slug)).resolves.toEqual(record);
-    expect(findFirst).toHaveBeenCalledWith(expect.objectContaining({ where: { slug: record.slug } }));
+    await expect(staffController.detail(record.slug, {
+      id: "staff-1", lembagaId: "tenant-1", permissions: ["programs.read"],
+    })).resolves.toEqual(record);
+    expect(findFirst).toHaveBeenCalledWith(expect.objectContaining({ where: { slug: record.slug, lembagaId: "tenant-1" } }));
   });
 });

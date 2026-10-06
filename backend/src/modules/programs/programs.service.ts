@@ -116,8 +116,8 @@ export class ProgramsService {
     return this.programsRepository.findPublished(options);
   }
 
-  async getProgramBySlug(slug: string) {
-    return this.programsRepository.getProgramBySlug(slug);
+  async getProgramBySlug(slug: string, actor: RBACSessionUser) {
+    return this.programsRepository.getProgramBySlug(slug, actor);
   }
 
   async getPublicProgramBySlug(slug: string) {

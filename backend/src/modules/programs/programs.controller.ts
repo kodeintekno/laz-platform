@@ -51,8 +51,8 @@ export class ProgramsController {
 
   @Get(":slug")
   @RequirePermission(PERMISSIONS.PROGRAMS_READ)
-  async detail(@Param("slug") slug: string) {
-    const program = await this.programsService.getProgramBySlug(slug);
+  async detail(@Param("slug") slug: string, @CurrentUser() user: RBACSessionUser) {
+    const program = await this.programsService.getProgramBySlug(slug, user);
     if (!program) throw new NotFoundException("Program tidak ditemukan");
     return program;
   }

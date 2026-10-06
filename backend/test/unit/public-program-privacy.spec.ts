@@ -95,7 +95,9 @@ describe("public program donor privacy", () => {
   });
 
   it("keeps the authenticated program detail contract separate", async () => {
-    const result = await staff.detail("program");
+    const result = await staff.detail("program", {
+      id: "staff-1", lembagaId: "tenant-1", permissions: ["programs.read"],
+    });
     expect(result?.donations[0]).toEqual(donation);
     expect(findFirst.mock.calls[0][0].include.donations.select).toBeUndefined();
   });
