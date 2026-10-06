@@ -4,7 +4,7 @@ import { PrismaService } from "../../prisma/prisma.service";
 import { AuditService } from "../audit/audit.service";
 import { AuditAction } from "../audit/audit.types";
 import { AppError } from "../../common/errors/app.error";
-import type { JournalInput, VoidJournalInput } from "../../../../shared/validations/journal.schema";
+import { hasBalancedJournalAmounts, journalAmountToMinorUnits, type JournalInput, type VoidJournalInput } from "../../../../shared/validations/journal.schema";
 import { AutoJournalService } from "./auto-journal.service";
 
 @Injectable()
@@ -73,10 +73,11 @@ export class JournalService {
   async createJournal(lembagaId: string, data: JournalInput, userId: string) {
     await this.validateJournalLines(lembagaId, data);
     
-    // Validasi balance sebelum membuat jurnal
-    const totalDebit = data.details.reduce((sum, d) => sum + Number(d.debit), 0);
-    const totalCredit = data.details.reduce((sum, d) => sum + Number(d.credit), 0);
-    if (Math.abs(totalDebit - totalCredit) >= 0.01) {
+    // Internal callers must enforce the same stored precision as the API.
+    if (data.details.some((detail) => journalAmountToMinorUnits(detail.debit) === null || journalAmountToMinorUnits(detail.credit) === null)) {
+      throw new AppError("INVALID_JOURNAL_AMOUNT", "Nominal jurnal harus berada dalam batas penyimpanan dan maksimal 2 angka desimal", 400);
+    }
+    if (!hasBalancedJournalAmounts(data.details)) {
        throw new AppError("UNBALANCED_JOURNAL", "Jurnal tidak balance", 400);
     }
     
