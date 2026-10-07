@@ -76,7 +76,7 @@ export function JournalDetailPage() {
         <div className="flex flex-wrap gap-2 pt-1">
 
           
-          {!isPlatformBook && journal.status === "POSTED" && can(PERMISSIONS.JOURNAL_VOID) && (
+          {!isPlatformBook && journal.status === "POSTED" && journal.sourceType === "MANUAL" && can(PERMISSIONS.JOURNAL_VOID) && (
             <Button intent="destructive" onClick={() => setIsVoidModalOpen(true)} disabled={isPending}>
               <Ban className="w-4 h-4 mr-2" />
               Void Jurnal

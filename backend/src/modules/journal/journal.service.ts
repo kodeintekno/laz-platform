@@ -112,6 +112,11 @@ export class JournalService {
       throw new AppError("JOURNAL_NOT_POSTED", "Hanya jurnal berstatus POSTED yang dapat dibatalkan (void)", 400);
     }
 
+    // Automatic journals must stay aligned with their source accounting.
+    if (existing.sourceType !== "MANUAL") {
+      throw new AppError("AUTOMATIC_JOURNAL_LOCKED", "Jurnal otomatis tidak dapat dibatalkan secara manual", 400);
+    }
+
     const journal = await this.journalRepository.updateStatus(id, lembagaId, "VOID", userId);
 
     await this.auditService.log({
