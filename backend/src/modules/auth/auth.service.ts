@@ -6,6 +6,7 @@ import { AppError } from "../../common/errors/app.error";
 import type { LoginInput } from "../../../../shared/validations/auth.schema";
 import type { RBACSessionUser } from "../../../../shared/types/rbac";
 import type { PermissionKey } from "../../../../shared/constants/permissions";
+import { isPlatformRoleName } from "../../../../shared/lib/roles";
 
 /**
  * Auth Service — pindahan dari src/features/auth dengan penyesuaian:
@@ -25,9 +26,14 @@ export class AuthService {
     private readonly config: ConfigService,
   ) {}
 
-  private hasApprovedLembaga(user: { lembagaId: string | null; lembaga: { status: string } | null }): boolean {
-    // Platform accounts have no tenant; every tenant-bound role needs approval.
-    return user.lembagaId === null || user.lembaga?.status === "APPROVED";
+  private hasApprovedLembaga(user: {
+    lembagaId: string | null;
+    lembaga: { status: string } | null;
+    role: { name: string } | null;
+  }): boolean {
+    // Only named platform roles may authenticate without a tenant.
+    if (user.lembagaId === null) return isPlatformRoleName(user.role?.name);
+    return !!user.lembagaId?.trim() && user.lembaga?.status === "APPROVED";
   }
 
   /**

@@ -186,10 +186,10 @@ export class UsersRepository {
   /**
    * Update a user's role (legacy compatibility).
    */
-  async updateRole(userId: string, roleId: string) {
+  async updateRole(userId: string, roleId: string, lembagaId: string | null) {
     return this.prisma.user.update({
       where: { id: userId },
-      data: { roleId, withdrawalApprovalLimit: 0 },
+      data: { roleId, lembagaId, withdrawalApprovalLimit: 0 },
       select: {
         ...USER_FIELDS,
         role: { select: { id: true, name: true, description: true, createdAt: true, updatedAt: true } },

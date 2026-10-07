@@ -231,7 +231,8 @@ export class ProgramsService {
         409,
       );
     }
-    if (actor.lembagaId && oldProgram.lembagaId !== actor.lembagaId && !hasPermission(actor, PERMISSIONS.PROGRAMS_APPROVE)) {
+    if (!hasPermission(actor, PERMISSIONS.PROGRAMS_APPROVE) &&
+      (!actor.lembagaId?.trim() || oldProgram.lembagaId !== actor.lembagaId)) {
       throw new AppError("FORBIDDEN_PROGRAM", "Anda tidak memiliki izin untuk mengubah program lembaga lain", 403);
     }
 
@@ -575,9 +576,8 @@ export class ProgramsService {
 
     // 2. Tenant scoping: LEMBAGA_ADMIN hanya boleh hapus program milik lembaganya sendiri
     if (
-      actor.lembagaId &&
       !hasPermission(actor, PERMISSIONS.PROGRAMS_APPROVE) &&
-      existing.lembagaId !== actor.lembagaId
+      (!actor.lembagaId?.trim() || existing.lembagaId !== actor.lembagaId)
     ) {
       throw new AppError(
         "FORBIDDEN_PROGRAM",

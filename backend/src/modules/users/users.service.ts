@@ -35,6 +35,14 @@ export class UsersService {
     }
   }
 
+  private resolveUserLembaga(roleName: string, lembagaId: string | null | undefined): string | null {
+    if (isPlatformRoleName(roleName)) return null;
+    if (!lembagaId?.trim()) {
+      throw new AppError("LEMBAGA_REQUIRED", "Lembaga tujuan harus ditentukan.", 422);
+    }
+    return lembagaId;
+  }
+
   async getUsers(page: number, limit: number, search?: string, lembagaId?: string, roleName?: string) {
     return this.usersRepository.findMany(page, limit, search, lembagaId, roleName);
   }
@@ -97,15 +105,10 @@ export class UsersService {
       throw new ForbiddenException("Hanya Super Admin yang dapat membuat user platform baru.");
     }
 
-    let targetLembagaId: string | null | undefined = isSuperAdmin ? input.lembagaId : (adminLembagaId || input.lembagaId);
-    
-    if (isPlatformRoleName(targetRole.name)) {
-      targetLembagaId = null;
-    } else {
-      if (!targetLembagaId) {
-        throw new AppError("LEMBAGA_REQUIRED", "Lembaga tujuan harus ditentukan.", 422);
-      }
-    }
+    const targetLembagaId = this.resolveUserLembaga(
+      targetRole.name,
+      isSuperAdmin ? input.lembagaId : adminLembagaId,
+    );
 
     // 3. Hash password
     const hashedPassword = await bcrypt.hash(input.password, 12);
@@ -159,7 +162,7 @@ export class UsersService {
     }
 
     // 2. Safety Check: Scoped to same tenant if not Super Admin
-    if (!isSuperAdmin && existingUser.lembagaId !== adminLembagaId) {
+    if (!isSuperAdmin && (!adminLembagaId?.trim() || existingUser.lembagaId !== adminLembagaId)) {
       throw new ForbiddenException(
         "Akses ditolak: Anda tidak dapat mengubah data pengguna dari lembaga amil zakat lain.",
       );
@@ -203,19 +206,15 @@ export class UsersService {
       name: input.name,
       email: input.email,
       roleId: input.roleId,
+      lembagaId: this.resolveUserLembaga(
+        targetRole.name,
+        isSuperAdmin ? (input.lembagaId ?? existingUser.lembagaId) : existingUser.lembagaId,
+      ),
       status: input.status,
       withdrawalApprovalLimit: targetRole.name === "FINANCE_PLATFORM"
         ? (input.withdrawalApprovalLimit ?? (changingRole ? 0 : existingUser.withdrawalApprovalLimit))
         : 0,
     };
-
-    if (isSuperAdmin) {
-      if (isPlatformRoleName(targetRole.name)) {
-        updateData.lembagaId = null;
-      } else {
-        updateData.lembagaId = input.lembagaId || existingUser.lembagaId;
-      }
-    }
 
     if (input.password && input.password.trim() !== "") {
       updateData.password = await bcrypt.hash(input.password, 12);
@@ -225,7 +224,7 @@ export class UsersService {
     const updatedUser = await this.usersRepository.update(id, updateData);
 
     // 6.5 Revoke sessions when access-relevant fields change
-    if (changingRole || deactivating || updateData.password) {
+    if (changingRole || updateData.lembagaId !== existingUser.lembagaId || deactivating || updateData.password) {
       await revokeUserSessions(id);
     }
 
@@ -329,7 +328,7 @@ export class UsersService {
       throw new NotFoundException("User tidak ditemukan");
     }
 
-    if (!isSuperAdmin && user.lembagaId !== adminLembagaId) {
+    if (!isSuperAdmin && (!adminLembagaId?.trim() || user.lembagaId !== adminLembagaId)) {
       throw new ForbiddenException(
         "Akses ditolak: Anda tidak dapat mengubah data pengguna dari lembaga amil zakat lain.",
       );
@@ -345,6 +344,7 @@ export class UsersService {
     }
 
     if (user.roleId === newRoleId) {
+      this.resolveUserLembaga(targetRole.name, user.lembagaId);
       return user;
     }
 
@@ -359,7 +359,8 @@ export class UsersService {
       }
     }
 
-    const updatedUser = await this.usersRepository.updateRole(targetUserId, newRoleId);
+    const targetLembagaId = this.resolveUserLembaga(targetRole.name, user.lembagaId);
+    const updatedUser = await this.usersRepository.updateRole(targetUserId, newRoleId, targetLembagaId);
 
     // Role berubah → permissions berubah → revoke semua session user target
     await revokeUserSessions(targetUserId);
