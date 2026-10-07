@@ -65,7 +65,13 @@ export class DonationsRepository {
         skip,
         take: limit,
         orderBy: { createdAt: "desc" },
-        include: {
+        // Public history must not load internal allocations or payment data.
+        select: {
+          id: true,
+          amount: true,
+          status: true,
+          createdAt: true,
+          message: true,
           program: { select: { title: true, slug: true } },
           lembaga: { select: { name: true, slug: true } },
         },
@@ -74,7 +80,16 @@ export class DonationsRepository {
     ]);
 
     return {
-      items,
+      // Keep the public response allowlisted even if a query grows later.
+      items: items.map((item) => ({
+        id: item.id,
+        amount: item.amount,
+        status: item.status,
+        createdAt: item.createdAt,
+        message: item.message,
+        program: item.program ? { title: item.program.title, slug: item.program.slug } : null,
+        lembaga: item.lembaga ? { name: item.lembaga.name, slug: item.lembaga.slug } : null,
+      })),
       metadata: {
         total,
         page,
