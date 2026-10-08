@@ -417,7 +417,9 @@ export const router = createBrowserRouter([
             path: "journal/new",
             element: (
               <RequirePermission permission={PERMISSIONS.JOURNAL_CREATE}>
-                <NewJournalPage />
+                <RequirePermission permission={PERMISSIONS.JOURNAL_POST}>
+                  <NewJournalPage />
+                </RequirePermission>
               </RequirePermission>
             ),
           },

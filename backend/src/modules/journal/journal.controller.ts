@@ -73,7 +73,7 @@ export class JournalController {
       throw new AppError("LEMBAGA_REQUIRED", "Parameter lembagaId diperlukan", 400);
     }
 
-    const data = await this.journalService.createJournal(lembagaId, body, user.id);
+    const data = await this.journalService.createJournal(lembagaId, body, user);
     return { data, message: "Jurnal berhasil disimpan dan diposting" };
   }
 

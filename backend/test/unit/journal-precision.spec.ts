@@ -4,6 +4,13 @@ import { journalSchema } from "../../../shared/validations/journal.schema";
 import { ZodValidationPipe } from "../../src/common/pipes/zod-validation.pipe";
 import { JournalService } from "../../src/modules/journal/journal.service";
 import { JournalRepository } from "../../src/modules/journal/journal.repository";
+import { PERMISSIONS } from "../../../shared/constants/permissions";
+import type { RBACSessionUser } from "../../../shared/types/rbac";
+
+const staff: RBACSessionUser = {
+  id: "staff", email: "staff@example.com", roleName: "LEMBAGA_ADMIN", lembagaId: "tenant",
+  permissions: [PERMISSIONS.JOURNAL_CREATE, PERMISSIONS.JOURNAL_POST],
+};
 
 const maximum = 9_999_999_999_999.99;
 const input = (debits: any[], credits: any[]) => ({
@@ -55,7 +62,7 @@ describe("manual journal precision (BAL-003)", () => {
 
   it("rejects the split-rounding exploit through direct service invocation before posting", async () => {
     const ctx = setup();
-    await expect(ctx.service.createJournal("tenant", input([50.004, 50.004], [100.008]), "staff"))
+    await expect(ctx.service.createJournal("tenant", input([50.004, 50.004], [100.008]), staff))
       .rejects.toMatchObject({ code: "INVALID_JOURNAL_AMOUNT", status: 400 });
     expect(ctx.create).not.toHaveBeenCalled();
     expect(ctx.generateJournalNo).not.toHaveBeenCalled();
@@ -67,7 +74,7 @@ describe("manual journal precision (BAL-003)", () => {
       const ctx = setup();
       const data = input([amount], [amount]);
       expect(journalSchema.safeParse(data).success).toBe(false);
-      await expect(ctx.service.createJournal("tenant", data, "staff")).rejects.toMatchObject({ code: "INVALID_JOURNAL_AMOUNT", status: 400 });
+      await expect(ctx.service.createJournal("tenant", data, staff)).rejects.toMatchObject({ code: "INVALID_JOURNAL_AMOUNT", status: 400 });
       expect(ctx.create).not.toHaveBeenCalled();
     },
   );
@@ -81,7 +88,7 @@ describe("manual journal precision (BAL-003)", () => {
     const ctx = setup();
     const data = input(Array(100).fill(1.004), [100.4]);
     expect(journalSchema.safeParse(data).success).toBe(false);
-    await expect(ctx.service.createJournal("tenant", data, "staff")).rejects.toMatchObject({ code: "INVALID_JOURNAL_AMOUNT", status: 400 });
+    await expect(ctx.service.createJournal("tenant", data, staff)).rejects.toMatchObject({ code: "INVALID_JOURNAL_AMOUNT", status: 400 });
     expect(ctx.create).not.toHaveBeenCalled();
   });
 
@@ -92,7 +99,7 @@ describe("manual journal precision (BAL-003)", () => {
     credits[31] = maximum - 0.01;
     const data = input(debits, credits);
     expect(journalSchema.safeParse(data).success).toBe(false);
-    await expect(ctx.service.createJournal("tenant", data, "staff"))
+    await expect(ctx.service.createJournal("tenant", data, staff))
       .rejects.toMatchObject({ code: "UNBALANCED_JOURNAL", status: 400 });
     expect(ctx.create).not.toHaveBeenCalled();
   });
@@ -107,7 +114,7 @@ describe("manual journal precision (BAL-003)", () => {
   ])("preserves valid stored-precision journals %j against %j", async (debits, credits) => {
     const ctx = setup();
     const parsed = journalSchema.parse(input(debits, credits));
-    const row = await ctx.service.createJournal("tenant", parsed, "staff");
+    const row = await ctx.service.createJournal("tenant", parsed, staff);
     expectStoredBalance(row);
     expect(row).toMatchObject({ status: "POSTED", lembagaId: "tenant", programId: "program", createdById: "staff" });
     expect(ctx.create.mock.calls[0][0].data.details.create).toEqual(parsed.details);
@@ -119,7 +126,7 @@ describe("manual journal precision (BAL-003)", () => {
     const parsed = journalSchema.parse(input([amount], [50]));
     expect(parsed.details[0].debit).toBe(50);
     expect(typeof parsed.details[0].debit).toBe("number");
-    expectStoredBalance(await ctx.service.createJournal("tenant", parsed, "staff"));
+    expectStoredBalance(await ctx.service.createJournal("tenant", parsed, staff));
   });
 
   it.each([-1, Number.NaN, Number.POSITIVE_INFINITY, Number.NEGATIVE_INFINITY, 10_000_000_000_000])(
@@ -127,14 +134,14 @@ describe("manual journal precision (BAL-003)", () => {
       const ctx = setup();
       const data = input([amount], [amount]);
       expect(journalSchema.safeParse(data).success).toBe(false);
-      await expect(ctx.service.createJournal("tenant", data, "staff")).rejects.toMatchObject({ code: "INVALID_JOURNAL_AMOUNT", status: 400 });
+      await expect(ctx.service.createJournal("tenant", data, staff)).rejects.toMatchObject({ code: "INVALID_JOURNAL_AMOUNT", status: 400 });
       expect(ctx.create).not.toHaveBeenCalled();
     },
   );
 
   it("retains the service error for ordinary unbalanced two-decimal inputs", async () => {
     const ctx = setup();
-    await expect(ctx.service.createJournal("tenant", input([1], [1.01]), "staff"))
+    await expect(ctx.service.createJournal("tenant", input([1], [1.01]), staff))
       .rejects.toMatchObject({ code: "UNBALANCED_JOURNAL", status: 400 });
     expect(ctx.create).not.toHaveBeenCalled();
   });
@@ -145,10 +152,10 @@ describe("manual journal precision (BAL-003)", () => {
       { id: "debit-account", code: "A", lembagaId: "other", isActive: true },
       { id: "credit-account", code: "B", lembagaId: "tenant", isActive: true },
     ]);
-    await expect(ctx.service.createJournal("tenant", input([10], [10]), "staff"))
+    await expect(ctx.service.createJournal("tenant", input([10], [10]), staff))
       .rejects.toMatchObject({ code: "INVALID_ACCOUNT_TENANT", status: 403 });
     ctx.prisma.program.findUnique.mockResolvedValueOnce({ lembagaId: "other" });
-    await expect(ctx.service.createJournal("tenant", input([10], [10]), "staff"))
+    await expect(ctx.service.createJournal("tenant", input([10], [10]), staff))
       .rejects.toMatchObject({ code: "INVALID_PROGRAM", status: 400 });
     expect(ctx.create).not.toHaveBeenCalled();
   });

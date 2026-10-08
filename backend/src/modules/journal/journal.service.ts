@@ -6,6 +6,9 @@ import { AuditAction } from "../audit/audit.types";
 import { AppError } from "../../common/errors/app.error";
 import { hasBalancedJournalAmounts, journalAmountToMinorUnits, type JournalInput, type VoidJournalInput } from "../../../../shared/validations/journal.schema";
 import { AutoJournalService } from "./auto-journal.service";
+import { PERMISSIONS } from "../../../../shared/constants/permissions";
+import { hasAllPermissions } from "../../../../shared/lib/permissions";
+import type { RBACSessionUser } from "../../../../shared/types/rbac";
 
 @Injectable()
 export class JournalService {
@@ -70,7 +73,12 @@ export class JournalService {
 
   // generateJournalNo dipindahkan ke AutoJournalService
 
-  async createJournal(lembagaId: string, data: JournalInput, userId: string) {
+  async createJournal(lembagaId: string, data: JournalInput, actor: RBACSessionUser) {
+    // Manual creation immediately posts, so both permissions are required.
+    if (!actor?.id || !hasAllPermissions(actor, [PERMISSIONS.JOURNAL_CREATE, PERMISSIONS.JOURNAL_POST])) {
+      throw new AppError("FORBIDDEN", "Akses ditolak", 403);
+    }
+    const userId = actor.id;
     await this.validateJournalLines(lembagaId, data);
     
     // Internal callers must enforce the same stored precision as the API.

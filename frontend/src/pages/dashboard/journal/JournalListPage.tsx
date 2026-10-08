@@ -10,7 +10,7 @@ import { UserLembagaFilter } from "@/features/users/components/UserLembagaFilter
 import { Plus } from "lucide-react";
 
 export function JournalListPage() {
-  const { can } = usePermission();
+  const { can, canAll } = usePermission();
   const [searchParams] = useSearchParams();
   const hasPlatformFinanceAccess = can(PERMISSIONS.PLATFORM_FINANCE_READ);
 
@@ -47,11 +47,11 @@ export function JournalListPage() {
         title="Jurnal Umum"
         description="Pencatatan transaksi akuntansi double-entry."
         action={
-          can(PERMISSIONS.JOURNAL_CREATE) && (!hasPlatformFinanceAccess || (lembagaId && !isPlatformBook)) ? (
+          canAll([PERMISSIONS.JOURNAL_CREATE, PERMISSIONS.JOURNAL_POST]) && (!hasPlatformFinanceAccess || (lembagaId && !isPlatformBook)) ? (
             <Link to={hasPlatformFinanceAccess ? `/dashboard/journal/new?lembagaId=${lembagaId}` : "/dashboard/journal/new"}>
               <Button intent="primary">
                 <Plus className="w-4 h-4 mr-2" />
-                Buat Draft Jurnal
+                Buat Jurnal
               </Button>
             </Link>
           ) : undefined
