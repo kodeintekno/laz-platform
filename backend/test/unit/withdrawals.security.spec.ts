@@ -22,6 +22,7 @@ describe("Withdrawals Security", () => {
       lembagaBankAccount: { findUnique: vi.fn() },
       programBalance: { findFirst: vi.fn() },
       withdrawal: { findUnique: vi.fn() },
+      auditLog: { create: vi.fn() },
     };
 
     repository = {

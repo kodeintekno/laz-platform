@@ -49,7 +49,7 @@ export class PublicController {
   @Get("programs/:slug")
   @Public()
   async programBySlug(@Param("slug") slug: string) {
-    const program = await this.programsService.getProgramBySlug(slug);
+    const program = await this.programsService.getPublicProgramBySlug(slug);
     if (!program) throw new NotFoundException("Program tidak ditemukan");
     return program;
   }

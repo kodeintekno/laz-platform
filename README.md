@@ -210,7 +210,7 @@ This runs backend and frontend concurrently:
 
 # Default Seed Accounts
 
-After running `npm run db:seed`:
+After running `npm run db:seed` with `NODE_ENV=development` or `NODE_ENV=test`:
 
 ## Super Admin
 
@@ -244,7 +244,7 @@ Email    : relawan@ruangberbagi.id
 Password : Volunteer@123
 ```
 
-In non-production environments, the seed also creates sample programs, donations, distributions, volunteer activities, and applications across their full status lifecycle.
+Only explicit development/test environments create sample tenants, tenant administrators, programs, donations, distributions, volunteers, activities, and applications. Outside these environments (including when `NODE_ENV` is unset), both seed passwords must be supplied explicitly; development defaults are rejected.
 
 Donors never have accounts — checkout is always guest, identified by phone number.
 
@@ -331,4 +331,7 @@ Before deploying to production:
 - Configure Cloudinary credentials
 - Configure production `XENDIT_SECRET_KEY` and `XENDIT_WEBHOOK_TOKEN`
 - Run `npm run build`, then start the backend with `node dist/backend/src/main.js`
-- Run `npm run db:migrate` (Prisma `migrate deploy`) and `npm run db:seed`
+- Set `NODE_ENV=production`. Before `npm run db:seed`, supply unique, randomly generated `SEED_ADMIN_PASSWORD` and `SEED_FINANCE_PASSWORD` through your deployment secret store (at least 16 characters, at most 72 UTF-8 bytes each). Do not use the development examples. Missing, blank, or short passwords stop seeding before any database writes.
+- Run `npm run db:migrate` (Prisma `migrate deploy`) and `npm run db:seed`. Production seeds reference data, platform COA, and the two configured platform accounts; it omits all sample tenants/users and transactions. Existing account passwords are not reset by rerunning the seed.
+- If an earlier seed created accounts with development passwords, rotate those passwords and remove unwanted sample accounts through your normal account-management process before exposing the deployment.
+- Platform provisioning refuses an email already held by a tenant account or a different role. Choose an unoccupied provisioning email; seeding must not be used to promote an existing registrant. Reruns accept only an existing account with the exact intended platform role and no Lembaga, preserving its password, profile, and active/disabled status. A conflict stops the seed; earlier reference-data changes are not rolled back.

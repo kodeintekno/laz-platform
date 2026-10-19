@@ -207,12 +207,6 @@ export const NAV_ITEMS: NavItem[] = [
     icon: "ShieldCheck",
     children: [
       {
-        label: "Hak Akses",
-        href: "/dashboard/rbac",
-        icon: "Key",
-        permission: PERMISSIONS.ROLES_MANAGE,
-      },
-      {
         label: "Audit Logs",
         href: "/dashboard/audit",
         icon: "ScrollText",

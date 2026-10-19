@@ -3,6 +3,7 @@ import { DistributionsRepository } from "./distributions.repository";
 import { AuditService } from "../audit/audit.service";
 import { AuditAction } from "../audit/audit.types";
 import type { DistributionInput } from "../../../../shared/validations/distributions.schema";
+import type { RBACSessionUser } from "../../../../shared/types/rbac";
 
 @Injectable()
 export class DistributionsService {
@@ -19,11 +20,11 @@ export class DistributionsService {
     return this.distributionsRepository.getByProgramSlug(programSlug);
   }
 
-  async createDistribution(data: DistributionInput, userId: string) {
-    const distribution = await this.distributionsRepository.create(data, userId);
+  async createDistribution(data: DistributionInput, actor: RBACSessionUser) {
+    const distribution = await this.distributionsRepository.create(data, actor);
 
     await this.auditService.log({
-      userId,
+      userId: actor.id,
       action: AuditAction.CREATE,
       entity: "Distribution",
       entityId: distribution.id,

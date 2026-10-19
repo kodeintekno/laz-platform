@@ -1,6 +1,9 @@
-import { Injectable } from "@nestjs/common";
+import { ForbiddenException, Injectable } from "@nestjs/common";
 import { PrismaService } from "../../prisma/prisma.service";
 import type { Prisma } from "@prisma/client";
+import type { RBACSessionUser } from "../../../../shared/types/rbac";
+import { PERMISSIONS } from "../../../../shared/constants/permissions";
+import { hasPermission } from "../../../../shared/lib/permissions";
 
 @Injectable()
 export class ProgramsRepository {
@@ -156,9 +159,16 @@ export class ProgramsRepository {
   /**
    * Find a specific program by its slug.
    */
-  async getProgramBySlug(slug: string) {
+  async getProgramBySlug(slug: string, actor: RBACSessionUser) {
+    if (!actor?.id || !hasPermission(actor, PERMISSIONS.PROGRAMS_READ)) {
+      throw new ForbiddenException("Akses ditolak");
+    }
+    const platformAccess = hasPermission(actor, PERMISSIONS.PLATFORM_FINANCE_READ);
+    if (!platformAccess && !actor.lembagaId) {
+      throw new ForbiddenException("Lembaga pengguna tidak ditemukan");
+    }
     return this.prisma.program.findFirst({
-      where: { slug },
+      where: { slug, ...(platformAccess ? {} : { lembagaId: actor.lembagaId! }) },
       include: {
         lembaga: {
           select: { name: true, slug: true, logoUrl: true },
@@ -180,6 +190,50 @@ export class ProgramsRepository {
         },
       },
     });
+  }
+
+  /** Public detail must never return raw donor records. */
+  async getPublicProgramBySlug(slug: string) {
+    const program = await this.prisma.program.findFirst({
+      where: { slug, status: "PUBLISHED" },
+      include: {
+        lembaga: { select: { name: true, slug: true, logoUrl: true } },
+        createdBy: { select: { name: true, avatarUrl: true } },
+        donations: {
+          where: { status: "PAID" },
+          orderBy: { createdAt: "desc" },
+          take: 20,
+          select: {
+            id: true,
+            donorName: true,
+            isAnonymous: true,
+            amount: true,
+            createdAt: true,
+            message: true,
+          },
+        },
+        distributions: {
+          where: { status: "COMPLETED" },
+          orderBy: { createdAt: "desc" },
+        },
+        _count: { select: { donations: { where: { status: "PAID" } } } },
+      },
+    });
+    if (!program) return null;
+
+    return {
+      ...program,
+      // Explicit response allowlist: do not spread donor rows, even if the
+      // query is later extended. Anonymity is enforced before serialization.
+      donations: program.donations.map((donation) => ({
+        id: donation.id,
+        donorName: donation.isAnonymous ? "Hamba Allah" : donation.donorName,
+        isAnonymous: donation.isAnonymous,
+        amount: donation.amount,
+        createdAt: donation.createdAt,
+        message: donation.message,
+      })),
+    };
   }
 
   /**

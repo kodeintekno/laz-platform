@@ -43,7 +43,7 @@ export class DistributionsController {
     @Body(new ZodValidationPipe(distributionSchema)) body: DistributionInput,
     @CurrentUser() user: RBACSessionUser,
   ) {
-    const distribution = await this.distributionsService.createDistribution(body, user.id);
+    const distribution = await this.distributionsService.createDistribution(body, user);
     return { distributionId: distribution.id };
   }
 

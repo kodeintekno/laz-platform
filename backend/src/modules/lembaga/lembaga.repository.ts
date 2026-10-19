@@ -112,7 +112,7 @@ export class LembagaRepository {
   /**
    * Update an existing Lembaga's details.
    */
-  async update(id: string, data: Prisma.LembagaUpdateInput) {
+  async update(id: string, data: Prisma.LembagaUpdateInput, executorUserId?: string) {
     const existing = await this.prisma.lembaga.findUnique({ where: { id } });
     if (
       existing?.logoPublicId &&
@@ -120,7 +120,7 @@ export class LembagaRepository {
       data.logoPublicId !== existing.logoPublicId
     ) {
       try {
-        await this.cloudinaryProvider.delete(existing.logoPublicId);
+        await this.cloudinaryProvider.delete(existing.logoPublicId, { lembagaId: id, userId: executorUserId });
       } catch (e) {
         this.logger.error(
           { err: e, id, oldLogoPublicId: existing.logoPublicId },
@@ -134,11 +134,11 @@ export class LembagaRepository {
     });
   }
 
-  async delete(id: string) {
+  async delete(id: string, executorUserId?: string) {
     const existing = await this.prisma.lembaga.findUnique({ where: { id } });
     if (existing?.logoPublicId) {
       try {
-        await this.cloudinaryProvider.delete(existing.logoPublicId);
+        await this.cloudinaryProvider.delete(existing.logoPublicId, { lembagaId: id, userId: executorUserId });
       } catch (e) {
         this.logger.error(
           { err: e, id, logoPublicId: existing.logoPublicId },

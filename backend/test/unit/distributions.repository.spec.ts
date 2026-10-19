@@ -1,11 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { DistributionsRepository } from "../../src/modules/distributions/distributions.repository";
 import { AppError } from "../../src/common/errors/app.error";
+import { PERMISSIONS } from "../../../shared/constants/permissions";
 
 describe("DistributionsRepository", () => {
   let prisma: any;
   let autoJournalService: any;
   let repository: DistributionsRepository;
+  const actor = { id: "user-1", lembagaId: "lembaga-1", permissions: [PERMISSIONS.DISTRIBUTIONS_MANAGE] };
 
   const baseInput = {
     programId: "program-1",
@@ -37,7 +39,7 @@ describe("DistributionsRepository", () => {
   it("uses and records the selected mustahiq balance", async () => {
     prisma.$executeRaw.mockResolvedValue(1);
 
-    await repository.create({ ...baseInput, fundSource: "MUSTAHIQ" }, "user-1");
+    await repository.create({ ...baseInput, fundSource: "MUSTAHIQ" }, actor);
 
     expect(prisma.$queryRaw).not.toHaveBeenCalled();
     expect(prisma.distribution.create).toHaveBeenCalledWith(expect.objectContaining({
@@ -53,11 +55,11 @@ describe("DistributionsRepository", () => {
     prisma.donation.aggregate.mockResolvedValue({ _sum: { amilInstitutionAmount: 5000 } });
     prisma.distribution.aggregate.mockResolvedValue({ _sum: { amount: 2000 } });
 
-    await repository.create({ ...baseInput, fundSource: "AMIL" }, "user-1");
+    await repository.create({ ...baseInput, fundSource: "AMIL" }, actor);
 
     expect(prisma.$executeRaw).not.toHaveBeenCalled();
     expect(prisma.program.update).toHaveBeenCalledWith({
-      where: { id: "program-1" },
+      where: { id: "program-1", lembagaId: "lembaga-1" },
       data: {
         distributedAmount: { increment: 1000 },
         amilDistributedAmount: { increment: 1000 },
@@ -73,7 +75,7 @@ describe("DistributionsRepository", () => {
     prisma.distribution.aggregate.mockResolvedValue({ _sum: { amount: 2000 } });
 
     await expect(
-      repository.create({ ...baseInput, fundSource: "AMIL" }, "user-1"),
+      repository.create({ ...baseInput, fundSource: "AMIL" }, actor),
     ).rejects.toThrow(AppError);
 
     expect(prisma.distribution.create).not.toHaveBeenCalled();

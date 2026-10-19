@@ -58,6 +58,8 @@ describe("AmilService program snapshots", () => {
 describe("AmilService settings and platform requests", () => {
   it("rejects lowering a global maximum below an existing institution allocation", async () => {
     const prisma = {
+      $executeRaw: async () => 1,
+      $transaction: async (work: any) => work(prisma),
       amilInstitutionSetting: {
         findMany: async () => [{ lembagaId: "lembaga-1", institutionPercentage: 15, platformPercentage: 5 }],
       },
@@ -73,6 +75,8 @@ describe("AmilService settings and platform requests", () => {
   it("accepts a valid global configuration with two decimal places", async () => {
     let saved: any;
     const prisma = {
+      $executeRaw: async () => 1,
+      $transaction: async (work: any) => work(prisma),
       amilInstitutionSetting: { findMany: async () => [] },
       amilGlobalSetting: { upsert: async (input: any) => (saved = input) },
     };

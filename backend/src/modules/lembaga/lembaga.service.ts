@@ -215,7 +215,7 @@ export class LembagaService {
       logoPublicId: input.logoPublicId || null,
       officePhotoUrl: input.officePhotoUrl || null,
       officePhotoPublicId: input.officePhotoPublicId || null,
-    });
+    }, executorUserId);
 
     await this.auditService.log({
       userId: executorUserId,
@@ -288,7 +288,7 @@ export class LembagaService {
       );
     }
 
-    const deleted = await this.lembagaRepository.delete(id);
+    const deleted = await this.lembagaRepository.delete(id, executorUserId);
 
     await this.auditService.log({
       userId: executorUserId,
@@ -313,7 +313,7 @@ export class LembagaService {
       logoUrl: input.logoUrl ?? null,
       logoPublicId: input.logoPublicId ?? null,
       status: input.status,
-    });
+    }, executorUserId);
 
     await this.auditService.log({
       userId: executorUserId,

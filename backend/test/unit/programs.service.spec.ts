@@ -112,7 +112,9 @@ describe("ProgramsService unified program approval", () => {
     expect(prisma.$transaction).toHaveBeenCalledTimes(1);
     expect(amil.validateProgramAmilSnapshot).toHaveBeenCalledWith(3, 7, 12.5);
     expect(tx.program.updateMany).toHaveBeenCalledWith(expect.objectContaining({
-      where: { id: "program-1", status: "PENDING_REVIEW" },
+      where: expect.objectContaining({ id: "program-1", status: "PENDING_REVIEW",
+        amilPlatformPercentage: 5, requestedAmilPlatformPercentage: 3,
+        amilInstitutionPercentage: 7, amilMaxTotalPercentage: 12.5, amilLockedAt: null }),
       data: expect.objectContaining({
         status: "PUBLISHED",
         amilPlatformPercentage: 3,

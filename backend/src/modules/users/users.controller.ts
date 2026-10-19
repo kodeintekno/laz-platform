@@ -73,8 +73,8 @@ export class UsersController {
 
   @Get("users/:id")
   @RequirePermission(PERMISSIONS.USERS_READ)
-  async detail(@Param("id") id: string) {
-    const found = await this.usersService.getUserById(id);
+  async detail(@Param("id") id: string, @CurrentUser() user: RBACSessionUser) {
+    const found = await this.usersService.getUserById(id, user);
     if (!found) throw new NotFoundException("User tidak ditemukan");
     return found;
   }

@@ -7,6 +7,7 @@ import * as crypto from "crypto";
 import { NotificationsService } from "../notifications/notifications.service";
 import { COA_KEYS } from "../coa/coa.template";
 import { Prisma } from "@prisma/client";
+import { contextData } from "../audit/audit-context";
 
 @Injectable()
 export class WithdrawalsService {
@@ -366,7 +367,7 @@ export class WithdrawalsService {
     }
 
     // Kick off the payout process. We don't await this so the UI responds quickly.
-    // If it fails synchronously, the retry endpoint can be used.
+    // Attempt outcomes are persisted by the shared processing path; retries reuse the payout identity.
     this.processApprovedWithdrawal(withdrawal).catch((err) => {
       this.logger.error({ withdrawalId, err }, "Failed to process payout during approval");
     });
@@ -381,45 +382,77 @@ export class WithdrawalsService {
 
     const idempotencyKey = crypto.randomUUID();
     const referenceId = `payout-${withdrawal.id}`;
+    const audit = {
+      userId: contextData().userId ?? withdrawal.approvedById ?? null,
+      lembagaId: withdrawal.lembagaId ?? null,
+      entity: "Withdrawal", entityId: withdrawal.id,
+      correlationId: `withdrawal:${withdrawal.id}`,
+    };
+    const transactionData: Record<string, string | number> = {
+      attemptId: crypto.randomUUID(), provider: "XENDIT", withdrawalId: withdrawal.id,
+      amount: Number(withdrawal.amount), referenceId, phase: "PREPARE",
+    };
+    let processingResult = "NOT_SENT";
+    let status = "FAILED";
+    let errorMessage: string | undefined;
+    try {
+      // 1. Create or get existing Payout record
+      const payoutRecord = await this.withdrawalsRepository.createPayoutRecord(withdrawal, idempotencyKey, referenceId);
+      transactionData.payoutId = payoutRecord.id;
+      transactionData.referenceId = payoutRecord.referenceId;
+      transactionData.idempotencyKeyHash = crypto.createHash("sha256").update(payoutRecord.idempotencyKey).digest("hex");
 
-    // 1. Create or get existing Payout record
-    const payoutRecord = await this.withdrawalsRepository.createPayoutRecord(
-      withdrawal,
-      idempotencyKey,
-      referenceId
-    );
+      if (payoutRecord.status !== "REQUESTED" && payoutRecord.status !== "FAILED") {
+        processingResult = "SKIPPED";
+        status = "SUCCESS";
+        this.logger.warn({ withdrawalId: withdrawal.id }, "Payout already in progress or completed");
+        return;
+      }
 
-    if (payoutRecord.status !== "REQUESTED" && payoutRecord.status !== "FAILED") {
-      this.logger.warn({ withdrawalId: withdrawal.id }, "Payout already in progress or completed");
-      return;
+      // Required append-only evidence before dispatch, including when a later outcome write fails.
+      await this.prisma.auditLog.create({ data: {
+        ...audit, action: "PAYOUT_ATTEMPT_STARTED", status: "PENDING",
+        transactionData: { ...transactionData, processingResult: "STARTED" },
+      } });
+      transactionData.phase = "GATEWAY";
+      processingResult = "UNKNOWN";
+      // 2. Call Xendit API
+      const payoutResult = await this.xenditService.createPayout({
+        idempotencyKey: payoutRecord.idempotencyKey,
+        referenceId: payoutRecord.referenceId,
+        amountIdr: Number(withdrawal.amount),
+        channelCode: withdrawal.bankCode,
+        accountNumber: withdrawal.accountNumber,
+        accountHolderName: withdrawal.accountHolder,
+      });
+      transactionData.xenditPayoutId = payoutResult.payoutId;
+      transactionData.gatewayStatus = ["ACCEPTED", "REQUESTED", "PENDING", "PROCESSING", "SUCCEEDED", "FAILED", "CANCELLED", "REVERSED"].includes(payoutResult.status)
+        ? payoutResult.status : "UNRECOGNIZED";
+      transactionData.phase = "ACKNOWLEDGEMENT";
+
+      // 3. Respons create-payout hanya acknowledgement. Status COMPLETED dan
+      // konsumsi saldo reservasi hanya boleh terjadi lewat webhook sukses yang
+      // terverifikasi, yaitu saat gateway menyatakan dana benar-benar terkirim.
+      const payoutRejected = ["FAILED", "CANCELLED", "REVERSED"].includes(payoutResult.status);
+      // Kegagalan acknowledgement bukan bukti dana gagal secara terminal;
+      // pertahankan REQUESTED agar retry aman dan webhook gagal masih dapat
+      // melepaskan reservasi tepat satu kali.
+      const newPayoutStatus = payoutRejected ? "REQUESTED" : "PROCESSING";
+      const newWithdrawalStatus = payoutRejected ? undefined : "PROCESSING";
+
+      await this.withdrawalsRepository.updatePayoutStatus(withdrawal.id, payoutResult.payoutId, newPayoutStatus, newWithdrawalStatus);
+      processingResult = payoutRejected ? "REJECTED_ACKNOWLEDGEMENT" : "ACKNOWLEDGED";
+      status = payoutRejected ? "FAILED" : "SUCCESS";
+    } catch (error) {
+      // Never retain provider error messages, response bodies, headers or bank details.
+      errorMessage = error instanceof AppError && error.code === "PAYOUT_GATEWAY_ERROR" ? error.code : "PAYOUT_PROCESSING_ERROR";
+      throw error;
+    } finally {
+      await this.prisma.auditLog.create({ data: {
+        ...audit, action: "PAYOUT_ATTEMPT_OUTCOME", status, errorMessage,
+        transactionData: { ...transactionData, processingResult },
+      } });
     }
-
-    // 2. Call Xendit API
-    const payoutResult = await this.xenditService.createPayout({
-      idempotencyKey: payoutRecord.idempotencyKey,
-      referenceId: payoutRecord.referenceId,
-      amountIdr: Number(withdrawal.amount),
-      channelCode: withdrawal.bankCode,
-      accountNumber: withdrawal.accountNumber,
-      accountHolderName: withdrawal.accountHolder,
-    });
-
-    // 3. Respons create-payout hanya acknowledgement. Status COMPLETED dan
-    // konsumsi saldo reservasi hanya boleh terjadi lewat webhook sukses yang
-    // terverifikasi, yaitu saat gateway menyatakan dana benar-benar terkirim.
-    const payoutRejected = ["FAILED", "CANCELLED", "REVERSED"].includes(payoutResult.status);
-    // Kegagalan acknowledgement bukan bukti dana gagal secara terminal;
-    // pertahankan REQUESTED agar retry aman dan webhook gagal masih dapat
-    // melepaskan reservasi tepat satu kali.
-    const newPayoutStatus = payoutRejected ? "REQUESTED" : "PROCESSING";
-    const newWithdrawalStatus = payoutRejected ? undefined : "PROCESSING";
-
-    await this.withdrawalsRepository.updatePayoutStatus(
-      withdrawal.id,
-      payoutResult.payoutId,
-      newPayoutStatus,
-      newWithdrawalStatus
-    );
   }
 
   async retryPayout(withdrawalId: string) {

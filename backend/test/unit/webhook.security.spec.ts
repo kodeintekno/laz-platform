@@ -2,6 +2,7 @@ import { Test, TestingModule } from "@nestjs/testing";
 import { WebhookService } from "../../src/modules/payments/webhook.service";
 import { PaymentsRepository } from "../../src/modules/payments/payments.repository";
 import { AuditService } from "../../src/modules/audit/audit.service";
+import { NotificationsService } from "../../src/modules/notifications/notifications.service";
 import { ConfigService } from "@nestjs/config";
 import { AppError } from "../../src/common/errors/app.error";
 import { describe, it, expect, beforeEach, vi } from "vitest";
@@ -11,10 +12,12 @@ describe("Webhook Security", () => {
   let paymentsRepository: any;
   let configService: any;
   let auditService: any;
+  let notifications: any;
 
   beforeEach(async () => {
     paymentsRepository = {
       findByGatewayRef: vi.fn(),
+      findByXenditPaymentRequestId: vi.fn(),
       updatePaymentAndDonationStatus: vi.fn(),
     };
 
@@ -26,6 +29,7 @@ describe("Webhook Security", () => {
     };
 
     auditService = { log: vi.fn(), logRequired: vi.fn() };
+    notifications = { notifyLembaga: vi.fn() };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -33,6 +37,7 @@ describe("Webhook Security", () => {
         { provide: PaymentsRepository, useValue: paymentsRepository },
         { provide: ConfigService, useValue: configService },
         { provide: AuditService, useValue: auditService },
+        { provide: NotificationsService, useValue: notifications },
       ],
     }).compile();
 
@@ -40,17 +45,37 @@ describe("Webhook Security", () => {
   });
 
   describe("8. Webhook Authentication Failure", () => {
-    it("should throw 401 if x-callback-token is missing", async () => {
-      await expect(
-        service.processXenditPaymentWebhook("", { event: "payment.capture", data: {} as any } as any)
-      ).rejects.toThrow(new AppError("INVALID_WEBHOOK_TOKEN", "Invalid webhook token", 401));
-    });
+    it.each(["", "wrong_token", "secure_token_124"])(
+      "rejects a forged success callback with token %j before any financial processing",
+      async (token) => {
+        paymentsRepository.findByGatewayRef.mockResolvedValue({
+          id: "pay-1", donationId: "don-1", status: "PENDING", amount: 50000,
+          xenditPaymentRequestId: "pr-1", donation: { programId: "prog-1" },
+        });
+        const payload = {
+          event: "payment.capture",
+          data: {
+            payment_id: "py-1", reference_id: "don-1", payment_request_id: "pr-1",
+            status: "SUCCEEDED", request_amount: 50000, currency: "IDR",
+          },
+        } as any;
 
-    it("should throw 401 if x-callback-token is incorrect", async () => {
-      await expect(
-        service.processXenditPaymentWebhook("wrong_token", { event: "payment.capture", data: {} as any } as any)
-      ).rejects.toThrow(new AppError("INVALID_WEBHOOK_TOKEN", "Invalid webhook token", 401));
-    });
+        await expect(service.processXenditPaymentWebhook(token, payload))
+          .rejects.toMatchObject({ code: "INVALID_WEBHOOK_TOKEN", status: 401 });
+        expect(paymentsRepository.findByGatewayRef).not.toHaveBeenCalled();
+        expect(paymentsRepository.findByXenditPaymentRequestId).not.toHaveBeenCalled();
+        // This is the only entry point for payment/donation updates and credits.
+        expect(paymentsRepository.updatePaymentAndDonationStatus).not.toHaveBeenCalled();
+        expect(notifications.notifyLembaga).not.toHaveBeenCalled();
+        expect(auditService.logRequired).toHaveBeenCalledWith(expect.objectContaining({
+          status: "FAILED", errorMessage: "INVALID_WEBHOOK_TOKEN",
+          transactionData: expect.objectContaining({ processingResult: "FAILED" }),
+        }));
+        const auditOutput = JSON.stringify(auditService.logRequired.mock.calls);
+        expect(auditOutput).not.toContain("secure_token_123");
+        if (token) expect(auditOutput).not.toContain(token);
+      },
+    );
   });
 
   describe("9. Payment Amount Mismatch", () => {

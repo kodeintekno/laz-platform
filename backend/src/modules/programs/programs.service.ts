@@ -9,7 +9,7 @@ import { hasPermission } from "../../../../shared/lib/permissions";
 import { PERMISSIONS } from "../../../../shared/constants/permissions";
 import { MAX_FEATURED_PROGRAMS, type ProgramInput } from "../../../../shared/validations/programs.schema";
 import type { RBACSessionUser } from "../../../../shared/types/rbac";
-import { Prisma } from "@prisma/client";
+import { Prisma, type Program } from "@prisma/client";
 import { AmilService } from "../amil/amil.service";
 import { NotificationsService } from "../notifications/notifications.service";
 
@@ -62,6 +62,27 @@ export class ProgramsService {
     }
   }
 
+  /** Match the exact financial snapshot validated before this atomic write. */
+  private unchangedSplit(program: Program): Prisma.ProgramWhereInput {
+    return {
+      id: program.id,
+      status: program.status,
+      category: program.category,
+      amilPlatformPercentage: program.amilPlatformPercentage,
+      amilInstitutionPercentage: program.amilInstitutionPercentage,
+      amilMaxTotalPercentage: program.amilMaxTotalPercentage,
+      requestedAmilPlatformPercentage: program.requestedAmilPlatformPercentage,
+      amilPlatformChangeReason: program.amilPlatformChangeReason,
+      amilLockedAt: program.amilLockedAt,
+    };
+  }
+
+  private assertSnapshotClaimed(count: number) {
+    if (count !== 1) {
+      throw new AppError("PROGRAM_CHANGED", "Program telah berubah. Muat ulang dan tinjau kembali sebelum melanjutkan.", 409);
+    }
+  }
+
   private resolvePlatformProposal(
     data: Pick<ProgramInput, "requestedPlatformPercentage" | "platformChangeReason">,
     snapshot: { platformPercentage: number; institutionPercentage: number; maxTotalPercentage: number },
@@ -95,8 +116,12 @@ export class ProgramsService {
     return this.programsRepository.findPublished(options);
   }
 
-  async getProgramBySlug(slug: string) {
-    return this.programsRepository.getProgramBySlug(slug);
+  async getProgramBySlug(slug: string, actor: RBACSessionUser) {
+    return this.programsRepository.getProgramBySlug(slug, actor);
+  }
+
+  async getPublicProgramBySlug(slug: string) {
+    return this.programsRepository.getPublicProgramBySlug(slug);
   }
 
   async createProgram(data: ProgramInput, actor: RBACSessionUser) {
@@ -206,7 +231,8 @@ export class ProgramsService {
         409,
       );
     }
-    if (actor.lembagaId && oldProgram.lembagaId !== actor.lembagaId && !hasPermission(actor, PERMISSIONS.PROGRAMS_APPROVE)) {
+    if (!hasPermission(actor, PERMISSIONS.PROGRAMS_APPROVE) &&
+      (!actor.lembagaId?.trim() || oldProgram.lembagaId !== actor.lembagaId)) {
       throw new AppError("FORBIDDEN_PROGRAM", "Anda tidak memiliki izin untuk mengubah program lembaga lain", 403);
     }
 
@@ -252,8 +278,8 @@ export class ProgramsService {
           }
         : this.resolvePlatformProposal(data, snapshot);
 
-      const program = await tx.program.update({
-        where: { id },
+      const claimed = await tx.program.updateMany({
+        where: this.unchangedSplit(oldProgram),
         data: {
           title: data.title,
           description: data.description,
@@ -272,6 +298,8 @@ export class ProgramsService {
           ...(!oldProgram.amilLockedAt && data.status === "PUBLISHED" ? { amilLockedAt: new Date() } : {}),
         },
       });
+
+      this.assertSnapshotClaimed(claimed.count);
 
       const reviewSnapshot = {
         defaultPlatformPercentage: snapshot.platformPercentage,
@@ -300,7 +328,7 @@ export class ProgramsService {
         });
       }
 
-      return program;
+      return tx.program.findUniqueOrThrow({ where: { id } });
     });
 
     // If the image was changed or removed, delete the old image from Cloudinary
@@ -311,7 +339,7 @@ export class ProgramsService {
       if (oldPublicId) {
         try {
           const provider = new CloudinaryProvider();
-          await provider.delete(oldPublicId);
+          await provider.delete(oldPublicId, { lembagaId: oldProgram.lembagaId, userId: adminId });
         } catch (e) {
           this.logger.error({ err: e }, "Gagal menghapus gambar lama program");
         }
@@ -361,7 +389,7 @@ export class ProgramsService {
 
     const updated = await this.prisma.$transaction(async (tx) => {
       const claimed = await tx.program.updateMany({
-        where: { id, status: "PENDING_REVIEW" },
+        where: this.unchangedSplit(existing),
         data: {
           status: "PUBLISHED",
           approvedAt: new Date(),
@@ -369,11 +397,11 @@ export class ProgramsService {
           approvedById: approverId,
           rejectionReason: null,
           amilPlatformPercentage: effectivePlatformPercentage,
+          requestedAmilPlatformPercentage: null,
+          amilPlatformChangeReason: null,
         },
       });
-      if (claimed.count !== 1) {
-        throw new AppError("INVALID_STATUS", "Pengajuan program ini sudah diproses", 409);
-      }
+      this.assertSnapshotClaimed(claimed.count);
 
       const pendingReview = await tx.programReviewHistory.findFirst({
         where: { programId: id, status: "PENDING" },
@@ -440,18 +468,17 @@ export class ProgramsService {
 
     const updated = await this.prisma.$transaction(async (tx) => {
       const claimed = await tx.program.updateMany({
-        where: { id, status: "PENDING_REVIEW" },
+        where: this.unchangedSplit(existing),
         data: {
           status: "REJECTED",
           rejectionReason: reason,
           approvedById: approverId,
           approvedAt: null,
-          amilLockedAt: null,
+          // A later review decision must never unlock a previously published split.
+          amilLockedAt: existing.amilLockedAt,
         },
       });
-      if (claimed.count !== 1) {
-        throw new AppError("INVALID_STATUS", "Pengajuan program ini sudah diproses", 409);
-      }
+      this.assertSnapshotClaimed(claimed.count);
 
       const pendingReview = await tx.programReviewHistory.findFirst({
         where: { programId: id, status: "PENDING" },
@@ -549,9 +576,8 @@ export class ProgramsService {
 
     // 2. Tenant scoping: LEMBAGA_ADMIN hanya boleh hapus program milik lembaganya sendiri
     if (
-      actor.lembagaId &&
       !hasPermission(actor, PERMISSIONS.PROGRAMS_APPROVE) &&
-      existing.lembagaId !== actor.lembagaId
+      (!actor.lembagaId?.trim() || existing.lembagaId !== actor.lembagaId)
     ) {
       throw new AppError(
         "FORBIDDEN_PROGRAM",

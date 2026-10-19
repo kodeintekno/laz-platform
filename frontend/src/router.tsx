@@ -56,7 +56,6 @@ import { EditLembagaPage } from "@/pages/dashboard/lembaga/EditLembagaPage";
 import { LembagaMyProfilePage } from "@/pages/dashboard/lembaga/LembagaMyProfilePage";
 import { VolunteerApplicationsPage } from "@/pages/dashboard/volunteers/VolunteerApplicationsPage";
 import { VolunteerActivitiesPage as VolunteerActivitiesManagementPage } from "@/pages/dashboard/volunteers/VolunteerActivitiesPage";
-import { RbacPage } from "@/pages/dashboard/rbac/RbacPage";
 import { ReportsPage } from "@/pages/dashboard/reports/ReportsPage";
 import { SettingsPage } from "@/pages/dashboard/settings/SettingsPage";
 import { AuditPage } from "@/pages/dashboard/audit/AuditPage";
@@ -366,15 +365,6 @@ export const router = createBrowserRouter([
               </RequirePermission>
             ),
           },
-          // RBAC
-          {
-            path: "rbac",
-            element: (
-              <RequirePermission permission={PERMISSIONS.ROLES_MANAGE}>
-                <RbacPage />
-              </RequirePermission>
-            ),
-          },
           // Reports
           {
             path: "reports",
@@ -417,7 +407,9 @@ export const router = createBrowserRouter([
             path: "journal/new",
             element: (
               <RequirePermission permission={PERMISSIONS.JOURNAL_CREATE}>
-                <NewJournalPage />
+                <RequirePermission permission={PERMISSIONS.JOURNAL_POST}>
+                  <NewJournalPage />
+                </RequirePermission>
               </RequirePermission>
             ),
           },

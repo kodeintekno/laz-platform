@@ -7,7 +7,7 @@
  * 3. Role ↔ Permission matrix
  * 4. One SUPER_ADMIN user (lembagaId = null — platform-level)
  * 5. One FINANCE_PLATFORM user (lembagaId = null — platform finance)
- * 6. One APPROVED sample Lembaga + its LEMBAGA_ADMIN
+ * 6. One APPROVED sample Lembaga + its LEMBAGA_ADMIN (dev only)
  * 7. Five dummy programs/donations/distributions (dev only)
  * 8. A second APPROVED Lembaga + its LEMBAGA_ADMIN (dev only)
  * 9. One PENDING Lembaga (with dummy documents) for the approval-queue UI —
@@ -149,7 +149,35 @@ const ROLE_DEFINITIONS = [
 
 // ─── Main ─────────────────────────────────────────────────────────────────────
 
+async function seedPlatformUser(data: { email: string; name: string; password: string; roleId: string }) {
+  const user = await prisma.user.upsert({
+    where: { email: data.email },
+    // Email ownership alone is not authority to promote or reactivate a user.
+    // An empty update also keeps a concurrent registrant unchanged.
+    update: {},
+    create: { ...data, status: "ACTIVE", lembagaId: null },
+  });
+  if (user.roleId !== data.roleId || user.lembagaId !== null) {
+    throw new Error(`Seed account conflict for ${data.email}: existing account does not match the intended platform role and tenant scope. Use a separate unoccupied provisioning email.`);
+  }
+  return user;
+}
+
 async function main() {
+  // Defaults and fixtures require an explicit local environment. Missing/unknown
+  // NODE_ENV must not silently provision accounts with development passwords.
+  const seedDemoData = ["development", "test"].includes(process.env.NODE_ENV ?? "");
+  const seedPassword = (key: string, developmentDefault: string): string => {
+    const value = process.env[key];
+    if (seedDemoData) return value ?? developmentDefault;
+    if (!value || value.trim().length < 16 || Buffer.byteLength(value, "utf8") > 72) {
+      throw new Error(`${key} must be explicitly set to a unique password of at least 16 characters and at most 72 UTF-8 bytes outside development/test`);
+    }
+    return value;
+  };
+  // Validate both credentials before permissions, roles, or account writes.
+  const adminPassword = seedPassword("SEED_ADMIN_PASSWORD", "Admin@123456");
+  const financePassword = seedPassword("SEED_FINANCE_PASSWORD", "Finance@123456");
   console.log("🌱 Seeding Ruang Berbagi Platform...\n");
 
   // 1. Upsert all permissions
@@ -231,58 +259,40 @@ async function main() {
 
   // 4. Seed SUPER_ADMIN user (platform-level — no lembaga)
   const adminEmail = process.env.SEED_ADMIN_EMAIL ?? "admin@ruangberbagi.id";
-  const adminPassword = process.env.SEED_ADMIN_PASSWORD ?? "Admin@123456";
   const superAdminRoleId = roleMap["SUPER_ADMIN"];
 
   console.log(`👤 Seeding SUPER_ADMIN user (${adminEmail})...`);
 
   const hashedPassword = await bcrypt.hash(adminPassword, 12);
 
-  await prisma.user.upsert({
-    where: { email: adminEmail },
-    update: {
-      roleId: superAdminRoleId,
-      status: "ACTIVE",
-      lembagaId: null,
-    },
-    create: {
-      email: adminEmail,
-      name: "Super Admin",
-      password: hashedPassword,
-      status: "ACTIVE",
-      roleId: superAdminRoleId,
-      lembagaId: null,
-    },
+  await seedPlatformUser({
+    email: adminEmail,
+    name: "Super Admin",
+    password: hashedPassword,
+    roleId: superAdminRoleId,
   });
-  console.log(" ✓ Super admin created");
+  console.log(" ✓ Super admin created or existing identity verified");
 
   // 5. Seed FINANCE_PLATFORM user (platform-level — no lembaga)
   const financeEmail = process.env.SEED_FINANCE_EMAIL ?? "finance@ruangberbagi.id";
-  const financePassword = process.env.SEED_FINANCE_PASSWORD ?? "Finance@123456";
   const financePlatformRoleId = roleMap["FINANCE_PLATFORM"];
 
   console.log(`\n💰 Seeding FINANCE_PLATFORM user (${financeEmail})...`);
 
   const hashedFinancePassword = await bcrypt.hash(financePassword, 12);
 
-  await prisma.user.upsert({
-    where: { email: financeEmail },
-    update: {
-      roleId: financePlatformRoleId,
-      status: "ACTIVE",
-      lembagaId: null,
-    },
-    create: {
-      email: financeEmail,
-      name: "Finance Platform",
-      password: hashedFinancePassword,
-      status: "ACTIVE",
-      roleId: financePlatformRoleId,
-      lembagaId: null,
-    },
+  await seedPlatformUser({
+    email: financeEmail,
+    name: "Finance Platform",
+    password: hashedFinancePassword,
+    roleId: financePlatformRoleId,
   });
-  console.log(" ✓ Finance platform created");
+  console.log(" ✓ Finance platform created or existing identity verified");
 
+  if (!seedDemoData) {
+    await seedCoaForLembaga();
+    console.log("\nℹ️  Skipping all sample tenants, users, and transactions outside development/test.\n");
+  } else {
   // 6. Seed one APPROVED sample Lembaga + its LEMBAGA_ADMIN
   console.log("\n🏢 Seeding sample APPROVED Lembaga...");
   const lembagaAdminRoleId = roleMap["LEMBAGA_ADMIN"];
@@ -330,9 +340,6 @@ async function main() {
   });
   console.log(" ✓ Lembaga admin created");
 
-  if (process.env.NODE_ENV === "production") {
-    console.log("\nℹ️  Skipping dummy data (programs, pending lembaga, volunteers) in production.\n");
-  } else {
     // 6. Dummy Programs / Donations / Distributions ────────────────────────────
     console.log("\n📦 Seeding dummy programs...");
 
@@ -819,20 +826,20 @@ async function main() {
 // Sumber tunggal template berada di src/modules/coa/coa.template.ts.
 
 /**
- * Seed COA template untuk satu lembaga.
+ * Seed platform COA and optionally the template for one Lembaga.
  * Aman di-run berulang — menggunakan upsert berdasarkan [lembagaId, code].
  */
-async function seedCoaForLembaga(lembagaId: string): Promise<void> {
-  const lembagaBook = await prisma.accountingBook.upsert({
+async function seedCoaForLembaga(lembagaId?: string): Promise<void> {
+  const lembagaBook = lembagaId ? await prisma.accountingBook.upsert({
     where: { lembagaId },
     update: {},
     create: { ownerType: "LEMBAGA", lembagaId, name: `Buku Lembaga ${lembagaId}` },
-  });
+  }) : null;
   const platformBook = (await prisma.accountingBook.findFirst({ where: { ownerType: "PLATFORM" } }))
     ?? await prisma.accountingBook.create({ data: { ownerType: "PLATFORM", name: "Buku Platform" } });
 
   for (const [book, ownerType, ownerLembagaId] of [
-    [lembagaBook, "LEMBAGA", lembagaId],
+    ...(lembagaBook && lembagaId ? [[lembagaBook, "LEMBAGA", lembagaId] as const] : []),
     [platformBook, "PLATFORM", null],
   ] as const) {
     for (const row of coaTemplateFor(ownerType)) {

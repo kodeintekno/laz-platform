@@ -4,8 +4,11 @@ import { PrismaService } from "../../prisma/prisma.service";
 import { AuditService } from "../audit/audit.service";
 import { AuditAction } from "../audit/audit.types";
 import { AppError } from "../../common/errors/app.error";
-import type { JournalInput, VoidJournalInput } from "../../../../shared/validations/journal.schema";
+import { hasBalancedJournalAmounts, journalAmountToMinorUnits, type JournalInput, type VoidJournalInput } from "../../../../shared/validations/journal.schema";
 import { AutoJournalService } from "./auto-journal.service";
+import { PERMISSIONS } from "../../../../shared/constants/permissions";
+import { hasAllPermissions } from "../../../../shared/lib/permissions";
+import type { RBACSessionUser } from "../../../../shared/types/rbac";
 
 @Injectable()
 export class JournalService {
@@ -70,13 +73,19 @@ export class JournalService {
 
   // generateJournalNo dipindahkan ke AutoJournalService
 
-  async createJournal(lembagaId: string, data: JournalInput, userId: string) {
+  async createJournal(lembagaId: string, data: JournalInput, actor: RBACSessionUser) {
+    // Manual creation immediately posts, so both permissions are required.
+    if (!actor?.id || !hasAllPermissions(actor, [PERMISSIONS.JOURNAL_CREATE, PERMISSIONS.JOURNAL_POST])) {
+      throw new AppError("FORBIDDEN", "Akses ditolak", 403);
+    }
+    const userId = actor.id;
     await this.validateJournalLines(lembagaId, data);
     
-    // Validasi balance sebelum membuat jurnal
-    const totalDebit = data.details.reduce((sum, d) => sum + Number(d.debit), 0);
-    const totalCredit = data.details.reduce((sum, d) => sum + Number(d.credit), 0);
-    if (Math.abs(totalDebit - totalCredit) >= 0.01) {
+    // Internal callers must enforce the same stored precision as the API.
+    if (data.details.some((detail) => journalAmountToMinorUnits(detail.debit) === null || journalAmountToMinorUnits(detail.credit) === null)) {
+      throw new AppError("INVALID_JOURNAL_AMOUNT", "Nominal jurnal harus berada dalam batas penyimpanan dan maksimal 2 angka desimal", 400);
+    }
+    if (!hasBalancedJournalAmounts(data.details)) {
        throw new AppError("UNBALANCED_JOURNAL", "Jurnal tidak balance", 400);
     }
     
@@ -109,6 +118,11 @@ export class JournalService {
     
     if (existing.status !== "POSTED") {
       throw new AppError("JOURNAL_NOT_POSTED", "Hanya jurnal berstatus POSTED yang dapat dibatalkan (void)", 400);
+    }
+
+    // Automatic journals must stay aligned with their source accounting.
+    if (existing.sourceType !== "MANUAL") {
+      throw new AppError("AUTOMATIC_JOURNAL_LOCKED", "Jurnal otomatis tidak dapat dibatalkan secara manual", 400);
     }
 
     const journal = await this.journalRepository.updateStatus(id, lembagaId, "VOID", userId);

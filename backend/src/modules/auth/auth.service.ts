@@ -6,6 +6,7 @@ import { AppError } from "../../common/errors/app.error";
 import type { LoginInput } from "../../../../shared/validations/auth.schema";
 import type { RBACSessionUser } from "../../../../shared/types/rbac";
 import type { PermissionKey } from "../../../../shared/constants/permissions";
+import { isPlatformRoleName } from "../../../../shared/lib/roles";
 
 /**
  * Auth Service — pindahan dari src/features/auth dengan penyesuaian:
@@ -25,9 +26,19 @@ export class AuthService {
     private readonly config: ConfigService,
   ) {}
 
+  private hasApprovedLembaga(user: {
+    lembagaId: string | null;
+    lembaga: { status: string } | null;
+    role: { name: string } | null;
+  }): boolean {
+    // Only named platform roles may authenticate without a tenant.
+    if (user.lembagaId === null) return isPlatformRoleName(user.role?.name);
+    return !!user.lembagaId?.trim() && user.lembaga?.status === "APPROVED";
+  }
+
   /**
    * Verify credentials and return the session-user shape.
-   * Melempar error spesifik jika akun LEMBAGA_ADMIN milik lembaga yang
+   * Melempar error spesifik jika akun staff milik lembaga yang
    * belum/tidak disetujui — agar frontend bisa menampilkan pesan yang jelas.
    */
   async signIn(credentials: LoginInput): Promise<RBACSessionUser | null> {
@@ -47,15 +58,15 @@ export class AuthService {
       return null;
     }
 
-    if (user.role?.name === "LEMBAGA_ADMIN" && user.lembaga) {
-      if (user.lembaga.status === "PENDING") {
+    if (!this.hasApprovedLembaga(user)) {
+      if (user.lembaga?.status === "PENDING") {
         throw new AppError(
           "LEMBAGA_PENDING",
           "Pendaftaran lembaga Anda masih menunggu persetujuan Super Admin",
           403,
         );
       }
-      if (user.lembaga.status === "REJECTED") {
+      if (user.lembaga?.status === "REJECTED") {
         const phone = this.config.get<string>("SUPER_ADMIN_WHATSAPP_NUMBER", "").trim();
         const message = [
           "Halo Super Admin Ruang Berbagi,",
@@ -76,6 +87,7 @@ export class AuthService {
             : undefined,
         );
       }
+      throw new AppError("LEMBAGA_UNAVAILABLE", "Lembaga tidak tersedia atau belum disetujui", 403);
     }
 
     const permissions =
@@ -108,7 +120,7 @@ export class AuthService {
    */
   async getUserById(id: string): Promise<RBACSessionUser | null> {
     const user = await this.userRepository.findById(id);
-    if (!user || user.status !== "ACTIVE") {
+    if (!user || user.status !== "ACTIVE" || !this.hasApprovedLembaga(user)) {
       return null;
     }
     const permissions =

@@ -4,6 +4,7 @@ import { ConfigModule } from "@nestjs/config";
 import { LoggerModule } from "nestjs-pino";
 import { ThrottlerGuard, ThrottlerModule } from "@nestjs/throttler";
 import { validateEnv } from "./config/env";
+import { httpLogRedaction } from "./config/logging";
 import { PrismaModule } from "./prisma/prisma.module";
 import { AuthGuard } from "./common/guards/auth.guard";
 import { PermissionsGuard } from "./common/guards/permissions.guard";
@@ -18,7 +19,6 @@ import { DonationsModule } from "./modules/donations/donations.module";
 import { PaymentsModule } from "./modules/payments/payments.module";
 import { DistributionsModule } from "./modules/distributions/distributions.module";
 import { UsersModule } from "./modules/users/users.module";
-import { RbacModule } from "./modules/rbac/rbac.module";
 import { LembagaModule } from "./modules/lembaga/lembaga.module";
 import { VolunteersModule } from "./modules/volunteers/volunteers.module";
 import { AnalyticsModule } from "./modules/analytics/analytics.module";
@@ -42,17 +42,7 @@ const isDev = process.env.NODE_ENV !== "production";
     LoggerModule.forRoot({
       pinoHttp: {
         level: process.env.LOG_LEVEL ?? (isDev ? "debug" : "info"),
-        redact: {
-          paths: [
-            "req.headers.cookie",
-            "req.headers.authorization",
-            "req.body.password",
-            "req.body.confirmPassword",
-            "req.body.currentPassword",
-            "req.body.newPassword",
-          ],
-          remove: true,
-        },
+        redact: httpLogRedaction,
         transport: isDev
           ? {
               target: "pino-pretty",
@@ -65,8 +55,8 @@ const isDev = process.env.NODE_ENV !== "production";
           : undefined,
       },
     }),
-    // Rate limit global /api ~300/menit; override per-route via @Throttle
-    ThrottlerModule.forRoot([{ name: "global", ttl: 60_000, limit: 300 }]),
+    // Match the default name used by route @Throttle and @SkipThrottle decorators.
+    ThrottlerModule.forRoot([{ name: "default", ttl: 60_000, limit: 300 }]),
     PrismaModule,
     NotificationsModule,
     AuditModule,
@@ -84,7 +74,6 @@ const isDev = process.env.NODE_ENV !== "production";
     PaymentsModule,
     DistributionsModule,
     UsersModule,
-    RbacModule,
     LembagaModule,
     AnalyticsModule,
     ReportsModule,

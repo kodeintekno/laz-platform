@@ -36,8 +36,8 @@ export function NewJournalPage() {
     <div className="space-y-6">
       <Breadcrumbs />
       <PageHeader
-        title="Buat Draft Jurnal"
-        description="Catat transaksi manual baru. Jurnal yang dibuat akan berstatus DRAFT dan dapat diedit sebelum diposting."
+        title="Buat Jurnal"
+        description="Catat transaksi manual baru. Jurnal langsung diposting setelah disimpan."
       />
 
       {isLoading ? (
