@@ -19,7 +19,6 @@ import { DonationsModule } from "./modules/donations/donations.module";
 import { PaymentsModule } from "./modules/payments/payments.module";
 import { DistributionsModule } from "./modules/distributions/distributions.module";
 import { UsersModule } from "./modules/users/users.module";
-import { RbacModule } from "./modules/rbac/rbac.module";
 import { LembagaModule } from "./modules/lembaga/lembaga.module";
 import { VolunteersModule } from "./modules/volunteers/volunteers.module";
 import { AnalyticsModule } from "./modules/analytics/analytics.module";
@@ -75,7 +74,6 @@ const isDev = process.env.NODE_ENV !== "production";
     PaymentsModule,
     DistributionsModule,
     UsersModule,
-    RbacModule,
     LembagaModule,
     AnalyticsModule,
     ReportsModule,

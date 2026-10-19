@@ -23,7 +23,6 @@ export const ROUTE_LABELS: Record<string, string> = {
   edit: "Ubah",
   lembaga: "Manajemen Lembaga",
   relawan: "Relawan",
-  rbac: "Hak Akses",
   reports: "Laporan",
   settings: "Pengaturan",
   users: "Pengguna",
@@ -42,7 +41,6 @@ const VALID_PATHS = new Set([
   "/dashboard/audit",
   "/dashboard/reports",
   "/dashboard/settings",
-  "/dashboard/rbac",
 ]);
 
 /**
